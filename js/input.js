@@ -10,7 +10,7 @@ const Input = {
   /** Browser-Koordinaten in Canvas-Pixel umrechnen */
   toCanvas(e) {
     const r = C.getBoundingClientRect();
-    return { x: (e.clientX - r.left) / r.width * VIEW.W, y: (e.clientY - r.top) / r.height * H };
+    return { x: (e.clientX - r.left) / r.width * VIEW.W, y: (e.clientY - r.top) / r.height * VIEW.HC - VIEW.OY };
   },
 
   init() {

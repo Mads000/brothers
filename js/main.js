@@ -266,7 +266,8 @@ const App = {
 
   draw() {
     X.setTransform(1, 0, 0, 1, 0, 0);
-    X.fillStyle = '#000'; X.fillRect(0, 0, VIEW.W, H);
+    X.fillStyle = '#000'; X.fillRect(0, 0, VIEW.W, VIEW.HC);
+    baseT();
     UI.begin();
     switch (this.scene) {
       case 'menu': Screens.menu(); break;

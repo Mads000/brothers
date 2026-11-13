@@ -101,11 +101,45 @@ function getFrame(ve) {
   return (frameCache[key] = o);
 }
 
-/** Seitenränder (nur PC) mit großen senkrechten Wut-Leisten */
+/* ---------- Handy: Streifen über und unter dem Spielfeld ---------- */
+const bandCache = {};
+onViewChange(() => { for (const k in bandCache) delete bandCache[k]; });
+
+function getBand(ve, top) {
+  const h = VIEW.OY, key = ve.id + (top ? '-t-' : '-b-') + (ve.id === 'bus' ? Save.paintId() : '');
+  if (bandCache[key]) return bandCache[key];
+  const o = makeCanvas(PLAY_W, h), g = o.getContext('2d');
+  g.fillStyle = ve.palette.side; g.fillRect(0, 0, PLAY_W, h);
+  if (ART.band[ve.id]) ART.band[ve.id](g, bandKit(g, 0, h, top), h, top);
+  // nach außen etwas dunkler, wie die Seitenränder am PC
+  shadePass(g, PLAY_W, h, (px, py) => 1 - (top ? h - 1 - py : py) / Math.max(h, 40) * .5);
+  return (bandCache[key] = o);
+}
+/**
+ * Streifen zeichnen. play = im Spiel (direkt am Spielfeld, die HUD-Leisten
+ * sitzen ganz außen), sonst (Menüs) außerhalb von 0..320.
+ */
+function drawBands(ve, T, play) {
+  const h = VIEW.OY;
+  if (h <= 0) return;
+  baseT();
+  for (const top of [true, false]) {
+    const y0 = top ? (play ? 26 - h : -h) : (play ? 304 : 320);
+    X.drawImage(getBand(ve, top), 0, y0);
+    if (ART.bandAnim[ve.id]) {
+      X.save(); X.beginPath(); X.rect(0, y0, PLAY_W, h); X.clip();
+      ART.bandAnim[ve.id](T, bandKit(X, y0, h, top), h, top);
+      X.restore();
+    }
+  }
+}
+
+/** Seitenränder (nur PC) mit großen senkrechten Wut-Leisten, am Handy die Streifen oben/unten */
 function drawFrame(ve, T, bros) {
   const OX = VIEW.OX, W = VIEW.W;
+  drawBands(ve, T, !!bros);
   if (OX <= 0) return;
-  X.setTransform(1, 0, 0, 1, 0, 0);
+  baseT();
   X.drawImage(getFrame(ve), 0, 0);
   if (ve.drawSide) for (const x of [0, W - OX]) {
     X.save(); X.beginPath(); X.rect(x, 0, OX, H); X.clip();
@@ -134,9 +168,10 @@ function drawBackdrop(ve, T, withBros) {
   drawVenue(ve, T);
   if (withBros) withBros.forEach(drawBro);
   drawFrame(ve, T, null);
-  X.setTransform(1, 0, 0, 1, 0, 0);
+  baseT();
   X.fillStyle = '#000'; X.fillRect(0, 0, VIEW.W, 26); X.fillRect(0, 304, VIEW.W, 16);
   shade();
+  if (VIEW.OY) { X.fillStyle = 'rgba(0,0,0,.62)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY); X.fillRect(0, 320, VIEW.W, VIEW.OY); }
 }
 function shade(a = .62) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
@@ -166,8 +201,9 @@ function bonusHud(lv, stats) {
 /* ---------- HUD während des Spiels ---------- */
 function drawHUD(game, interactive) {
   const W = VIEW.W, OX = VIEW.OX, cx = W / 2, lv = game.level, g = lv.goal || {};
+  const TY = -VIEW.OY, BY = VIEW.OY;   // Handy: Leisten an den Bildschirmrand schieben
   drawFrame(game.venue, game.T, game.bros);
-  X.fillStyle = '#000'; X.fillRect(0, 0, W, 26); X.fillRect(0, 304, W, 16);
+  X.fillStyle = '#000'; X.fillRect(0, TY, W, 26); X.fillRect(0, 304 + BY, W, 16);
 
   // Oben Mitte: Zeit bzw. Ziel
   const left = Math.max(0, lv.time - game.el);
@@ -177,21 +213,21 @@ function drawHUD(game, interactive) {
   else if (lv.endless) top = 'NEXT CITY ' + fmtTime(left);
   else top = 'GIG IN ' + fmtTime(left);
   if (left <= 10 && game.state === 'play' && game.phase !== 'stagecall' && (game.T * 4 | 0) % 2) col = '#ff5a4a';
-  txtS(top, cx, 3, col, 1, 'c');
-  txt(levelLabel(lv), OX + 3, 3, '#666');
+  txtS(top, cx, 3 + TY, col, 1, 'c');
+  txt(levelLabel(lv), OX + 3, 3 + TY, '#666');
   if (lv.endless) {
-    txt(String(Endless.liveScore(game)), W - 24, 3, '#ffd84a', 1, 'r');
-    if (Endless.cur && Endless.cur.kind === 'rowdy') txt('X2', OX + 4 + textW(levelLabel(lv)) + 4, 3, '#ff5a4a');
+    txt(String(Endless.liveScore(game)), W - 24, 3 + TY, '#ffd84a', 1, 'r');
+    if (Endless.cur && Endless.cur.kind === 'rowdy') txt('X2', OX + 4 + textW(levelLabel(lv)) + 4, 3 + TY, '#ff5a4a');
   }
 
   // Wut-Leisten oben
   game.bros.forEach((b, i) => {
     const bx = OX + (i ? 94 : 4);
-    X.fillStyle = b.color; X.fillRect(bx, 13, 6, 8);
-    txt(b.name, bx + 8, 15, '#ccc');
-    X.fillStyle = '#222'; X.fillRect(bx + 22, 14, 58, 6);
-    X.fillStyle = angerColor(b.anger); X.fillRect(bx + 23, 15, Math.round(56 * b.anger / 100), 4);
-    if (b.hidden) txt('LIFT', bx + 51, 15, '#fff', 1, 'c');
+    X.fillStyle = b.color; X.fillRect(bx, 13 + TY, 6, 8);
+    txt(b.name, bx + 8, 15 + TY, '#ccc');
+    X.fillStyle = '#222'; X.fillRect(bx + 22, 14 + TY, 58, 6);
+    X.fillStyle = angerColor(b.anger); X.fillRect(bx + 23, 15 + TY, Math.round(56 * b.anger / 100), 4);
+    if (b.hidden) txt('LIFT', bx + 51, 15 + TY, '#fff', 1, 'c');
   });
 
   // Angekündigte Events blinken am rechten Rand
@@ -215,7 +251,7 @@ function drawHUD(game, interactive) {
     const id = game.slots[s], def = POWERUPS[id];
     const used = game.slotUsed[s] || !def || Save.powerupCount(id) <= 0;
     const x = s ? OX + PLAY_W - 42 : OX + 2;
-    UI.button(x, 305, 40, 13, def ? def.short : '-', () => game.usePowerUp(s), {
+    UI.button(x, 305 + BY, 40, 13, def ? def.short : '-', () => game.usePowerUp(s), {
       disabled: !interactive || used, noDefault: true,
       draw(b, hl) {
         const c = used ? '#444' : hl ? '#ffd84a' : '#ff8a3a';
@@ -226,12 +262,12 @@ function drawHUD(game, interactive) {
   }
   // Bonusziel (Tour) bzw. Stadt-Mission (Never-Ending Tour)
   const bh = bonusHud(lv, game.stats);
-  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, 308, bh.ok); txt(bh.s, cx + 1, 309, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
+  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, 308 + BY, bh.ok); txt(bh.s, cx + 1, 309 + BY, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
-  if (interactive) UI.button(W - 22, 0, 22, 12, '', () => App.pause(), {
+  if (interactive) UI.button(W - 22, TY, 22, 12, '', () => App.pause(), {
     bare: true, noDefault: true,
-    draw(b, hl) { X.fillStyle = hl ? '#ffd84a' : '#aaa'; X.fillRect(W - 9, 2, 2, 7); X.fillRect(W - 5, 2, 2, 7); },
+    draw(b, hl) { X.fillStyle = hl ? '#ffd84a' : '#aaa'; X.fillRect(W - 9, b.y + 2, 2, 7); X.fillRect(W - 5, b.y + 2, 2, 7); },
   });
 
   if (game.state === 'intro') drawIntro(game);
@@ -517,7 +553,7 @@ const Screens = {
   /* ----- Gig-Szene nach einem Headliner ----- */
   gig() {
     const W = VIEW.W, cx = W / 2, g = App.gig, T = App.T;
-    X.setTransform(1, 0, 0, 1, 0, 0);
+    baseT();
     X.fillStyle = '#05040c'; X.fillRect(0, 0, W, H);
     // Lichtkegel
     const cols = ['rgba(255,216,74,.12)', 'rgba(255,90,160,.1)', 'rgba(90,160,255,.12)'];
@@ -763,7 +799,7 @@ const Screens = {
   /* ----- Debug-Menü (nur im Testmodus) ----- */
   debug() {
     const W = VIEW.W, OX = VIEW.OX, cx = W / 2;
-    X.setTransform(1, 0, 0, 1, 0, 0);
+    baseT();
     X.fillStyle = 'rgba(10,5,0,.93)'; X.fillRect(0, 0, W, H);
     txtS('DEBUG MENU', cx, 6, '#ff8a3a', 2, 'c');
     const x0 = OX + 10, bw = 160;

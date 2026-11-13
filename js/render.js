@@ -5,6 +5,10 @@
    - "Bildschirm" = Canvas-Pixel, 0..VIEW.W x 0..320
    - "Welt"       = Spielfeld, 0..180 x 0..320. Liegt bei VIEW.OX im Canvas
                     (Handy: OX = 0, PC: OX = 30)
+   - Auf langen Handys ist die Canvas höher (VIEW.HC). Dann liegt der Bereich
+     0..320 um VIEW.OY nach unten verschoben, darüber und darunter ist Platz
+     für die Streifen mit Umgebung (art.js: ART.band) und die HUD-Leisten.
+     baseT() stellt diese Grundverschiebung ein.
    ========================================================================= */
 
 const C = document.getElementById('c');
@@ -16,7 +20,10 @@ const PLAY_W = CONFIG.PLAY_W;   // 180
 const H = CONFIG.H;             // 320
 
 // Aktuelles Format. W = Canvas-Breite, OX = Versatz des Spielfelds
-const VIEW = { W: PLAY_W, OX: 0, pc: false, scale: 1, ready: false };
+const VIEW = { W: PLAY_W, OX: 0, OY: 0, HC: H, pc: false, scale: 1, ready: false };
+
+/** Bildschirm-Koordinaten einstellen (0..320 liegt bei VIEW.OY) */
+function baseT() { X.setTransform(1, 0, 0, 1, 0, VIEW.OY); }
 
 // Andere Dateien können sich hier melden, um bei Formatwechsel Caches zu leeren
 const viewListeners = [];
@@ -26,18 +33,21 @@ function onViewChange(fn) { viewListeners.push(fn); }
 function fitView() {
   const pc = innerWidth / innerHeight >= CONFIG.PC_ASPECT;
   const W = pc ? CONFIG.PC_W : PLAY_W;
-  const changed = !VIEW.ready || VIEW.W !== W;
-  if (C.width !== W || C.height !== H) { C.width = W; C.height = H; }
-  VIEW.W = W; VIEW.pc = pc; VIEW.OX = (W - PLAY_W) / 2; VIEW.ready = true;
+  // Handy: Bildfläche so hoch wie der Bildschirm, damit oben und unten nichts schwarz bleibt
+  const OY = pc ? 0 : clamp(Math.floor((PLAY_W * innerHeight / innerWidth - H) / 2), 0, CONFIG.MAX_BAND);
+  const HC = H + OY * 2;
+  const changed = !VIEW.ready || VIEW.W !== W || VIEW.OY !== OY;
+  if (C.width !== W || C.height !== HC) { C.width = W; C.height = HC; }
+  VIEW.W = W; VIEW.pc = pc; VIEW.OX = (W - PLAY_W) / 2; VIEW.OY = OY; VIEW.HC = HC; VIEW.ready = true;
   X.imageSmoothingEnabled = false;   // geht beim Ändern der Canvas-Größe verloren
 
   // Skalierung: PC pixelgenau in ganzen Gerätepixeln, Handy füllt den Bildschirm
   const dpr = window.devicePixelRatio || 1;
-  let s = Math.min(innerWidth / W, innerHeight / H);
+  let s = Math.min(innerWidth / W, innerHeight / HC);
   if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1) s = ds / dpr; }
   VIEW.scale = s;
   SCREEN.style.width = (W * s) + 'px';
-  SCREEN.style.height = (H * s) + 'px';
+  SCREEN.style.height = (HC * s) + 'px';
 
   // Scanlines: bei großer Skalierung eine Linie pro Spielpixel, sonst alle 3 CSS-px
   const per = Math.max(3, s), dark = Math.max(1, per / 3);
@@ -189,8 +199,8 @@ function getVenueBG(ve) {
 }
 function drawVenue(ve, T, sx = 0, sy = 0, mirror = false) {
   const sway = ve.sway ? Math.round(Math.sin(T * 1.7)) : 0;
-  if (mirror) X.setTransform(-1, 0, 0, 1, VIEW.OX + PLAY_W - sway - sx, sy);
-  else X.setTransform(1, 0, 0, 1, VIEW.OX + sway + sx, sy);
+  if (mirror) X.setTransform(-1, 0, 0, 1, VIEW.OX + PLAY_W - sway - sx, sy + VIEW.OY);
+  else X.setTransform(1, 0, 0, 1, VIEW.OX + sway + sx, sy + VIEW.OY);
   X.drawImage(getVenueBG(ve), 0, 0);
   if (ve.drawAnimated) ve.drawAnimated(T);
 }

@@ -732,7 +732,7 @@ const Game = {
     if (this.manager) this.drawManager();
     for (const c of this.comics) drawComic(c);
 
-    X.setTransform(1, 0, 0, 1, 0, 0);       // zurück zu Bildschirm-Koordinaten
+    baseT();                                // zurück zu Bildschirm-Koordinaten
     for (const a of this.active) if (a.ev.drawScreen) a.ev.drawScreen(this, a.ctx);
     this.sysCall('hud');
     if (this.slowT > 0) { X.fillStyle = 'rgba(80,120,255,.12)'; X.fillRect(VIEW.OX, 26, PLAY_W, 278); }

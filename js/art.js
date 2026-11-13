@@ -91,6 +91,14 @@ const ART = {
     k.r(depth - 1, 0, 1, H, 'rgba(0,0,0,.45)');
     k.r(depth, 0, 2, H, 'rgba(0,0,0,.3)');
   },
+  /** Wie cut, aber waagrecht für die Handy-Streifen (k = bandKit) */
+  bandCut(k, depth, base, hatch) {
+    k.r(0, 0, PLAY_W, depth, base);
+    for (let d = 0; d < depth; d++) for (let x = d % 3; x < PLAY_W; x += 3) k.r(x, d, 1, 1, hatch);
+    k.r(0, 0, PLAY_W, 1, 'rgba(255,255,255,.12)');
+    k.r(0, depth - 1, PLAY_W, 1, 'rgba(0,0,0,.45)');
+    k.r(0, depth, PLAY_W, 2, 'rgba(0,0,0,.3)');
+  },
   /** Text auf ein vorgerendertes Canvas */
   text(g, s, x, y, c, al = 'l') {
     s = String(s).toUpperCase();
@@ -759,6 +767,131 @@ const ART = {
       if (d > -6 && d < w) { k.r(Math.max(0, d), 293, 6, 3, '#2a2a40'); k.r(Math.max(0, d + 5), 294, 1, 1, '#fff0b0'); }
     },
   },
+
+  /* =================== Handy: Streifen über und unter dem Spielfeld ===================
+     Auf langen Handys ist mehr Platz als 320 px. Dort zeigen wir oben und unten,
+     was vor bzw. hinter dem Spielfeld liegt (wie die Seitenränder am PC).
+     Gemalt wird mit bandKit: d = Abstand vom Spielfeld nach außen (0..h),
+     top = Streifen über dem Spielfeld. */
+  band: {
+    bus(g, k, h, top) {
+      const p = busPaint();
+      k.r(0, 0, PLAY_W, h, '#2c2d31');                                                  // Straße
+      ART.noise(g, 0, 0, PLAY_W, 60, '#36373c', 160, top ? 3 : 4); ART.noise(g, 0, 0, PLAY_W, 60, '#232428', 140, top ? 5 : 6);
+      k.r(4, 0, 1, h, '#a8a898'); k.r(175, 0, 1, h, '#a8a898');                          // Randlinien
+      k.r(0, 0, 3, h, '#5e5e5a'); k.r(177, 0, 3, h, '#5e5e5a');                          // Bordstein
+      k.r(2, 0, 176, 4, p.hull || p.wall); k.r(2, 1, 176, 1, p.hullTrim || p.trim);      // Karosserie vorne/hinten
+      k.r(2, 4, 176, 3, 'rgba(0,0,0,.4)');
+      if (top) {                                                                        // Scheinwerfer und Lichtkegel
+        for (const x of [12, 158]) {
+          k.r(x, 0, 10, 3, '#fff4c8');
+          for (let d = 4; d < h; d += 2) { const s = (d - 4) >> 1; k.r(x - s, d, 10 + s * 2, 1, 'rgba(255,240,180,.07)'); }
+        }
+        k.r(80, 0, 20, 2, '#1a1a1e'); for (let x = 82; x < 98; x += 3) k.r(x, 0, 1, 2, '#555');   // Kühlergrill
+      } else {
+        for (const x of [10, 158]) { k.r(x, 0, 12, 3, '#c02020'); k.r(x + 2, 0, 8, 2, '#ff5040'); }   // Rücklichter
+        k.r(84, 0, 12, 3, '#d8d0b0'); k.r(85, 1, 10, 1, '#333');                            // Nummernschild
+      }
+    },
+    rehearsal(g, k, h, top) {
+      const r = seeded(top ? 61 : 62);
+      k.r(0, 0, PLAY_W, h, '#16181c');
+      for (let d = 0, row = 0; d < h; d += 4, row++)                                      // Pflaster
+        for (let x = -(row % 2) * 2; x < PLAY_W; x += 5) k.r(x, d, 4, 3, r() < .5 ? '#262a30' : '#2c3036');
+      for (const x of [30, 120]) { k.r(x - 4, 12, 9, 3, '#1c2636'); k.r(x - 2, 12, 3, 1, '#3a4a64'); }   // Pfützen
+      ART.bandCut(k, 5, '#4a4440', '#3a3430');
+      for (let n = 0; n < 30; n++) k.r(r() * PLAY_W | 0, 5, 2, 1, '#3a5a2a');               // Unkraut
+      if (!top) { k.r(140, 8, 12, 10, '#20262a'); k.r(140, 8, 12, 2, '#2e363c'); }            // Mülltonne
+      else { for (let n = 0; n < 4; n++) k.r(70 + n * 3, 0, 2, 5, '#c88a4a'); }              // Kellerfenster
+    },
+    pub(g, k, h, top) {
+      k.r(0, 0, PLAY_W, h, top ? '#2a2018' : '#3c3a36');
+      if (top) {                                                                         // Lager hinter dem Tresen: Fässer und Kisten
+        for (let x = 10; x < 170; x += 22) { ART.oval(g, x + 6, k.Y(12, 1), 6, 4, '#7a7a84'); ART.oval(g, x + 6, k.Y(12, 1), 4, 2, '#5a5a64'); k.r(x + 5, 11, 2, 2, '#333'); }
+        for (let x = 20; x < 170; x += 44) { k.r(x, 20, 14, 8, '#6a4a22'); k.r(x, 20, 14, 1, '#8a6a32'); for (let n = 0; n < 4; n++) k.r(x + 1 + n * 3, 22, 2, 2, '#3a6a2a'); }
+      } else {                                                                           // draußen: Gehweg, Bordstein, Straße
+        for (let d = 3; d < 20; d += 9) k.r(0, d, PLAY_W, 1, '#2c2a26');
+        for (let x = 8; x < PLAY_W; x += 16) k.r(x, 6, 1, 14, '#2c2a26');
+        k.r(0, 20, PLAY_W, 2, '#6a6864'); k.r(0, 22, PLAY_W, h, '#18181c');
+        for (const x of [40, 140]) { k.r(x - 10, 6, 22, 12, 'rgba(255,210,120,.1)'); k.r(x, 12, 2, 2, '#ffe0a0'); }   // Laternen
+      }
+      ART.bandCut(k, 5, '#4a3a2a', '#3a2c1e');
+      if (!top) k.r(76, 0, 28, 5, '#2a6a2a');                                             // Tür (EXIT)
+    },
+    backstage(g, k, h, top) {
+      const r = seeded(top ? 71 : 72);
+      k.r(0, 0, PLAY_W, h, '#26282c');
+      for (let x = 12; x < PLAY_W; x += 30) k.r(x, 0, 1, h, '#1e2024');
+      for (let n = 0; n < 5; n++) ART.oval(g, 10 + (r() * 160 | 0), k.Y(10 + (r() * 20 | 0), 1), 3, 1, '#1a1b1e');
+      for (let x = 0; x < PLAY_W; x++) k.r(x, 6, 1, 3, ((x >> 2) % 2) ? '#d8b020' : '#1a1a1a');   // Warnstreifen
+      for (const x of top ? [20, 110] : [40, 130]) {                                     // Flightcases
+        k.r(x + 1, 13, 26, 10, 'rgba(0,0,0,.4)'); k.r(x, 12, 26, 10, '#8a8a94'); k.r(x, 12, 26, 1, '#b4b4be');
+        k.r(x, 12, 2, 2, '#333'); k.r(x + 24, 12, 2, 2, '#333'); k.r(x + 11, 16, 4, 1, '#333');
+      }
+      for (let x = 0; x < PLAY_W; x++) k.r(x, 10 + Math.round(Math.sin(x / 13) * 1.2), 1, 1, '#0e0e10');   // Kabel
+      ART.bandCut(k, 5, '#4a4e56', '#3a3d44');
+    },
+    festival(g, k, h, top) {
+      k.r(0, 0, PLAY_W, h, top ? '#101016' : '#0c0e1a');
+      if (top) {                                                                         // hinter der Bühne: Backline und Traverse
+        for (let x = 8; x < 170; x += 28) { k.r(x, 8, 18, 12, '#1a1a1e'); k.r(x + 1, 9, 16, 2, '#2a2a30'); k.r(x + 7, 14, 4, 2, '#3a3a40'); }
+        k.r(0, 0, PLAY_W, 1, '#7a7c84'); k.r(0, 4, PLAY_W, 1, '#7a7c84');
+        for (let x = 0; x < PLAY_W; x++) k.r(x, 1 + ((x >> 1) % 3), 1, 1, '#4a4c54');
+        k.r(0, 5, PLAY_W, 2, 'rgba(0,0,0,.45)');
+      }
+    },
+    hotel(g, k, h, top) {
+      const r = seeded(top ? 81 : 82);
+      if (top) {                                                                         // Nachthimmel über der Skyline
+        for (let d = 0; d < h; d += 2) k.r(0, d, PLAY_W, 2, lerpCol('#141030', '#06050f', d / h));
+        for (let n = 0; n < 26; n++) k.r(r() * PLAY_W | 0, 3 + (r() * (h - 3) | 0), 1, 1, r() < .3 ? '#d8d8f0' : '#6a6888');
+      } else {                                                                           // Straße vor dem Hotel
+        k.r(0, 0, PLAY_W, h, '#1a1a20');
+        k.r(0, 0, PLAY_W, 8, '#2a2830'); k.r(0, 8, PLAY_W, 1, '#4a4a54');
+        for (let x = 4; x < PLAY_W; x += 14) k.r(x, 16, 7, 1, '#8a8a70');
+        k.r(60, 0, 60, 3, '#6a1a2a'); k.r(60, 0, 60, 1, '#a02a3a');                       // roter Teppich am Eingang
+      }
+    },
+    flat(g, k, h, top) {
+      ART.bricks(g, 0, 0, PLAY_W, 64, '#4a2418', '#7a3e2a');
+      k.r(0, 0, PLAY_W, 3, '#d8d0b8'); k.r(0, 3, PLAY_W, 2, 'rgba(0,0,0,.4)');             // Fensterbank / Sims
+      if (!top) { for (let x = 0; x < PLAY_W; x += 3) k.r(x, 14 + ((x * 7) % 4), 3, h, '#2a4a20'); k.r(0, 14, PLAY_W, 1, '#3a5a2a'); }   // Hecke im Vorgarten
+      else k.r(0, 18, PLAY_W, 3, '#2a2a30');                                              // Dachrinne
+    },
+  },
+
+  /* Animation der Handy-Streifen (jedes Frame) */
+  bandAnim: {
+    bus(T, k, h, top) {
+      for (let n = 0; n < 4; n++) {                                                      // Mittelstreifen zieht nach unten weg
+        const s = ((T * 70 + n * 30) % 120);
+        const d = top ? h - s : s - 20;
+        k.r(89, d, 2, 14, '#7a7a6a');
+      }
+      if (!top) for (let n = 0; n < 3; n++) {                                            // Auspuff
+        const t = (T * .8 + n / 3) % 1;
+        k.r(150 + Math.round(t * 6), 4 + Math.round(t * 18), 3 + Math.round(t * 4), 3, `rgba(160,160,170,${(.3 * (1 - t)).toFixed(2)})`);
+      }
+    },
+    festival(T, k, h, top) {
+      if (top) return;
+      for (let n = 0; n < 40; n++) {                                                     // die Menge geht weiter
+        const x = (n * 37) % 176, d = 2 + ((n * 13) % Math.max(4, h - 4)), up = Math.sin(T * 7 + n * 1.9) > .3 ? 1 : 0;
+        k.r(x, d - up, 3, 3, ['#a87858', '#6a4a30', '#c8a080', '#3a2a20'][n % 4]);
+        if (n % 5 === 0 && up) k.r(x + 1, d - 3, 1, 2, '#c8a080');
+      }
+    },
+    hotel(T, k, h, top) {
+      if (top) { if (Math.sin(T * .9) > .97) k.r(((T * 40) % 220) - 20 | 0, h - 6, 3, 1, '#fff'); return; }   // Sternschnuppe
+      const x = Math.round(((T * 30) % 240) - 30);                                       // Taxi fährt vorbei
+      k.r(x, 12, 14, 6, '#d8b020'); k.r(x + 3, 13, 7, 4, '#2a2a30'); k.r(x + 13, 13, 1, 1, '#fff0b0'); k.r(x + 13, 16, 1, 1, '#fff0b0');
+    },
+    pub(T, k, h, top) {
+      if (top) return;
+      const x = Math.round(200 - ((T * 9) % 240));                                       // Passant
+      k.r(x, 10, 4, 4, '#1a1a22'); k.r(x + 1, 11, 2, 2, '#3a2a20');
+    },
+  },
 };
 
 /* ---------- Kleinere Bauteile (auch von außen benutzt) ---------- */
@@ -775,6 +908,14 @@ function sideKit(g, x, w) {
     X: (d, ww = 1) => (L ? x + w - d - ww : x + d),
     r(d, y, ww, h, c) { g.fillStyle = c; g.fillRect(L ? x + w - d - ww : x + d, y, ww, h); },
   };
+}
+/**
+ * Malhilfe für die Handy-Streifen: d = Abstand vom Spielfeld nach außen,
+ * y0/h = Lage des Streifens, top = Streifen über dem Spielfeld.
+ */
+function bandKit(g, y0, h, top) {
+  const Y = (d, dh = 1) => (top ? y0 + h - d - dh : y0 + d);
+  return { top, Y, r(x, d, w, dh, c) { g.fillStyle = c; g.fillRect(x, Y(d, dh), w, dh); } };
 }
 /** Aktuelle Bus-Lackierung aus dem Shop */
 function busPaint() {
