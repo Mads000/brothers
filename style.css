@@ -1,0 +1,48 @@
+/* Grundlayout: schwarzer Hintergrund, kein Scrollen, kein Markieren, kein Zoomen per Touch */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* PC-Format: dunkler Rand mit dezentem Muster rund um das 3:4-Fenster */
+body.pc {
+  background-color: #0b0a0e;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 9px),
+    radial-gradient(ellipse at center, #1c1724 0%, #050407 75%);
+}
+
+#wrap {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Größe wird in render.js (fitView) gesetzt */
+#screen { position: relative; }
+body.pc #screen { box-shadow: 0 0 0 2px #000, 0 0 48px rgba(0,0,0,.85); }
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+}
+
+/* Scanlines: Hintergrund wird in render.js passend zur Skalierung gesetzt */
+#scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
