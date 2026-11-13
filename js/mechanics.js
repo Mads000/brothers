@@ -221,10 +221,12 @@ const MECHANICS = {
 
   /* ============ HOTEL: Etagen, Aufzug, Betten ============
      Ein Bruder in der Aufzugszone loslassen = er fährt weit weg.
-     Ein ruhiger Bruder (unter 45 %) auf einem Bett = er schläft.
+     Ein ruhiger Bruder (unter 45 %) auf einem Bett = er schläft (napTime Sekunden).
+     Sind beide zu lange auf verschiedenen Etagen (seekTime), sucht der
+     Wütendere den anderen und fährt selbst mit dem Lift.
      Schlafen beide, füllt sich die Nachtbonus-Leiste. */
   hotel: {
-    setup(game, s) { s.floors = game.venue.floors; s.lifts = game.venue.lifts; s.beds = game.venue.beds; s.bonus = 0; },
+    setup(game, s, p) { s.floors = game.venue.floors; s.lifts = game.venue.lifts; s.beds = game.venue.beds; s.bonus = 0; s.nap = p.napTime || 7; s.seek = p.seekTime || 8; s.apart = 0; },
     floorOf(s, y) { for (let i = 0; i < s.floors.length; i++) if (y < s.floors[i].y1 + 15) return i; return s.floors.length - 1; },
     ride(game, s, b, to) {
       game.dropBro(b);
@@ -232,6 +234,13 @@ const MECHANICS = {
       game.say(b, 'DING', '#ffd84a');
     },
     wander(game, s, b) {
+      // Zu lange getrennt? Dann sucht der Wütendere den anderen (und nimmt den Lift)
+      const o = game.other(b);
+      if (s.apart > s.seek && !o.hidden && b.anger >= o.anger) {
+        s.apart = 0;
+        game.say(b, 'WHERE IS HE?', '#ff8a3a');
+        return { x: clamp(o.x, 56, 140), y: o.y };
+      }
       const f = s.floors[this.floorOf(s, b.y)];
       return { x: rnd(56, 140), y: rnd(f.y0 + 2, f.y1 - 2) };
     },
@@ -256,7 +265,7 @@ const MECHANICS = {
       const bed = s.beds[f];
       if (inRect(b, { x: bed.x - 4, y: bed.y - 4, w: bed.w + 8, h: bed.h + 8 })) {
         if (b.anger < 45) {
-          b.asleep = true; b.x = bed.x + bed.w / 2 + 2; b.y = bed.y + bed.h - 6;
+          b.asleep = true; b.sleepT = s.nap; b.x = bed.x + bed.w / 2 + 2; b.y = bed.y + bed.h - 6;
           game.comic('ZZZ', b.x, b.y - 16, '#9fd8ff');
         } else game.say(b, 'NOT TIRED!', '#ff8a3a');
       }
@@ -272,8 +281,14 @@ const MECHANICS = {
           }
         }
         if (b.asleep && b.anger > 55) { b.asleep = false; game.say(b, "CAN'T SLEEP", '#fff'); }
+        // Nickerchen dauern nicht ewig: nach napTime Sekunden wacht er wieder auf
+        if (b.asleep && (b.sleepT -= dt) <= 0) { b.asleep = false; game.say(b, 'AWAKE!', '#ffd84a'); }
       }
       if (game.bros.every(b => b.asleep)) { s.bonus += dt; game.stats.sleepTime = s.bonus; }
+      // Wie lange sind beide wach und auf verschiedenen Etagen?
+      const [a, c] = game.bros;
+      if (!a.hidden && !c.hidden && !a.asleep && !c.asleep && this.floorOf(s, a.y) !== this.floorOf(s, c.y)) s.apart += dt;
+      else s.apart = 0;
     },
     drawUnder(game, s) {
       // Wird gerade ein Bruder gezogen? Dann Ablage-Ziele hervorheben

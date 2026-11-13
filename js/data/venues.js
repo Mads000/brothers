@@ -15,6 +15,7 @@
      fanSpots        wo beim Event "fan" ein Fan auftaucht (x, y) und wohin der Bruder läuft (tx, ty)
      drumSpot        wo der Drummer sitzt (falls im Level)
      sway            true = Bild schaukelt leicht (Bus fährt)
+     angerMult       Schwierigkeit: alle Wut-Zuwächse mal diesen Wert (1 = normal)
      palette         side = PC-Seitenränder
      color           Farbe auf der Tourkarte (Never-Ending Tour)
      endless         Vorlage für die Never-Ending Tour: Gegenstände, Events, Regel-Werte und
@@ -31,6 +32,7 @@ const VENUES = {
   /* ===================== 1. TOURBUS ===================== */
   bus: {
     color: '#c03a4a', name: 'TOUR BUS', short: 'BUS', rule: 'BENDS & POTHOLES. BIN THE BEER!',
+    angerMult: 1.25,
     starsToUnlock: 0,
     bounds: { x0: 40, x1: 140, y0: 62, y1: 288 },
     spawn: { x0: 44, x1: 136, y0: 72, y1: 284 },
@@ -52,6 +54,7 @@ const VENUES = {
   /* ===================== 2. PROBERAUM ===================== */
   rehearsal: {
     color: '#e0703a', name: 'REHEARSAL ROOM', short: 'REH', rule: 'LOUD AMP = ANGRY BROTHER. TAP AMPS!',
+    angerMult: 1.05,
     starsToUnlock: 8,
     mechanic: 'volume', mechDefaults: { volRate: 4 },
     bounds: { x0: 26, x1: 154, y0: 70, y1: 288 },
@@ -74,6 +77,7 @@ const VENUES = {
   /* ===================== 3. PUB ===================== */
   pub: {
     color: '#d8a830', name: 'PUB AFTER THE GIG', short: 'PUB', rule: 'FANS IN THE WAY. ONLY BETWEEN TABLES!',
+    angerMult: 1.2,
     starsToUnlock: 20,
     mechanic: 'pubfans', mechDefaults: { fanEvery: [3.5, 5.5] },
     bounds: { x0: 26, x1: 154, y0: 66, y1: 292 },
@@ -99,6 +103,7 @@ const VENUES = {
   /* ===================== 4. BACKSTAGE ===================== */
   backstage: {
     color: '#9a9ab0', name: 'BACKSTAGE', short: 'BKS', rule: 'TAP THE DOOR TO LOCK ONE IN. BRIEFLY!',
+    angerMult: 1.15,
     starsToUnlock: 35,
     mechanic: 'door', mechDefaults: { kickTime: 5 },
     bounds: { x0: 26, x1: 154, y0: 66, y1: 290 },
@@ -120,6 +125,7 @@ const VENUES = {
   /* ===================== 5. FESTIVAL-BÜHNE ===================== */
   festival: {
     color: '#4a7aff', name: 'FESTIVAL STAGE', short: 'FES', rule: 'KEEP BOTH AT THEIR MICS. CROWD WATCHES!',
+    angerMult: 1,
     starsToUnlock: 50,
     mechanic: 'stage', mechDefaults: { mood0: 70, gain: 5, drain: 4 },
     bounds: { x0: 24, x1: 156, y0: 66, y1: 226 },
@@ -141,8 +147,9 @@ const VENUES = {
   /* ===================== 6. HOTEL ===================== */
   hotel: {
     color: '#b05ab0', name: 'HOTEL', short: 'HTL', rule: 'SEPARATE FLOORS. LIFT AND BEDS HELP!',
+    angerMult: 1.3,
     starsToUnlock: 65,
-    mechanic: 'hotel', mechDefaults: {},
+    mechanic: 'hotel', mechDefaults: { napTime: 7, seekTime: 8 },   // Schlafdauer im Bett, Zeit bis einer den anderen sucht
     bounds: { x0: 24, x1: 162, y0: 62, y1: 290 },
     spawn: { x0: 56, x1: 140, y0: 66, y1: 288 },
     // Etagen: Bereich der Füße
@@ -167,6 +174,7 @@ const VENUES = {
      Sonderregel: Sonnenstrahlen wandern langsam über den Boden und beruhigen. */
   flat: {
     color: '#e8c860', name: 'THE FLAT', short: 'FLT', rule: 'SUNBEAMS CALM THEM DOWN. A LAZY AFTERNOON.',
+    angerMult: 1.2,
     starsToUnlock: 12,
     mechanic: 'sunbeam', mechDefaults: { sunCalm: 4 },
     bounds: { x0: 26, x1: 154, y0: 72, y1: 290 },

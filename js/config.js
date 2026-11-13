@@ -52,6 +52,8 @@ const CONFIG = {
     wanderSpeed: 9,     // Lauftempo, wenn er ruhig herumschlendert
     calmAmount: 20,     // so viel Wut nimmt ein Tippen weg
     calmCooldown: 0.9,  // Sekunden, bis derselbe Bruder wieder beruhigt werden kann
+    calmFatigue: .35,      // jedes schnelle Nachtippen beim selben Bruder wirkt schwächer (genervt)
+    calmFatigueDecay: .3,  // so schnell legt sich das Genervtsein wieder (pro Sekunde)
     pickupDist: 9,      // so nah muss ein Bruder an einen Gegenstand
     deliverDist: 16,    // so nah muss ein gezogener guter Gegenstand am Bruder losgelassen werden
     pushDist: 12,       // näher als das schieben sie sich auseinander

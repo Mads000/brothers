@@ -138,7 +138,7 @@ const Game = {
   sx(x) { return this.hasFlag('mirror') ? VIEW.OX + PLAY_W - x : VIEW.OX + x; },
   /** Wut ändern. Positive Werte werden mit Charakter und Modifikatoren verrechnet. */
   addAnger(b, n) {
-    if (n > 0) n *= b.ch.angerRate * this.mult('angerRate');
+    if (n > 0) n *= b.ch.angerRate * this.mult('angerRate') * (this.venue.angerMult || 1);
     b.anger = clamp(b.anger + n, 0, 100);
   },
   calm(b) {
@@ -148,10 +148,14 @@ const Game = {
     if (b.cd > 0) return;
     let m = R.calmAmount * b.ch.calmPower * this.mult('calmPower');
     for (const e of this.sys) if (e.def.calmBonus) m *= e.def.calmBonus(this, e.s);
+    const fat = b.calmFat || 0;                      // ständiges Antippen nervt: wirkt schwächer
+    m /= 1 + R.calmFatigue * fat;
+    b.calmFat = fat + 1;
     b.anger = Math.max(0, b.anger - m);
     b.cd = R.calmCooldown;
     this.stats.calms++;
-    this.say(b, Math.random() < .03 ? 'THIS IS THE ONE' : 'EASY', '#9fd8ff');
+    if (fat >= 2) this.say(b, 'YEAH YEAH', '#aaa');
+    else this.say(b, Math.random() < .03 ? 'THIS IS THE ONE' : 'EASY', '#9fd8ff');
   },
   burst(x, y, n, col, spread = 30) {
     for (let k = 0; k < n; k++) this.parts.push({ x, y, vx: rnd(-spread, spread), vy: rnd(-40, -10), life: .4, c: col });
@@ -459,7 +463,8 @@ const Game = {
       if (br.hidden) continue;
       const o = this.other(br);
       let r;
-      if (br.asleep) r = -4;
+      if (br.calmFat) br.calmFat = Math.max(0, br.calmFat - R.calmFatigueDecay * dt);
+      if (br.asleep) r = -3;
       else if (br.st.phone > 0) r = 0;
       else {
         r = R.baseAnger * this.diff;
