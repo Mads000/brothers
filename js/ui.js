@@ -202,8 +202,9 @@ function bonusHud(lv, stats) {
 function drawHUD(game, interactive) {
   const W = VIEW.W, OX = VIEW.OX, cx = W / 2, lv = game.level, g = lv.goal || {};
   const TY = -VIEW.OY, BY = VIEW.OY;   // Handy: Leisten an den Bildschirmrand schieben
+  const BH = VIEW.OY >= 12 ? 28 : 16, BB = 320 + BY - BH;   // untere Leiste: Höhe und Oberkante (Handy: große Knöpfe)
   drawFrame(game.venue, game.T, game.bros);
-  X.fillStyle = '#000'; X.fillRect(0, TY, W, 26); X.fillRect(0, 304 + BY, W, 16);
+  X.fillStyle = '#000'; X.fillRect(0, TY, W, 26); X.fillRect(0, BB, W, BH);
 
   // Oben Mitte: Zeit bzw. Ziel
   const left = Math.max(0, lv.time - game.el);
@@ -250,19 +251,19 @@ function drawHUD(game, interactive) {
   for (let s = 0; s < 2; s++) {
     const id = game.slots[s], def = POWERUPS[id];
     const used = game.slotUsed[s] || !def || Save.powerupCount(id) <= 0;
-    const x = s ? OX + PLAY_W - 42 : OX + 2;
-    UI.button(x, 305 + BY, 40, 13, def ? def.short : '-', () => game.usePowerUp(s), {
+    const bw = BH > 16 ? 52 : 40, x = s ? OX + PLAY_W - bw - 2 : OX + 2;
+    UI.button(x, BB + 1, bw, BH - 3, def ? def.short : '-', () => game.usePowerUp(s), {
       disabled: !interactive || used, noDefault: true,
       draw(b, hl) {
         const c = used ? '#444' : hl ? '#ffd84a' : '#ff8a3a';
-        txt(def ? def.short : '-', b.x + b.w / 2 + (VIEW.pc ? 3 : 0), b.y + 4, c, 1, 'c');
-        if (VIEW.pc) txt(String(s + 1), b.x + 3, b.y + 4, '#555');
+        txt(def ? def.short : '-', b.x + b.w / 2 + (VIEW.pc ? 3 : 0), b.y + (b.h >> 1) - 2, c, 1, 'c');
+        if (VIEW.pc) txt(String(s + 1), b.x + 3, b.y + (b.h >> 1) - 2, '#555');
       },
     });
   }
   // Bonusziel (Tour) bzw. Stadt-Mission (Never-Ending Tour)
   const bh = bonusHud(lv, game.stats);
-  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, 308 + BY, bh.ok); txt(bh.s, cx + 1, 309 + BY, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
+  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH >> 1) - 4, bh.ok); txt(bh.s, cx + 1, BB + (BH >> 1) - 3, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
   if (interactive) UI.button(W - 22, TY, 22, 12, '', () => App.pause(), {
@@ -535,7 +536,8 @@ const Screens = {
       txtS(fight ? 'FIGHT!' : 'GIG OVER', cx, 44, '#ff4a3a', fight ? 3 : 2, 'c');
       txt(fight ? 'GIG CANCELLED.' : r.reason, cx, 70, '#fff', 1, 'c');
       txt('LASTED ' + Math.floor(r.time) + ' OF ' + lv.time + 'S', cx, 82, '#aaa', 1, 'c');
-      if (r.causes && r.causes.length) { txt('WHAT HAPPENED:', cx, 98, '#888', 1, 'c'); txt(r.causes.join(' + '), cx, 107, '#ff8a3a', 1, 'c'); }
+      // Ursachen nur bei einer Prügelei; bei anderen Gründen (z. B. Publikum weg) steht der Grund schon oben
+      if (fight && r.causes && r.causes.length) { txt('WHAT HAPPENED:', cx, 98, '#888', 1, 'c'); txt(r.causes.join(' + '), cx, 107, '#ff8a3a', 1, 'c'); }
       y = 122;
     }
     if (r.picks > 0) { drawPick(cx - 16, y); txt('+' + r.picks, cx - 7, y + 1, '#ff8a3a'); }
@@ -651,6 +653,7 @@ const Screens = {
   extras() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
     drawBackdrop(VENUES.backstage, App.T);
+    shade(.75);  // Hintergrund deutlich dunkler, damit die Listen gut lesbar sind
     txtS('EXTRAS', cx, 7, '#ffd84a', 2, 'c');
     drawTabs(['AWARDS', 'POSTERS', 'SCORES'], App.extrasTab, i => { App.extrasTab = i; });
     const x0 = OX + 6, w = PLAY_W - 12;

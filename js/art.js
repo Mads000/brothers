@@ -133,7 +133,10 @@ const ART = {
     bus() {
       const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART;
       A.rect(g, 0, 0, PLAY_W, H, '#08080c');
-      busWall(g, 0); busWall(g, 162);
+      // Außen 4 px Straße, der Bus selbst ist etwas schmaler (Wände 4..18 und 162..176)
+      A.rect(g, 0, 26, 4, 278, '#2c2d31'); A.rect(g, 176, 26, 4, 278, '#2c2d31');
+      A.noise(g, 0, 26, 4, 278, '#3a3b40', 50, 12); A.noise(g, 176, 26, 4, 278, '#3a3b40', 50, 13);
+      busWall(g, 4, 14); busWall(g, 162, 14);
       // Boden: Gummi mit Riffelmuster
       A.rect(g, 18, 48, 144, 242, '#232836');
       g.fillStyle = '#1c202b';
@@ -182,12 +185,19 @@ const ART = {
       shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.15 - Math.abs(x - 90) / 110);
       // Außenhaut ganz außen und abgerundete Ecken vorne/hinten: so sieht man auch am Handy den Bus
       const p = busPaint();
-      for (const hx of [0, 178]) { A.rect(g, hx, 26, 2, 278, p.hull || p.wall); A.rect(g, hx === 0 ? 1 : 178, 26, 1, 278, p.hullTrim || p.trim); }
-      g.fillStyle = '#1c1d21';
+      for (const hx of [4, 174]) { A.rect(g, hx, 26, 2, 278, p.hull || p.wall); A.rect(g, hx === 4 ? 5 : 174, 26, 1, 278, p.hullTrim || p.trim); }
+      g.fillStyle = '#2c2d31';
       for (let dy = 0; dy < 7; dy++) for (let dx = 0; dx < 7; dx++) if ((7 - dx) ** 2 + (7 - dy) ** 2 > 49) {
-        g.fillRect(dx, 26 + dy, 1, 1); g.fillRect(179 - dx, 26 + dy, 1, 1);
-        g.fillRect(dx, 303 - dy, 1, 1); g.fillRect(179 - dx, 303 - dy, 1, 1);
+        g.fillRect(4 + dx, 26 + dy, 1, 1); g.fillRect(175 - dx, 26 + dy, 1, 1);
+        g.fillRect(4 + dx, 303 - dy, 1, 1); g.fillRect(175 - dx, 303 - dy, 1, 1);
       }
+      for (const wy of [60, 236]) for (const wx of [0, 176]) {                 // Räder schauen unter dem Bus hervor
+        A.rect(g, wx, wy, 4, 28, '#0c0c0e');
+        for (let y = wy + 1; y < wy + 28; y += 3) A.rect(g, wx, y, 4, 1, '#26262a');
+        A.rect(g, wx === 0 ? 1 : 177, wy + 10, 2, 8, '#8a8a92');
+      }
+      for (const mx of [0, 177]) { A.rect(g, mx, 38, 3, 9, '#1a1a1e'); A.rect(g, mx + 1, 39, 1, 7, '#7a8aaa'); }   // Außenspiegel
+      A.rect(g, 4, 299, 2, 4, '#ff4030'); A.rect(g, 174, 299, 2, 4, '#ff4030');                                   // Rücklichter
       ART.lift(g);
       return o;
     },
@@ -535,13 +545,16 @@ const ART = {
     bus(T) {
       for (let k = 0; k < 4; k++) {        // Straßenlaternen ziehen an den Fenstern vorbei
         const yy = Math.round(26 + ((T * 70 + k * 83) % 300));
-        for (const wx of [4, 167]) {
+        for (const wx of [6, 164]) {
           const m = ((yy - 34) % 40 + 40) % 40;
           if (yy >= 34 && yy < 294 && m < 29) {
             X.fillStyle = '#ffcc66'; X.fillRect(wx, yy, 9, 2);
             X.fillStyle = 'rgba(255,200,110,.18)'; X.fillRect(wx < 90 ? 18 : 156, yy - 3, 6, 8);
           }
         }
+      }
+      if (T % 9 > 6 && (T * 3 | 0) % 2) {  // Blinker beim Spurwechsel
+        X.fillStyle = '#ffa020'; X.fillRect(4, 29, 2, 3); X.fillRect(174, 29, 2, 3); X.fillRect(4, 294, 2, 3); X.fillRect(174, 294, 2, 3);
       }
       X.fillStyle = '#ddd';                // Mittelstreifen durch die Frontscheibe
       for (let k = 0; k < 3; k++) X.fillRect(89, Math.round(28 + ((T * 30 + k * 4) % 10)), 2, 1);
@@ -603,22 +616,14 @@ const ART = {
   side: {
     /* Tourbus: Karosserie mit Rädern und Spiegel, daneben die Straße */
     bus(g, x, w) {
-      const k = sideKit(g, x, w), p = busPaint();
+      const k = sideKit(g, x, w);
       k.r(0, 0, w, H, '#2c2d31');                                                     // Asphalt
       ART.noise(g, x, 0, w, H, '#36373c', 300, x + 5); ART.noise(g, x, 0, w, H, '#232428', 260, x + 6);
       k.r(18, 0, w - 18, H, '#3a3a38'); k.r(18, 0, 2, H, '#6a6a64'); k.r(18, 0, 1, H, '#84847c');   // Bordstein und Gehweg
       for (let y = 0; y < H; y += 12) k.r(18, y, 2, 1, '#4a4a46');
-      k.r(4, 0, 5, H, 'rgba(0,0,0,.4)');                                              // Schatten des Busses
-      // Außenhaut mit Zierstreifen
-      k.r(0, 0, 5, H, p.hull || p.wall); k.r(2, 0, 1, H, p.hullTrim || p.trim); k.r(4, 0, 1, H, 'rgba(0,0,0,.35)');
-      for (const y0 of [60, 236]) {                                                    // Räder mit Felge
-        k.r(0, y0 - 3, 5, 34, 'rgba(0,0,0,.35)');                                      // Radkasten
-        k.r(4, y0, 6, 28, '#0c0c0e');
-        for (let y = y0 + 1; y < y0 + 28; y += 3) k.r(4, y, 6, 1, '#26262a');
-        k.r(5, y0 + 10, 3, 8, '#9a9aa2'); k.r(6, y0 + 12, 1, 4, '#5a5a62');
-      }
-      k.r(5, 42, 4, 1, '#1a1a1e'); k.r(8, 37, 4, 10, '#1a1a1e'); k.r(9, 38, 2, 8, '#7a8aaa');   // Außenspiegel
-      k.r(0, 298, 5, 5, '#c02020'); k.r(1, 299, 3, 3, '#ff5040');                       // Rücklicht
+      k.r(0, 0, 3, H, 'rgba(0,0,0,.35)');                                             // Schatten des Busses
+      k.r(6, 0, 1, H, '#8a8a7a');                                                       // Randlinie
+      for (const y0 of [60, 236]) { k.r(0, y0, 2, 28, '#0c0c0e'); k.r(0, y0 + 10, 1, 8, '#5a5a62'); }   // Räder (Rest)
     },
     /* Proberaum: dicke Kellerwand, draußen nasses Kopfsteinpflaster im Hinterhof */
     rehearsal(g, x, w) {
@@ -722,7 +727,6 @@ const ART = {
   sideAnim: {
     bus(T, x, w) {
       const k = sideKit(X, x, w);
-      if (T % 9 > 6 && (T * 3 | 0) % 2) { k.r(0, 27, 3, 4, '#ffa020'); k.r(0, 291, 3, 4, '#ffa020'); }   // Blinker beim Spurwechsel
       for (let n = 0; n < 11; n++) k.r(13, Math.round(((T * 70 + n * 30) % 330) - 20), 1, 14, '#7a7a6a');   // Fahrbahnmarkierung
       for (let n = 0; n < 4; n++) {                                                     // Laternen ziehen vorbei (wie in den Fenstern)
         const yy = Math.round(26 + ((T * 70 + n * 83) % 300));
@@ -778,10 +782,9 @@ const ART = {
       const p = busPaint();
       k.r(0, 0, PLAY_W, h, '#2c2d31');                                                  // Straße
       ART.noise(g, 0, 0, PLAY_W, 60, '#36373c', 160, top ? 3 : 4); ART.noise(g, 0, 0, PLAY_W, 60, '#232428', 140, top ? 5 : 6);
-      k.r(4, 0, 1, h, '#a8a898'); k.r(175, 0, 1, h, '#a8a898');                          // Randlinien
-      k.r(0, 0, 3, h, '#5e5e5a'); k.r(177, 0, 3, h, '#5e5e5a');                          // Bordstein
-      k.r(2, 0, 176, 4, p.hull || p.wall); k.r(2, 1, 176, 1, p.hullTrim || p.trim);      // Karosserie vorne/hinten
-      k.r(2, 4, 176, 3, 'rgba(0,0,0,.4)');
+      k.r(1, 0, 1, h, '#8a8a7a'); k.r(178, 0, 1, h, '#8a8a7a');                          // Randlinien
+      k.r(6, 0, 168, 4, p.hull || p.wall); k.r(6, 1, 168, 1, p.hullTrim || p.trim);      // Karosserie vorne/hinten
+      k.r(6, 4, 168, 3, 'rgba(0,0,0,.4)');
       if (top) {                                                                        // Scheinwerfer und Lichtkegel
         for (const x of [12, 158]) {
           k.r(x, 0, 10, 3, '#fff4c8');
@@ -932,47 +935,49 @@ function busSeat(g, x, y) {
   ART.rect(g, x === 19 ? x + 16 : x, y + 2, 2, 10, '#555');                                       // Armlehne am Gang
 }
 /** Bus-Seitenwand mit gewählter Lackierung (Shop) */
-function busWall(g, x) {
-  const p = busPaint();
-  g.fillStyle = p.wall; g.fillRect(x, 26, 18, 278);
+function busWall(g, x, w = 18) {
+  const p = busPaint(), left = x < 90;
+  g.fillStyle = p.wall; g.fillRect(x, 26, w, 278);
   const r = seeded(x + 7);
   if (p.pattern === 'camo') {
-    for (let k = 0; k < 40; k++) { g.fillStyle = r() < .5 ? '#2a3a1a' : '#5a5a3a'; g.fillRect(x + (r() * 16 | 0), 26 + (r() * 274 | 0), 3 + (r() * 4 | 0), 3 + (r() * 6 | 0)); }
+    for (let k = 0; k < 40; k++) { g.fillStyle = r() < .5 ? '#2a3a1a' : '#5a5a3a'; g.fillRect(x + (r() * (w - 2) | 0), 26 + (r() * 274 | 0), 3 + (r() * 4 | 0), 3 + (r() * 6 | 0)); }
   } else if (p.pattern === 'unionjack') {
     for (let y = 26; y < 304; y += 20) {
-      g.fillStyle = '#eee'; for (let k = 0; k < 18; k++) { g.fillRect(x + k, y + k, 1, 2); g.fillRect(x + 17 - k, y + k, 1, 2); }
-      g.fillStyle = '#c02020'; for (let k = 0; k < 18; k++) { g.fillRect(x + k, y + k, 1, 1); }
-      g.fillStyle = '#eee'; g.fillRect(x, y + 8, 18, 4); g.fillStyle = '#c02020'; g.fillRect(x, y + 9, 18, 2);
+      g.fillStyle = '#eee'; for (let k = 0; k < w; k++) { g.fillRect(x + k, y + k, 1, 2); g.fillRect(x + w - 1 - k, y + k, 1, 2); }
+      g.fillStyle = '#c02020'; for (let k = 0; k < w; k++) { g.fillRect(x + k, y + k, 1, 1); }
+      g.fillStyle = '#eee'; g.fillRect(x, y + 8, w, 4); g.fillStyle = '#c02020'; g.fillRect(x, y + 9, w, 2);
     }
   } else if (p.pattern === 'gold') {
-    for (let y = 26; y < 304; y += 2) { g.fillStyle = (y >> 1) % 3 ? '#a8842a' : '#d8b040'; g.fillRect(x, y, 18, 1); }
-    ART.noise(g, x, 26, 18, 278, '#fff0a0', 60, x + 11);
+    for (let y = 26; y < 304; y += 2) { g.fillStyle = (y >> 1) % 3 ? '#a8842a' : '#d8b040'; g.fillRect(x, y, w, 1); }
+    ART.noise(g, x, 26, w, 278, '#fff0a0', 60, x + 11);
   } else if (p.pattern === 'splatter') {
     // Action-Painting: Farbspritzer und Zitronenscheiben
     const cols = ['#1a1a1a', '#3060c0', '#c03030', '#e8c020', '#30a060'];
-    for (let k = 0; k < 90; k++) { g.fillStyle = cols[k % 5]; const sx = x + (r() * 18 | 0), sy = 26 + (r() * 278 | 0); g.fillRect(sx, sy, 1 + (r() * 3 | 0), 1 + (r() * 2 | 0)); }
-    for (let y = 40; y < 300; y += 46) { g.fillStyle = '#fff27a'; g.fillRect(x + 6, y, 6, 6); g.fillStyle = '#e0c820'; g.fillRect(x + 8, y + 1, 2, 4); g.fillRect(x + 7, y + 2, 4, 2); }
+    for (let k = 0; k < 90; k++) { g.fillStyle = cols[k % 5]; const sx = x + (r() * w | 0), sy = 26 + (r() * 278 | 0); g.fillRect(sx, sy, 1 + (r() * 3 | 0), 1 + (r() * 2 | 0)); }
+    const lx = x + (w >> 1) - 3;
+    for (let y = 40; y < 300; y += 46) { g.fillStyle = '#fff27a'; g.fillRect(lx, y, 6, 6); g.fillStyle = '#e0c820'; g.fillRect(lx + 2, y + 1, 2, 4); g.fillRect(lx + 1, y + 2, 4, 2); }
   } else if (p.pattern === 'psych') {
     const cols = ['#e03070', '#f0a020', '#f0e040', '#30c070', '#3080e0', '#9040d0'];
-    for (let y = 26; y < 304; y += 3) { g.fillStyle = cols[((y / 3) | 0) % cols.length]; g.fillRect(x + Math.round(Math.sin(y / 9) * 3) + 3, y, 12, 3); }
+    for (let y = 26; y < 304; y += 3) { g.fillStyle = cols[((y / 3) | 0) % cols.length]; g.fillRect(x + Math.round(Math.sin(y / 9) * 2) + 2, y, w - 4, 3); }
   } else {
     // Holzverkleidung mit Maserung
-    g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 26; y < 304; y += 5) g.fillRect(x, y, 18, 1);
-    ART.noise(g, x, 26, 18, 278, 'rgba(255,220,160,.08)', 120, x + 3);
+    g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 26; y < 304; y += 5) g.fillRect(x, y, w, 1);
+    ART.noise(g, x, 26, w, 278, 'rgba(255,220,160,.08)', 120, x + 3);
   }
+  const wx = x + 2, ww = w - 5;                                       // Fenster
   for (let y = 34; y < 296; y += 40) {
-    if (x === 0 && y === 34) {                                       // Falttür am Einstieg
-      g.fillStyle = '#111'; g.fillRect(x, y + 6, 18, 30);
-      g.fillStyle = '#1a2a44'; g.fillRect(x + 1, y + 7, 16, 13); g.fillRect(x + 1, y + 22, 16, 13);
+    if (left && y === 34) {                                          // Falttür am Einstieg
+      g.fillStyle = '#111'; g.fillRect(x, y + 6, w, 30);
+      g.fillStyle = '#1a2a44'; g.fillRect(x + 1, y + 7, w - 2, 13); g.fillRect(x + 1, y + 22, w - 2, 13);
       g.fillStyle = 'rgba(120,150,210,.25)'; g.fillRect(x + 2, y + 8, 2, 6); g.fillRect(x + 2, y + 23, 2, 6);
-      g.fillStyle = '#d8b030'; g.fillRect(x + 16, y + 6, 2, 30);
-      g.fillStyle = '#333'; g.fillRect(x, y + 20, 18, 2);
+      g.fillStyle = '#d8b030'; g.fillRect(x + w - 2, y + 6, 2, 30);
+      g.fillStyle = '#333'; g.fillRect(x, y + 20, w, 2);
       continue;
     }
-    g.fillStyle = '#0a1430'; g.fillRect(x + 3, y, 11, 30);
-    g.fillStyle = 'rgba(80,110,180,.18)'; g.fillRect(x + 4, y + 2, 2, 10);                          // Spiegelung
-    g.fillStyle = p.trim; g.fillRect(x + 3, y, 11, 1); g.fillRect(x + 3, y + 29, 11, 1); g.fillRect(x + 2, y, 1, 30); g.fillRect(x + 14, y, 1, 30);
-    g.fillStyle = '#5a1a26'; g.fillRect(x === 0 ? x + 3 : x + 11, y + 1, 3, 28);                   // Vorhang
+    g.fillStyle = '#0a1430'; g.fillRect(wx, y, ww, 30);
+    g.fillStyle = 'rgba(80,110,180,.18)'; g.fillRect(wx + 1, y + 2, 2, 10);                         // Spiegelung
+    g.fillStyle = p.trim; g.fillRect(wx, y, ww, 1); g.fillRect(wx, y + 29, ww, 1); g.fillRect(wx - 1, y, 1, 30); g.fillRect(wx + ww, y, 1, 30);
+    g.fillStyle = '#5a1a26'; g.fillRect(left ? wx : wx + ww - 3, y + 1, 3, 28);                   // Vorhang
   }
 }
 /** Runder Pub-Tisch mit Gläsern, Bierdeckeln und Hockern */
