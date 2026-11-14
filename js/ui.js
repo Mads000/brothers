@@ -446,7 +446,7 @@ const Screens = {
       { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
     UI.button(bx, y0 + 33, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
-      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE BEACH JAM', bare: true, draw: ticket('road') });
+      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE FOREST JAM', bare: true, draw: ticket('road') });
     UI.button(bx, y0 + 66, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
     UI.button(bx, y0 + 91, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
     UI.button(cx + 2, y0 + 91, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });

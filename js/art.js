@@ -63,7 +63,7 @@ const ART = {
   LIGHTS: false,   // true = geditherte Lichtflecken wieder an
   FLOOR: {
     bus:       (x, y) => x >= 18 && x < 162 && y >= 48,
-    rehearsal: (x, y) => y >= BEACH.shore,
+    rehearsal: (x, y) => y >= 26,
     pub:       (x, y) => x >= 20 && x < 160 && y >= 66,
     backstage: (x, y) => x >= 18 && x < 162 && y >= 60 && !(y >= 160 && y < 186 && (x < 78 || x >= 102)),
     festival:  (x, y) => (x >= 18 && x < 162 && y < 238) || y >= 246,
@@ -221,79 +221,49 @@ const ART = {
 
     /* ---------- 2. PROBERAUM ---------- */
     rehearsal() {
-      // Strand bei Sonnenuntergang: oben Himmel und Meer, die Band probt auf dem Sand
-      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, r = seeded(31), B = BEACH;
+      // Waldlichtung im Herbst: Laub auf dem Boden, bunte Baumkronen ringsum, die Band probt in der Mitte
+      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, r = seeded(31);
       A.rect(g, 0, 0, PLAY_W, H, '#000');
-      beachSky(g, 0, 26, PLAY_W, B.sea, y => .35 + .65 * (y - 26) / (B.sea - 26));
-      // Sonne halb im Meer
-      for (let y = -6; y <= 0; y++) { const w = Math.round(Math.sqrt(36 - y * y)); g.fillStyle = y > -2 ? '#ffd890' : '#ffe8b0'; g.fillRect(132 - w, B.sea + y, w * 2 + 1, 1); }
-      // Meer mit Wellenlinien und Sonnenglitzern
-      for (let y = B.sea; y < B.shore; y++) {
-        const t = (y - B.sea) / (B.shore - B.sea);
-        g.fillStyle = lerpCol('#5a5a86', '#3a7a8e', t); g.fillRect(0, y, PLAY_W, 1);
+      forestFloor(g, 0, 26, PLAY_W, 278, 32);
+      // Erdpfad durch die Lichtung
+      for (let y = 66; y < 304; y++) {
+        const x = Math.round(90 + Math.sin(y / 33) * 10), w = 12 + Math.round(Math.sin(y / 17) * 2);
+        g.fillStyle = '#6a4e30'; g.fillRect(x - (w >> 1), y, w, 1);
+        if ((y * 7) % 4 === 0) { g.fillStyle = '#7a5c3a'; g.fillRect(x - (w >> 1) + ((y * 13) % w), y, 2, 1); }
       }
-      for (let y = B.sea + 2; y < B.shore - 2; y += 3) for (let x = (y * 7) % 11; x < PLAY_W; x += 9 + (y % 5)) {
-        g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(x, y, 4 + (x % 3), 1);
-      }
-      for (let y = B.sea + 1; y < B.shore - 1; y++) {                                  // Sonnenbahn auf dem Wasser
-        const w = 2 + Math.round((y - B.sea) * .5);
-        if ((y + (y >> 1)) % 2) { g.fillStyle = 'rgba(255,214,140,.55)'; g.fillRect(132 - w + ((y * 5) % 3), y, w * 2 - 2, 1); }
-      }
-      // Brandung und nasser Sand
-      for (let x = 0; x < PLAY_W; x++) {
-        const fy = B.shore + Math.round(Math.sin(x / 13) * 1.5 + Math.sin(x / 5) * .6);
-        g.fillStyle = '#e8f0f0'; g.fillRect(x, fy - 1, 1, 2);
-        g.fillStyle = '#8a9a90'; g.fillRect(x, fy + 1, 1, 4);
-        g.fillStyle = '#a8a088'; g.fillRect(x, fy + 5, 1, 4);
-      }
-      // trockener Sand mit Rippeln, nach unten wärmer
-      for (let y = B.shore + 9; y < 304; y++) {
-        const t = (y - B.shore) / (304 - B.shore);
-        g.fillStyle = lerpCol('#d8b884', '#c89a64', t); g.fillRect(0, y, PLAY_W, 1);
-      }
-      for (let y = B.shore + 12; y < 304; y += 5) for (let x = 0; x < PLAY_W; x++) {
-        if (Math.sin(x / 7 + y * .9) > .55) { g.fillStyle = 'rgba(150,110,60,.28)'; g.fillRect(x, y + Math.round(Math.sin(x / 9 + y) * 1.2), 1, 1); }
-      }
-      A.noise(g, 0, B.shore + 9, PLAY_W, 304 - B.shore - 9, 'rgba(255,240,210,.35)', 500, 33);
-      A.noise(g, 0, B.shore + 9, PLAY_W, 304 - B.shore - 9, 'rgba(120,90,50,.25)', 300, 34);
-      // Dünen mit Strandhafer an den Seiten
-      for (const [x0, w] of [[0, 16], [164, 16]]) {
-        for (let y = 80; y < 304; y++) {
-          const ww = Math.round(w * (.6 + .4 * Math.sin(y / 31 + x0)));
-          g.fillStyle = '#e2c494'; g.fillRect(x0 === 0 ? 0 : PLAY_W - ww, y, ww, 1);
-          g.fillStyle = 'rgba(120,90,50,.35)'; g.fillRect(x0 === 0 ? ww : PLAY_W - ww - 1, y, 1, 1);
-        }
-        for (let n = 0; n < 34; n++) {
-          const x = x0 + (r() * w | 0), y = 82 + (r() * 220 | 0), h = 3 + (r() * 4 | 0);
-          g.fillStyle = r() < .5 ? '#8a9a4a' : '#a8b060';
-          for (let q = 0; q < h; q++) g.fillRect(x + Math.round(q * (r() < .5 ? .3 : -.3)), y - q, 1, 1);
-        }
-      }
-      // Holzplattform an der Wasserkante mit Schlagzeug
+      forestLeaves(g, 0, 66, PLAY_W, 238, 35, .5);
+      // Farne und Pilze
+      for (let k = 0; k < 10; k++) forestFern(g, 22 + (r() * 136 | 0), 110 + (r() * 180 | 0));
+      for (let k = 0; k < 8; k++) { const x = 24 + (r() * 132 | 0), y = 100 + (r() * 190 | 0); A.rect(g, x, y, 1, 2, '#e8e0d0'); A.rect(g, x - 1, y - 1, 3, 1, r() < .5 ? '#c83a2a' : '#a8743a'); }
+      // Waldrand oben
+      for (let x = -4; x < 190; x += 15) forestTree(g, x + (x % 2) * 3, 30 + ((x * 7) % 6), 11, (x / 15 | 0));
+      // Holzplattform mit Schlagzeug vor dem Waldrand
       A.shadow(g, 62, 38, 60, 30, .35);
       A.rect(g, 60, 36, 60, 30, '#8a6440');
       for (let y = 36; y < 66; y += 5) { A.rect(g, 60, y, 60, 1, '#6a4a2c'); A.rect(g, 60, y + 1, 60, 1, '#9a7450'); }
       for (const x of [61, 117]) A.rect(g, x, 36, 2, 30, '#5a3e24');
       A.drumKit(g, 90, 46);
-      // Strandtuch in der Mitte (statt Orientteppich), Fransen
+      // karierte Wolldecke in der Mitte
       A.shadow(g, 50, 140, 80, 108, .25);
-      A.rect(g, 48, 138, 80, 108, '#e8e0d0');
-      for (let x = 48; x < 128; x += 16) A.rect(g, x, 138, 8, 108, '#d84a3a');
-      A.rect(g, 48, 186, 80, 12, '#f0c040'); A.rect(g, 48, 190, 80, 4, '#3a8ab0');
-      for (let x = 49; x < 128; x += 3) { A.rect(g, x, 136, 1, 2, '#f0ece0'); A.rect(g, x, 246, 1, 2, '#f0ece0'); }
-      // Fußspuren, Muscheln, Treibholz
-      for (let k = 0; k < 9; k++) { const x = 140 + Math.round(Math.sin(k) * 4) + (k % 2) * 4, y = 110 + k * 16; A.rect(g, x, y, 2, 3, 'rgba(140,100,60,.4)'); }
-      for (let k = 0; k < 14; k++) A.rect(g, 20 + (r() * 140 | 0), 90 + (r() * 200 | 0), 1, 1, r() < .5 ? '#f8f0e8' : '#e8b0a0');
-      A.rect(g, 30, 268, 26, 3, '#a89474'); A.rect(g, 32, 267, 10, 1, '#c8b494'); A.rect(g, 50, 271, 6, 2, '#8a7656');
-      // Kühlbox (statt Bierkiste) und Lagerfeuer mit Steinen (statt Sofa)
+      A.rect(g, 48, 138, 80, 108, '#7a2a24');
+      for (let x = 48; x < 128; x += 12) A.rect(g, x, 138, 4, 108, 'rgba(30,40,30,.45)');
+      for (let y = 138; y < 246; y += 12) A.rect(g, 48, y, 80, 4, 'rgba(30,40,30,.45)');
+      for (let x = 50; x < 128; x += 12) A.rect(g, x, 138, 1, 108, 'rgba(240,200,80,.35)');
+      for (let x = 49; x < 128; x += 3) { A.rect(g, x, 136, 1, 2, '#c8b080'); A.rect(g, x, 246, 1, 2, '#c8b080'); }
+      // umgestürzter Baumstamm, Kühlbox, Lagerfeuer
+      A.shadow(g, 24, 270, 34, 8, .35);
+      A.rect(g, 22, 266, 34, 7, '#5a3e24'); A.rect(g, 22, 266, 34, 2, '#7a5634'); A.oval(g, 55, 269, 3, 3, '#b08a5a'); A.oval(g, 55, 269, 1, 1, '#7a5634');
+      for (let x = 26; x < 54; x += 5) A.rect(g, x, 268, 2, 1, '#4a7a2a');
       A.shadow(g, 22, 286, 18, 14, .35);
       A.rect(g, 20, 284, 18, 14, '#3a8ab0'); A.rect(g, 20, 284, 18, 4, '#f0ece0'); A.rect(g, 26, 285, 6, 1, '#888');
       for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; A.oval(g, 145 + Math.round(Math.cos(a) * 9), 292 + Math.round(Math.sin(a) * 6), 2, 2, k % 2 ? '#7a7670' : '#9a968e'); }
       A.rect(g, 140, 290, 10, 2, '#5a3a1e'); A.rect(g, 143, 288, 2, 6, '#4a2e18');
-      // Kabel vom Verstärker über den Sand
+      // Kabel vom Verstärker über den Waldboden
       g.fillStyle = '#1a1a1a'; for (let y = 104; y < 280; y += 3) { g.fillRect(28 + Math.round(Math.sin(y / 17) * 3), y, 1, 2); g.fillRect(152 + Math.round(Math.cos(y / 19) * 3), y, 1, 2); }
-      // Abendlicht: leicht, nur auf dem Sand
-      shadePass(g, PLAY_W, H, (x, y) => y < B.shore || y >= 304 ? null : ART.SOFT + 1.3 - (y - B.shore) / 480 - Math.abs(x - 110) / 300);
+      // Bäume ringsum: oben Waldrand, an den Seiten große Kronen
+      for (let y = 80; y < 310; y += 26) { forestTree(g, 4 + (y % 3) * 2, y, 12, y); forestTree(g, 176 - (y % 4), y + 12, 12, y + 1); }
+      // Lichtung hell, zum Waldrand hin etwas dunkler (leicht)
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.45 - Math.hypot((x - 90) * 1.3, y - 170) / 160);
       return o;
     },
 
@@ -597,14 +567,11 @@ const ART = {
       for (let k = 0; k < 3; k++) X.fillRect(89, Math.round(28 + ((T * 30 + k * 4) % 10)), 2, 1);
     },
     rehearsal(T) {
-      const B = BEACH;
-      // Brandung läuft langsam an und zieht sich zurück
-      const s = Math.round((Math.sin(T * .8) + 1) * 2);
-      X.fillStyle = 'rgba(240,248,248,.75)';
-      for (let x = 0; x < PLAY_W; x += 2) X.fillRect(x, B.shore + 1 + s + Math.round(Math.sin(x / 13 + T * .5) * 1.5), 2, 1);
-      // eine Möwe segelt über dem Meer
-      const gx = Math.round(((T * 7) % 220) - 20), gy = 34 + Math.round(Math.sin(T * .6) * 2), up = Math.sin(T * 4) > 0 ? 1 : 0;
-      X.fillStyle = '#f0f0f0'; X.fillRect(gx - 2, gy - up, 2, 1); X.fillRect(gx, gy, 1, 1); X.fillRect(gx + 1, gy - up, 2, 1);
+      // ein paar Blätter segeln langsam herab
+      for (let k = 0; k < 4; k++) {
+        const y = Math.round(((T * (6 + k) + k * 80) % 300) + 20), x = Math.round(30 + k * 38 + Math.sin(T * 1.2 + k * 2) * 8);
+        X.fillStyle = ['#d0a040', '#b8682a', '#9a3a20', '#e0b050'][k]; X.fillRect(x, y, 2, 1); X.fillRect(x + (Math.sin(T * 3 + k) > 0 ? 1 : 0), y + 1, 1, 1);
+      }
       // Lagerfeuer flackert
       for (let k = 0; k < 4; k++) {
         const h = 3 + Math.round(Math.abs(Math.sin(T * 7 + k * 1.9)) * 5);
@@ -676,21 +643,11 @@ const ART = {
       k.r(6, 0, 1, H, '#8a8a7a');                                                       // Randlinie
       for (const y0 of [60, 236]) { k.r(0, y0, 2, 28, '#0c0c0e'); k.r(0, y0 + 10, 1, 8, '#5a5a62'); }   // Räder (Rest)
     },
-    /* Strand: oben Himmel und Meer, darunter Dünen mit Strandhafer */
+    /* Wald: Laubboden mit großen Baumkronen */
     rehearsal(g, x, w) {
-      const k = sideKit(g, x, w), r = seeded(x + 21), B = BEACH;
-      beachSky(g, x, 0, w, B.sea, y => .35 + .65 * (y - 26) / (B.sea - 26));
-      for (let y = B.sea; y < B.shore; y++) { g.fillStyle = lerpCol('#5a5a86', '#3a7a8e', (y - B.sea) / (B.shore - B.sea)); g.fillRect(x, y, w, 1); }
-      g.fillStyle = '#e8f0f0'; g.fillRect(x, B.shore - 1, w, 2);
-      g.fillStyle = '#8a9a90'; g.fillRect(x, B.shore + 1, w, 4);
-      for (let y = B.shore + 5; y < H; y++) { g.fillStyle = lerpCol('#e2c494', '#d0a874', (y - B.shore) / (H - B.shore)); g.fillRect(x, y, w, 1); }
-      ART.noise(g, x, B.shore + 5, w, H - B.shore - 5, 'rgba(120,90,50,.25)', 160, x + 3);
-      for (let n = 0; n < 60; n++) {
-        const d = r() * w | 0, y = B.shore + 14 + (r() * (H - B.shore - 14) | 0), h = 3 + (r() * 4 | 0);
-        g.fillStyle = r() < .5 ? '#8a9a4a' : '#a8b060';
-        for (let q = 0; q < h; q++) g.fillRect(k.X(d), y - q, 1, 1);
-      }
-      for (let y = B.shore + 30; y < H; y += 40) k.r(16, y, 1, 14, '#8a7656');               // Zaun aus Treibholz
+      forestFloor(g, x, 0, w, H, x + 21);
+      forestLeaves(g, x, 0, w, H, x + 22, .6);
+      for (let y = -6; y < H + 10; y += 22) forestTree(g, x + 4 + ((y / 22 | 0) % 2) * 12, y, 12, y + x);
     },
     /* Pub: Steinwand, Gehweg aus Platten, Bordstein, nasse Straße und Laternen */
     pub(g, x, w) {
@@ -781,8 +738,9 @@ const ART = {
       }
     },
     rehearsal(T, x, w) {
-      const k = sideKit(X, x, w), s = Math.round((Math.sin(T * .8) + 1) * 2);            // Brandung auch am Rand
-      X.fillStyle = 'rgba(240,248,248,.75)'; X.fillRect(x, BEACH.shore + 1 + s, w, 1);
+      // ein Eichhörnchen huscht ab und zu am Rand entlang
+      const k = sideKit(X, x, w), t = (T * .25 + (x ? .5 : 0)) % 1;
+      if (t < .3) { const y = Math.round(300 - t / .3 * 280); k.r(9, y, 3, 2, '#a85a2a'); k.r(10, y + 2, 2, 3, '#c87a3a'); }
     },
     pub(T, x, w) {
       const k = sideKit(X, x, w);
@@ -834,21 +792,13 @@ const ART = {
       }
     },
     rehearsal(g, k, h, top) {
-      if (top) {                                                                         // Himmel wird nach oben dunkler (Abend)
-        for (let d = 0; d < h; d++) {
-          const t = .35 - .35 * d / Math.max(1, h), c = BEACH.sky, f = t * (c.length - 1), i = Math.min(c.length - 2, f | 0);
-          k.r(0, d, PLAY_W, 1, lerpCol(c[i], c[i + 1], f - i));
-        }
-        for (let n = 0; n < 8; n++) k.r((n * 47) % 180, Math.round(h * .6) + (n % 3), 1, 1, '#f0e8ff');   // erste Sterne
-      } else {
-        const r = seeded(62);
-        k.r(0, 0, PLAY_W, h, '#d0a874');
-        ART.noise(g, 0, k.Y(0, h), PLAY_W, h, 'rgba(120,90,50,.25)', 200, 7);
-        for (let n = 0; n < 70; n++) {
-          const x = r() * PLAY_W | 0, d = 4 + (r() * (h - 4) | 0), hh = 3 + (r() * 4 | 0);
-          for (let q = 0; q < hh; q++) k.r(x, d + q, 1, 1, r() < .5 ? '#8a9a4a' : '#a8b060');
-        }
-      }
+      const c = makeCanvas(PLAY_W, h), cg = c.getContext('2d');
+      forestFloor(cg, 0, 0, PLAY_W, h, top ? 61 : 62);
+      forestLeaves(cg, 0, 0, PLAY_W, h, top ? 63 : 64, .6);
+      for (let x = -6; x < 190; x += 16) forestTree(cg, x, top ? h - 14 - (x % 3) * 4 : 10 + (x % 3) * 4, 12, x + (top ? 1 : 2));
+      if (top) for (let x = 4; x < 190; x += 18) forestTree(cg, x, h - 34, 12, x + 7);
+      else for (let x = 10; x < 190; x += 18) forestTree(cg, x, 30, 12, x + 9);
+      g.drawImage(c, 0, k.Y(0, h));
     },
     pub(g, k, h, top) {
       k.r(0, 0, PLAY_W, h, top ? '#2a2018' : '#3c3a36');
@@ -1144,4 +1094,34 @@ function festCrowd(g, x0, y0, w, h, seed, dens) {
     g.fillStyle = '#ddd'; g.fillRect(x, y - 6, 1, 6);
     g.fillStyle = ['#c03030', '#3060c0', '#e8e8e8'][k % 3]; g.fillRect(x + 1, y - 6, 4, 3);
   }
+}
+
+/* ---------- Der Wald (Proberaum draußen): Laubboden, Herbstbäume, Farne ---------- */
+function forestFloor(g, x0, y0, w, h, seed) {
+  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x += 2) {
+    const n = Math.sin(x * .08 + y * .05 + seed) + Math.sin(x * .023 - y * .041) + Math.sin(y * .09 + x * .017 + 1);
+    g.fillStyle = n > .9 ? '#56662e' : n < -1 ? '#5a4228' : n < 0 ? '#6a5430' : '#4e5c2a'; g.fillRect(x, y, 2, 1);
+  }
+}
+function forestLeaves(g, x0, y0, w, h, seed, dens) {
+  const r = seeded(seed), cols = ['#b8682a', '#9a3a20', '#d0a040', '#7a4a24', '#c88a3a'];
+  for (let k = 0; k < w * h * dens / 6; k++) {
+    g.fillStyle = cols[(r() * cols.length) | 0];
+    const x = x0 + (r() * w | 0), y = y0 + (r() * h | 0);
+    g.fillRect(x, y, 2, 1); if (r() < .4) g.fillRect(x, y + 1, 1, 1);
+  }
+}
+function forestFern(g, cx, cy) {
+  g.fillStyle = '#3e6a28';
+  for (let k = -3; k <= 3; k++) for (let t = 1; t < 6; t++) g.fillRect(cx + Math.round(k * t * .5), cy - t + Math.abs(k), 1, 1);
+  g.fillStyle = '#5a8a34'; g.fillRect(cx, cy - 5, 1, 5);
+}
+/** Herbstbaum von oben: Krone in Grün, Gold, Orange oder Rot */
+function forestTree(g, cx, cy, rr, seed) {
+  const P = [['#3e5a24', '#56782e', '#6e9040'], ['#8a6a1a', '#b8902a', '#d8b040'], ['#8a3e18', '#b85a24', '#d8803a'], ['#6a2418', '#943420', '#b84a2a']];
+  const p = P[Math.abs(seed * 7 + 3) % P.length];
+  ART.oval(g, cx + 3, cy + 3, rr, rr - 1, 'rgba(10,15,5,.4)');
+  ART.oval(g, cx, cy, rr, rr, p[0]);
+  ART.oval(g, cx - 1, cy - 1, rr - 2, rr - 2, p[1]);
+  for (const [a, b, q] of [[-3, -3, 3], [3, -1, 2], [-1, 3, 2], [2, 3, 2]]) ART.oval(g, cx + Math.round(a * rr / 9), cy + Math.round(b * rr / 9), q, q, p[2]);
 }
