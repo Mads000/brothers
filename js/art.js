@@ -176,9 +176,14 @@ const ART = {
       for (let x = 30; x < 160; x += 24) A.rect(g, x, 293, 1, 11, '#4a121c');
       A.rect(g, 28, 287, 18, 12, '#b8b8c0'); A.frame(g, 28, 287, 18, 12, '#555'); A.rect(g, 36, 287, 2, 12, '#555');        // Flightcase
       A.rect(g, 120, 292, 30, 7, '#151515'); A.rect(g, 146, 290, 6, 11, '#151515');                                          // zweiter Gitarrenkoffer
-      // Licht: gleichmäßiges Tageslicht (keine Lichtkegel auf dem Boden), nur sanft zum Rand hin dunkler
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + Math.min(1, .7 + (y - 26) / 400));
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.2 - Math.abs(x - 90) / 150);
+      // Licht: Tageslicht fällt durch die Seitenfenster auf die Sitze (gedithert, keine Pfützen im Gang),
+      // dazu der klassische PS1-Schatten nach hinten und zu den Wänden
+      const L = [];
+      for (let y = 72; y < 290; y += 38) { L.push({ x: 20, y, rx: 26, ry: 16, c: '#fff0c8', a: .4 }); L.push({ x: 160, y, rx: 26, ry: 16, c: '#fff0c8', a: .4 }); }
+      L.push({ x: 90, y: 50, rx: 60, ry: 16, c: '#d8e8ff', a: .35 });   // Frontscheibe
+      A.lights(g, L);
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + Math.min(1, .45 + (y - 26) / 260));
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.15 - Math.abs(x - 90) / 110);
       // Außenhaut ganz außen und abgerundete Ecken vorne/hinten: so sieht man auch am Handy den Bus
       const p = busPaint();
       for (const hx of [4, 174]) { A.rect(g, hx, 26, 2, 278, p.hull || p.wall); A.rect(g, hx === 4 ? 5 : 174, 26, 1, 278, p.hullTrim || p.trim); }
