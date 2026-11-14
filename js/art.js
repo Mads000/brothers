@@ -570,8 +570,7 @@ const ART = {
       for (let k = 0; k < 3; k++) X.fillRect(89, Math.round(28 + ((T * 30 + k * 4) % 10)), 2, 1);
     },
     rehearsal(T) {
-      // Die Glühbirne flackert ab und zu
-      if (Math.sin(T * 13) > .97) { X.fillStyle = 'rgba(0,0,0,.25)'; X.fillRect(18, 26, 144, 278); }
+      // (kein Flackern mehr: ruhiges, gleichmäßiges Licht)
     },
     pub(T) {
       X.fillStyle = (T * 3 | 0) % 2 ? '#ff60ff' : '#60ffff'; X.fillRect(164, 138, 10, 2);          // Jukebox
@@ -753,7 +752,6 @@ const ART = {
     },
     rehearsal(T, x, w) {
       const k = sideKit(X, x, w);
-      if ((T * 2.2) % 1 < .12) for (const y of [120, 230]) k.r(5, y - 2, 6, 18, 'rgba(255,170,90,.12)');   // Bass wummert aus dem Keller
       for (const [y, d, o] of [[96, 11, 0], [188, 8, .5], [262, 12, .25]]) {            // Regentropfen in den Pfützen
         const t = (T * .8 + o) % 1; if (t > .5) continue;
         const rr = 1 + Math.round(t * 6), cx = k.X(d);

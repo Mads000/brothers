@@ -208,13 +208,16 @@ function bonusHud(lv, stats) {
 /* ---------- HUD während des Spiels ---------- */
 function drawHUD(game, interactive) {
   const W = VIEW.W, OX = VIEW.OX, cx = W / 2, lv = game.level, g = lv.goal || {};
-  const TY = -VIEW.OY, BY = VIEW.OY;   // Handy: Leisten an den Bildschirmrand schieben
-  // Handy: die Leisten werden höher, vom Streifen mit Umgebung bleiben nur ~14 px sichtbar
-  const TB = 26 + Math.max(0, VIEW.OY - 14), dy = TB - 26, tall = dy > 8 ? 4 : 0;
+  // Handy: Leisten an den Bildschirmrand schieben, aber unter Statusleiste/Notch (safeT)
+  // und über der Home-Leiste (safeB) bleiben. Die Leisten-Farbe reicht bis ganz an den Rand.
+  const ST = VIEW.safeT || 0, SB = VIEW.safeB || 0;
+  const TY = -VIEW.OY + ST, BY = VIEW.OY - SB;
+  // die Leisten werden höher, vom Streifen mit Umgebung bleiben nur ~14 px sichtbar
+  const TB = 26 + Math.max(0, VIEW.OY - ST - 14), dy = TB - 26, tall = dy > 8 ? 4 : 0;
   const HY = TY + (dy >> 1), RY = TY + dy;          // Kopfzeile / Zeile mit den Wut-Leisten
-  const BH = VIEW.OY >= 12 ? Math.max(28, VIEW.OY + 2) : 16, BB = 320 + BY - BH;   // untere Leiste
+  const BH = BY >= 12 ? Math.max(28, BY + 2) : 16, BB = 320 + BY - BH;   // untere Leiste
   drawFrame(game.venue, game.T, game.bros);
-  X.fillStyle = HUD_BG; X.fillRect(0, TY, W, TB); X.fillRect(0, BB, W, BH);
+  X.fillStyle = HUD_BG; X.fillRect(0, TY - ST, W, TB + ST); X.fillRect(0, BB, W, BH + SB);
 
   // Oben Mitte: Zeit bzw. Ziel
   const left = Math.max(0, lv.time - game.el);

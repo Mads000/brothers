@@ -2,7 +2,7 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: #000;
+  background: #16131b;   /* gleiche Farbe wie die HUD-Leisten */
   overflow: hidden;
   touch-action: none;
   -webkit-user-select: none;

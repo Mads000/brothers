@@ -29,6 +29,19 @@ function baseT() { X.setTransform(1, 0, 0, 1, 0, VIEW.OY); }
 const viewListeners = [];
 function onViewChange(fn) { viewListeners.push(fn); }
 
+/**
+ * Sicherer Bereich am Handy (Statusleiste/Notch oben, Home-Leiste unten) in CSS-Pixeln.
+ * Das Spiel zeichnet bis an den Rand, legt aber keine Anzeigen unter Uhr oder Notch.
+ */
+const SAFE_PROBE = document.createElement('div');
+SAFE_PROBE.style.cssText = 'position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;' +
+  'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+document.body.appendChild(SAFE_PROBE);
+function safeInsets() {
+  const cs = getComputedStyle(SAFE_PROBE);
+  return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+}
+
 /** Erkennt das Format (Handy hochkant 180x320 oder PC 240x320) und skaliert. */
 function fitView() {
   const pc = innerWidth / innerHeight >= CONFIG.PC_ASPECT;
@@ -51,6 +64,9 @@ function fitView() {
   // Sonst (z. B. Fenster knapp unter 960 px hoch) füllt das Spiel die Höhe trotzdem aus.
   if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1 && ds / dpr >= s * .9) s = ds / dpr; }
   VIEW.scale = s;
+  // Handy: wie viele Spielpixel oben/unten unter Statusleiste bzw. Home-Leiste liegen
+  const si = pc ? { top: 0, bottom: 0 } : safeInsets();
+  VIEW.safeT = Math.min(OY, Math.ceil(si.top / s)); VIEW.safeB = Math.min(OY, Math.ceil(si.bottom / s));
   SCREEN.style.width = (W * s) + 'px';
   SCREEN.style.height = (HC * s) + 'px';
 
