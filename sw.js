@@ -10,7 +10,7 @@
      CACHE hochzählen, dann wird der alte Cache gelöscht.
    ========================================================================= */
 
-const CACHE = 'brothers-v16';   // bei jedem größeren Update hochzählen
+const CACHE = 'brothers-v17';   // bei jedem größeren Update hochzählen
 const FILES = [
   './',
   './index.html',
@@ -72,7 +72,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith((async () => {
-    const net = fetch(req);
+    // immer beim Server nachfragen (nicht den 10-Minuten-Zwischenspeicher des Browsers nehmen)
+    const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
     let cache = null;
     try { cache = await caches.open(CACHE); } catch (_) { /* kein Speicher */ }
     try {
