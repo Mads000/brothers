@@ -53,7 +53,7 @@ const VENUES = {
 
   /* ===================== 2. PROBERAUM ===================== */
   rehearsal: {
-    color: '#e0703a', name: 'FOREST JAM', short: 'FOR', rule: 'LOUD AMP = ANGRY BROTHER. TAP AMPS!',
+    color: '#e0703a', name: 'THE BOARDWALK', short: 'BWK', rule: 'LOUD AMP = ANGRY BROTHER. TAP AMPS!',
     angerMult: 1.05,
     starsToUnlock: 8,
     mechanic: 'volume', mechDefaults: { volRate: 4 },
@@ -66,7 +66,7 @@ const VENUES = {
     stageZone: { x: 26, y: 270, w: 128, h: 18 },
     fanSpots: [{ x: 150, y: 296, tx: 140, ty: 280 }, { x: 30, y: 296, tx: 40, ty: 280 }],
     drumSpot: { x: 90, y: 54 },
-    palette: { side: '#3e3a1e', floor: '#56662e' },
+    palette: { side: '#3e5828', floor: '#8a6a44' },
     endless: {
       missions: [{ type: 'volume', n: 80 }],
       items: { beer: 3, pedal: 3, tea: 2, headphones: 1, cable: 1 }, itemEvery: [2.8, 4.8],

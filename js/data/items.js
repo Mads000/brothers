@@ -99,7 +99,7 @@ const ITEMS = {
     },
   },
   pedal: {
-    desc: 'FOREST JAM: CRANKS HIS AMP WAY UP.',
+    desc: 'BOARDWALK: CRANKS HIS AMP WAY UP.',
     name: 'EFFECT PEDAL', kind: 'bad', height: 6,
     onPickup(game, b) {
       // Proberaum: dreht seinen Verstärker kräftig auf

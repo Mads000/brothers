@@ -459,7 +459,7 @@ const Screens = {
       { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
     UI.button(bx, y0 + 33, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
-      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE FOREST JAM', bare: true, draw: ticket('road') });
+      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE BOARDWALK', bare: true, draw: ticket('road') });
     UI.button(bx, y0 + 66, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
     UI.button(bx, y0 + 91, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
     UI.button(cx + 2, y0 + 91, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
@@ -1246,7 +1246,6 @@ function ticket(icon) {
 function drawLogo(cx, y, k) {
   const x0 = Math.round(cx - 16 * k);
   const r = (x, yy, w, h, c) => { X.fillStyle = c; X.fillRect(x0 + x * k, y + yy * k, w * k, h * k); };
-  drawSwirl(X, Math.round(cx), y + 14 * k, 17 * k, '#4a3a66', '#211a2c');    // Strudel-Emblem hinter den Brüdern
   // Kev: Haare, Sonnenbrille, grüner Parka mit Fellkragen
   r(2, 18, 12, 6, '#4a5e2a'); r(2, 22, 12, 2, '#36451e'); r(7, 18, 1, 6, '#bbbbbb'); r(2, 17, 12, 1, '#c8b890');
   r(4, 8, 8, 9, '#e2b38f');
