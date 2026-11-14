@@ -231,7 +231,7 @@ const ART = {
         g.fillStyle = '#6a4e30'; g.fillRect(x - (w >> 1), y, w, 1);
         if ((y * 7) % 4 === 0) { g.fillStyle = '#7a5c3a'; g.fillRect(x - (w >> 1) + ((y * 13) % w), y, 2, 1); }
       }
-      forestLeaves(g, 0, 66, PLAY_W, 238, 35, .5);
+      forestLeaves(g, 0, 66, PLAY_W, 238, 35, .22);
       // Farne und Pilze
       for (let k = 0; k < 10; k++) forestFern(g, 22 + (r() * 136 | 0), 110 + (r() * 180 | 0));
       for (let k = 0; k < 8; k++) { const x = 24 + (r() * 132 | 0), y = 100 + (r() * 190 | 0); A.rect(g, x, y, 1, 2, '#e8e0d0'); A.rect(g, x - 1, y - 1, 3, 1, r() < .5 ? '#c83a2a' : '#a8743a'); }
@@ -537,7 +537,7 @@ const ART = {
         const cx = 24 + (r() * 130 | 0), cy = 90 + (r() * 200 | 0);
         for (let n = 0; n < 14; n++) { g.fillStyle = r() < .5 ? '#8a5a86' : '#a874a0'; g.fillRect(cx + (r() * 10 | 0) - 5, cy + (r() * 6 | 0) - 3, 1, 1); }
       }
-      for (let k = 0; k < 40; k++) { g.fillStyle = r() < .6 ? '#f0ece0' : '#f0d860'; g.fillRect(20 + (r() * 140 | 0), 80 + (r() * 220 | 0), 1, 1); }
+      for (let k = 0; k < 16; k++) { g.fillStyle = r() < .6 ? '#f0ece0' : '#f0d860'; g.fillRect(20 + (r() * 140 | 0), 80 + (r() * 220 | 0), 1, 1); }
       // Trockensteinmauer (Hindernis links oben)
       A.shadow(g, 20, 124, 22, 64, .3);
       A.rect(g, 18, 122, 22, 64, '#5a5a52');
@@ -646,7 +646,7 @@ const ART = {
     /* Wald: Laubboden mit großen Baumkronen */
     rehearsal(g, x, w) {
       forestFloor(g, x, 0, w, H, x + 21);
-      forestLeaves(g, x, 0, w, H, x + 22, .6);
+      forestLeaves(g, x, 0, w, H, x + 22, .3);
       for (let y = -6; y < H + 10; y += 22) forestTree(g, x + 4 + ((y / 22 | 0) % 2) * 12, y, 12, y + x);
     },
     /* Pub: Steinwand, Gehweg aus Platten, Bordstein, nasse Straße und Laternen */
@@ -794,7 +794,7 @@ const ART = {
     rehearsal(g, k, h, top) {
       const c = makeCanvas(PLAY_W, h), cg = c.getContext('2d');
       forestFloor(cg, 0, 0, PLAY_W, h, top ? 61 : 62);
-      forestLeaves(cg, 0, 0, PLAY_W, h, top ? 63 : 64, .6);
+      forestLeaves(cg, 0, 0, PLAY_W, h, top ? 63 : 64, .3);
       for (let x = -6; x < 190; x += 16) forestTree(cg, x, top ? h - 14 - (x % 3) * 4 : 10 + (x % 3) * 4, 12, x + (top ? 1 : 2));
       if (top) for (let x = 4; x < 190; x += 18) forestTree(cg, x, h - 34, 12, x + 7);
       else for (let x = 10; x < 190; x += 18) forestTree(cg, x, 30, 12, x + 9);
@@ -1026,7 +1026,7 @@ function moorGrass(g, x0, y0, w, h, seed, farOf) {
     g.fillStyle = far > 0 ? lerpCol(base, '#9aac84', far * .7) : base; g.fillRect(x, y, 2, 1);
   }
   // Büschel: Schatten unten, Halme, helle Spitzen
-  const n = Math.round(w * h / 13);
+  const n = Math.round(w * h / 18);
   for (let k = 0; k < n; k++) {
     const x = x0 + (r() * w | 0), y = y0 + (r() * h | 0), far = farOf(y);
     if (far > .2 && r() < .5) continue;

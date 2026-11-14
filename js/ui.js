@@ -169,8 +169,21 @@ function drawFrame(ve, T, bros) {
 }
 
 const HUD_BG = '#16131b';   // Farbe der HUD-Leisten (statt reinem Schwarz)
-/** Hintergrund für Menüs: Schauplatz abgedunkelt */
-function drawBackdrop(ve, T, withBros) {
+/**
+ * Hintergrund für Menüs: ruhige, dunkle Fläche (keine Karte dahinter, damit nichts ablenkt).
+ * Oben eine dünne Linie in der Farbe des Schauplatzes als kleiner Akzent.
+ */
+function drawBackdrop(ve, T) {
+  baseT();
+  const h = VIEW.OY, W = VIEW.W;
+  X.fillStyle = MENU_BG; X.fillRect(0, -h, W, 320 + 2 * h);
+  X.fillStyle = 'rgba(255,255,255,.025)';                       // ganz leichtes Raster
+  for (let y = -h; y < 320 + h; y += 4) X.fillRect(0, y, W, 1);
+  X.fillStyle = ve && ve.color ? ve.color : '#ffd84a'; X.globalAlpha = .5; X.fillRect(VIEW.OX + 20, 24, PLAY_W - 40, 1); X.globalAlpha = 1;
+}
+const MENU_BG = '#17141d';
+/** Hintergrund mit Schauplatz (nur noch fürs Hauptmenü am PC) */
+function drawVenueBackdrop(ve, T, withBros) {
   drawVenue(ve, T);
   if (withBros) withBros.forEach(drawBro);
   drawFrame(ve, T, null);
@@ -426,8 +439,8 @@ const Screens = {
     const cx = VIEW.W / 2, T = App.T, OX = VIEW.OX;
     // Handy: Bus über die ganze Höhe, kräftig abgedunkelt, damit die Knöpfe klar vorne stehen
     const tall = drawTallBus();
-    if (tall) { baseT(); X.fillStyle = 'rgba(10,8,14,.6)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY); }
-    else { drawBackdrop(VENUES.bus, T); shade(.6); }
+    if (tall) { baseT(); X.fillStyle = 'rgba(10,8,14,.72)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY); }
+    else { drawVenueBackdrop(VENUES.bus, T); shade(.72); }
 
     // Oben: Sterne links, Plektren rechts (am Handy ganz oben unter der Statusleiste)
     const sy = tall ? 26 : 9;   // Handy: knapp über dem Logo, nicht unter der Statusleiste
@@ -759,7 +772,6 @@ const Screens = {
   extras() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
     drawBackdrop(VENUES.backstage, App.T);
-    shade(.75);  // Hintergrund deutlich dunkler, damit die Listen gut lesbar sind
     txtS('EXTRAS', cx, 7, '#ffd84a', 2, 'c');
     drawTabs(['AWARDS', 'POSTERS', 'SCORES'], App.extrasTab, i => { App.extrasTab = i; });
     const x0 = OX + 6, w = PLAY_W - 12;
