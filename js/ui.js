@@ -128,6 +128,8 @@ function drawBands(ve, T, play) {
   const h = VIEW.OY;
   if (h <= 0) return;
   baseT();
+  // In Menüs: oben/unten nur eine ruhige Fläche (keine angeschnittene Umgebung)
+  if (!play) { X.fillStyle = HUD_BG; X.fillRect(0, -h, VIEW.W, h); X.fillRect(0, 320, VIEW.W, h); return; }
   for (const top of [true, false]) {
     const y0 = top ? (play ? 26 - h : -h) : (play ? 304 : 320);
     X.drawImage(getBand(ve, top), 0, y0);
@@ -177,7 +179,6 @@ function drawBackdrop(ve, T, withBros) {
   baseT();
   X.fillStyle = HUD_BG; X.fillRect(0, 0, VIEW.W, 26); X.fillRect(0, 304, VIEW.W, 16);
   shade();
-  if (VIEW.OY) { X.fillStyle = 'rgba(0,0,0,.62)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY); X.fillRect(0, 320, VIEW.W, VIEW.OY); }
 }
 function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
@@ -265,8 +266,10 @@ function drawHUD(game, interactive) {
   for (let s = 0; s < 2; s++) {
     const id = game.slots[s], def = POWERUPS[id];
     const used = game.slotUsed[s] || !def || Save.powerupCount(id) <= 0;
-    const bw = BH > 16 ? 52 : 40, x = s ? OX + PLAY_W - bw - 2 : OX + 2;
-    UI.button(x, BB + 1, bw, BH - 3, def ? def.short : '-', () => game.usePowerUp(s), {
+    // Handy: etwas kleiner und weiter innen, damit sie nicht in den runden Bildschirmecken liegen
+    const big = BH > 16, bw = big ? 36 : 40, bh = big ? 22 : BH - 3, inset = big ? 10 : 2;
+    const x = s ? OX + PLAY_W - bw - inset : OX + inset;
+    UI.button(x, BB + (big ? 4 : 1), bw, bh, def ? def.short : '-', () => game.usePowerUp(s), {
       disabled: !interactive || used, noDefault: true,
       draw(b, hl) {
         const c = used ? '#444' : hl ? '#ffd84a' : '#ff8a3a';
@@ -277,7 +280,7 @@ function drawHUD(game, interactive) {
   }
   // Bonusziel (Tour) bzw. Stadt-Mission (Never-Ending Tour)
   const bh = bonusHud(lv, game.stats);
-  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH >> 1) - 4, bh.ok); txt(bh.s, cx + 1, BB + (BH >> 1) - 3, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
+  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH > 16 ? 11 : (BH >> 1) - 4), bh.ok); txt(bh.s, cx + 1, BB + (BH > 16 ? 12 : (BH >> 1) - 3), bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
   // Trefferfläche reicht bis zum Bildschirmrand
