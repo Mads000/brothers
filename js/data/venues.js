@@ -136,7 +136,7 @@ const VENUES = {
     stageZone: { x: 24, y: 66, w: 132, h: 20 },
     fanSpots: [{ x: 50, y: 252, tx: 50, ty: 224 }, { x: 90, y: 252, tx: 90, ty: 224 }, { x: 130, y: 252, tx: 130, ty: 224 }],
     drumSpot: { x: 90, y: 50 },
-    palette: { side: '#0a0e22', floor: '#141a3a' },
+    palette: { side: '#3e5828', floor: '#6a5238' },
     endless: {
       missions: [{ type: 'crowd', n: 50 }],
       items: { beer: 3, tea: 2, mic: 1 }, itemEvery: [2.8, 4.8],
@@ -161,7 +161,7 @@ const VENUES = {
     stageZone: { x: 56, y: 270, w: 106, h: 20 },
     fanSpots: [{ x: 9, y: 116, tx: 30, ty: 110 }, { x: 9, y: 196, tx: 30, ty: 192 }, { x: 9, y: 284, tx: 30, ty: 282 }],
     drumSpot: { x: 90, y: 50 },
-    palette: { side: '#140c1c', floor: '#3a2440' },
+    palette: { side: '#3a2818', floor: '#5a2a3a' },
     endless: {
       missions: [{ type: 'sleep', n: 3 }],
       items: { minibar: 4, tea: 2, chips: 1 }, itemEvery: [2.8, 4.8],
