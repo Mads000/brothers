@@ -115,7 +115,7 @@ function buzz(ms) {
 function hex(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 function lerpCol(a, b, t) { const A = hex(a), B = hex(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',') + ')'; }
 /** Farbe der Wut-Leiste: grün, gelb, rot */
-function angerColor(a) { return a > 80 ? '#e33' : a > 50 ? '#e9b23a' : '#4caf50'; }
+function angerColor(a) { return a > 85 ? '#ff3030' : a > 65 ? '#ff8a3a' : '#ffd84a'; }   // gelb -> orange -> rot
 
 /* ---------- 3x5 Pixel-Schrift ----------
    Jedes Zeichen sind 15 Bits, zeilenweise von oben links. Neue Zeichen einfach ergänzen. */

@@ -169,17 +169,18 @@ const VENUES = {
     },
   },
 
-  /* ===================== 7. DIE WOHNUNG (Bonus) =====================
-     Sonniger Nachmittag in der Band-WG: helle Dielen, großes Erkerfenster.
-     Sonderregel: Sonnenstrahlen wandern langsam über den Boden und beruhigen. */
+  /* ===================== 7. DAS MOOR (Bonus) =====================
+     Weites Grasland unter blauem Himmel, rosa Wolken am Horizont.
+     (Die id bleibt 'flat', damit alte Spielstände weiter passen.)
+     Sonderregel: Sonnenflecken ziehen langsam über das Gras und beruhigen. */
   flat: {
-    color: '#e8c860', name: 'THE FLAT', short: 'FLT', rule: 'SUNBEAMS CALM THEM DOWN. A LAZY AFTERNOON.',
+    color: '#7ab04a', name: 'THE MOOR', short: 'MOR', rule: 'PATCHES OF SUN CALM THEM DOWN. NOTHING BUT SKY.',
     angerMult: 1.2,
     starsToUnlock: 12,
     mechanic: 'sunbeam', mechDefaults: { sunCalm: 4 },
     bounds: { x0: 26, x1: 154, y0: 72, y1: 290 },
     spawn: { x0: 44, x1: 150, y0: 80, y1: 286 },
-    // Sofa und Sessel links sind Hindernisse
+    // Trockensteinmauer und Findling links sind Hindernisse
     walls: [{ x: 18, y: 122, w: 22, h: 64 }, { x: 18, y: 236, w: 20, h: 20 }],
     // Sonnenstrahlen: Startposition, Größe, Schräge (x pro y), wie weit sie wandern
     beams: [
@@ -191,7 +192,7 @@ const VENUES = {
     stageZone: { x: 52, y: 72, w: 76, h: 18 },
     fanSpots: [{ x: 70, y: 52, tx: 70, ty: 76 }, { x: 110, y: 52, tx: 110, ty: 76 }],
     drumSpot: { x: 140, y: 284 },
-    palette: { side: '#4a2418', floor: '#c9a66c' },
+    palette: { side: '#3e5828', floor: '#62803a' },
     endless: {
       missions: [{ type: 'anger', n: 75 }, { type: 'serve', n: 2 }],
       items: { wine: 4, beer: 2, record: 2, tea: 2 }, itemEvery: [2.8, 4.8],

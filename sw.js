@@ -10,7 +10,7 @@
      CACHE hochzählen, dann wird der alte Cache gelöscht.
    ========================================================================= */
 
-const CACHE = 'brothers-v1';
+const CACHE = 'brothers-v2';   // bei jedem größeren Update hochzählen
 const FILES = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const FILES = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
+  './icons/og-image.png',
   './js/config.js',
   './js/render.js',
   './js/data/characters.js',

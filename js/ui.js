@@ -227,8 +227,9 @@ function bonusHud(lv, stats) {
   if (!def) return null;
   const v = def.value(stats), ok = def.ok(v, bo.n);
   let s = def.text(bo.n);
-  if (['bin', 'serve', 'fans', 'locks', 'sleep'].includes(bo.type)) s += ' ' + Math.min(v, bo.n) + '/' + bo.n;
-  return { s, ok };
+  const counted = ['bin', 'serve', 'fans', 'locks', 'sleep'].includes(bo.type);
+  if (counted && bo.n > 8) s += ' ' + Math.min(v, bo.n) + '/' + bo.n;
+  return { s, ok, boxes: counted && bo.n <= 8 ? { n: bo.n, v: Math.min(v, bo.n), type: bo.type } : null };
 }
 
 /* ---------- HUD während des Spiels ---------- */
@@ -266,8 +267,14 @@ function drawHUD(game, interactive) {
     const bx = OX + (i ? 94 : 4);
     X.fillStyle = b.color; X.fillRect(bx, 13 + RY, 6, 8 + tall);
     txt(b.name, bx + 8, 15 + RY + (tall >> 1), '#ccc');
-    X.fillStyle = '#222'; X.fillRect(bx + 22, 14 + RY, 58, 6 + tall);
-    X.fillStyle = angerColor(b.anger); X.fillRect(bx + 23, 15 + RY, Math.round(56 * b.anger / 100), 4 + tall);
+    // dicker, gelb -> orange -> rot (blinkt, wenn es kritisch wird)
+    X.fillStyle = '#000'; X.fillRect(bx + 22, 12 + RY, 58, 10 + tall);
+    X.fillStyle = '#26222c'; X.fillRect(bx + 23, 13 + RY, 56, 8 + tall);
+    const hot = b.anger > 85, col = hot ? ((App.T * 5 | 0) % 2 ? '#ff3030' : '#c01818') : b.anger > 65 ? '#ff8a3a' : '#ffd84a';
+    const aw = Math.round(56 * b.anger / 100);
+    X.fillStyle = col; X.fillRect(bx + 23, 13 + RY, aw, 8 + tall);
+    X.fillStyle = 'rgba(255,255,255,.35)'; X.fillRect(bx + 23, 13 + RY, aw, 1);
+    X.fillStyle = 'rgba(0,0,0,.5)'; for (const m of [.65, .85]) X.fillRect(bx + 23 + Math.round(56 * m), 13 + RY, 1, 8 + tall);
     if (b.hidden) txt('LIFT', bx + 51, 15 + RY + (tall >> 1), '#fff', 1, 'c');
   });
 
@@ -305,7 +312,21 @@ function drawHUD(game, interactive) {
   }
   // Bonusziel (Tour) bzw. Stadt-Mission (Never-Ending Tour)
   const bh = bonusHud(lv, game.stats);
-  if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH > 16 ? 11 : (BH >> 1) - 4), bh.ok); txt(bh.s, cx + 1, BB + (BH > 16 ? 12 : (BH >> 1) - 3), bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
+  if (bh) {
+    const big = BH > 16;
+    if (bh.boxes && big) {                              // Text oben, darunter ein Kästchen pro Teil
+      const B = bh.boxes, ty = BB + 6, bw = 6, gap = 2, tw = B.n * (bw + gap) - gap, x0 = Math.round(cx - tw / 2) + 5;
+      txt(bh.s, cx + 1, ty, bh.ok ? '#7cfc6a' : '#bbb', 1, 'c');
+      goalIcon(B.type, x0 - 7, ty + 11);
+      for (let k = 0; k < B.n; k++) {
+        X.fillStyle = '#000'; X.fillRect(x0 + k * (bw + gap), ty + 8, bw, bw);
+        X.fillStyle = k < B.v ? (bh.ok ? '#7cfc6a' : '#ffd84a') : '#2c2832'; X.fillRect(x0 + k * (bw + gap) + 1, ty + 9, bw - 2, bw - 2);
+      }
+    } else {
+      const s = bh.boxes ? bh.s + ' ' + bh.boxes.v + '/' + bh.boxes.n : bh.s;
+      drawStar(cx - textW(s) / 2 - 8, BB + (big ? 11 : (BH >> 1) - 4), bh.ok); txt(s, cx + 1, BB + (big ? 12 : (BH >> 1) - 3), bh.ok ? '#7cfc6a' : '#999', 1, 'c');
+    }
+  }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
   // Trefferfläche reicht bis zum Bildschirmrand
@@ -329,10 +350,18 @@ function drawIntro(game) {
   txt(goalText(lv), cx, 92, '#9fd8ff', 1, 'c');
   wrapText(lv.hint || '', 38).forEach((l, i) => txt(l, cx, 108 + i * 8, '#ccc', 1, 'c'));
 
-  // Die drei Sterne
-  const rows = ['GIG PLAYED', 'ANGER NEVER OVER 90%', bonusText(lv.bonus) || '-'];
-  txt('STARS', cx, 166, '#ffd84a', 1, 'c');
-  rows.forEach((r, i) => { drawStar(OX + 22, 177 + i * 11, rec && rec.stars > i); txt(r, OX + 32, 178 + i * 11, '#bbb'); });
+  // Kev <-> Del: worum es immer geht
+  const kb = makeBro('kev', 0, { x: cx - 40, y: 160 }), db = makeBro('del', 0, { x: cx + 40, y: 160 });
+  drawBro(kb); drawBro(db);
+  X.fillStyle = '#ff8a3a';
+  X.fillRect(cx - 17, 146, 35, 1);
+  for (let q = 1; q <= 3; q++) { X.fillRect(cx - 18 + q, 146 - q, 1, q * 2 + 1); X.fillRect(cx + 18 - q, 146 - q, 1, q * 2 + 1); }
+  txtS('KEEP THEM', cx, 134, '#fff', 1, 'c'); txtS('APART', cx, 152, '#fff', 1, 'c');
+
+  // Die drei Sterne, jeweils mit kleinem Bild
+  const rows = [['gig', 'GIG PLAYED'], ['anger', 'ANGER NEVER OVER 90%'], [lv.bonus ? lv.bonus.type : '', bonusText(lv.bonus) || '-']];
+  txt('STARS', cx, 168, '#ffd84a', 1, 'c');
+  rows.forEach(([ic, r], i) => { drawStar(OX + 18, 179 + i * 11, rec && rec.stars > i); goalIcon(ic, OX + 31, 181 + i * 11); txt(r, OX + 38, 180 + i * 11, '#ccc'); });
 
   if (Save.data.loadout.length) {
     const names = game.slots.map(id => POWERUPS[id] ? POWERUPS[id].short : '-').join(' + ');
@@ -341,21 +370,41 @@ function drawIntro(game) {
   if ((App.T * 2 | 0) % 2) txtS(VIEW.pc ? 'CLICK OR ENTER TO START' : 'TAP TO START', cx, 244, '#fff', 1, 'c');
 }
 
-/** Tutorial-Hinweis mit Pfeil */
+/** Kleine Bilder für die Sterne-Ziele, (x, y) = Mitte */
+function goalIcon(type, x, y) {
+  const r = (a, b, w, h, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, w, h); };
+  switch (type) {
+    case 'gig':   r(0, -3, 1, 5, '#9fd8ff'); r(1, -3, 2, 1, '#9fd8ff'); r(-2, 1, 2, 2, '#9fd8ff'); break;              // Note
+    case 'anger': r(-3, -1, 7, 3, '#333'); r(-3, -1, 3, 3, '#ffd84a'); r(0, -1, 2, 3, '#ff8a3a'); r(2, -1, 2, 3, '#e33'); break;
+    case 'bin':   r(-2, -2, 5, 1, '#bbb'); r(-1, -3, 3, 1, '#bbb'); r(-2, -1, 5, 4, '#999'); r(-1, 0, 1, 2, '#555'); r(1, 0, 1, 2, '#555'); break;
+    case 'serve': r(-2, -2, 4, 5, '#e8e0d0'); r(2, -1, 1, 2, '#e8e0d0'); r(-1, -1, 2, 1, '#8a5a2a'); break;          // Tasse
+    case 'fans': case 'locks': drawLock(x - 3, y - 3, '#ccc'); break;
+    case 'sleep': txt('Z', x, y - 2, '#9fd8ff', 1, 'c'); break;
+    default: r(-1, -1, 3, 3, '#888');
+  }
+}
+
+/** Tutorial-Hinweis: kleine Sprechblase direkt beim Bruder bzw. Gegenstand, mit Pfeil */
 function drawTutorial(game) {
   const st = game.tutStep();
   if (!st) return;
-  const OX = VIEW.OX, lines = wrapText(st.text, 40);
-  panel(OX + 4, 60, PLAY_W - 8, 8 + lines.length * 8, '#ffd84a');
-  lines.forEach((l, i) => txt(l, VIEW.W / 2, 64 + i * 8, '#fff', 1, 'c'));
+  const OX = VIEW.OX, lines = wrapText(st.text, 30);
   let tgt = null;
   if (st.point === 'bro0') tgt = game.bros[0];
   else if (st.point === 'bro1') tgt = game.bros[1];
   else if (st.point === 'item') tgt = game.items.find(i => i.type === st.spawn);
+  const w = Math.max(...lines.map(l => textW(l))) + 8, h = 6 + lines.length * 8;
+  let bx = Math.round(OX + (PLAY_W - w) / 2), by = 30;
   if (tgt) {
+    const tx = game.sx(tgt.x), top = tgt.y - (tgt.type ? 22 : 44);
+    bx = clamp(Math.round(tx - w / 2), OX + 2, OX + PLAY_W - w - 2);
+    const above = top - 12 - h >= 30;
+    by = above ? Math.round(top - 12 - h) : Math.round(tgt.y + 6);   // über dem Kopf, sonst unter den Füßen
     const bounce = Math.round(Math.sin(game.T * 8) * 2);
-    drawArrowDown(Math.round(game.sx(tgt.x)), Math.round(tgt.y - (tgt.type ? 22 : 44)) + bounce);
+    if (above) drawArrowDown(Math.round(tx), Math.round(top) + bounce);
   }
+  panel(bx, by, w, h, '#ffd84a');
+  lines.forEach((l, i) => txt(l, bx + w / 2, by + 4 + i * 8, '#fff', 1, 'c'));
 }
 
 /** Fortschrittsbalken beim langen Drücken (Debug-Menü) */
@@ -377,31 +426,31 @@ const Screens = {
     const cx = VIEW.W / 2, T = App.T, OX = VIEW.OX;
     // Handy: Bus über die ganze Höhe, kräftig abgedunkelt, damit die Knöpfe klar vorne stehen
     const tall = drawTallBus();
-    if (tall) { baseT(); X.fillStyle = 'rgba(10,8,14,.45)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY); }
-    else { drawBackdrop(VENUES.bus, T); shade(.35); }
+    if (tall) { baseT(); X.fillStyle = 'rgba(10,8,14,.6)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY); }
+    else { drawBackdrop(VENUES.bus, T); shade(.6); }
 
     // Oben: Sterne links, Plektren rechts (am Handy ganz oben unter der Statusleiste)
     const sy = tall ? -VIEW.OY + VIEW.safeT + 9 : 9;
     drawStar(OX + 4, sy, true); txt(String(Save.totalStars()), OX + 12, sy, '#ffd84a');
     drawPicks(OX + PLAY_W - 4, sy);
 
-    txtS('BROTHERS', cx, 40, '#ffd84a', 3, 'c');
-    txt('TWO BROTHERS. ONE BAND. ONE BUS.', cx, 64, '#ccc', 1, 'c');
+    drawLogo(cx, 4, 2);                                            // Logo: die zwei Brüder + Schriftzug
+    txt('TWO BROTHERS. ONE BAND. ONE BUS.', cx, 72, '#ccc', 1, 'c');
 
     // Hauptknöpfe, jeweils mit kurzem Stand darunter
     const bx = cx - 64, bw = 128;
     const done = LEVELS.filter(l => (Save.level(l.id) || {}).done).length;
     // Die Knöpfe sehen aus wie Konzert-Tickets (siehe ticket() unten)
-    UI.button(bx, 82, bw, 28, 'TOUR', () => App.go('select'),
-      { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
+    UI.button(bx, 84, bw, 28, 'TOUR', () => App.go('select'),
+      { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, main: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
-    UI.button(bx, 115, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
+    UI.button(bx, 117, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
       { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE REHEARSAL ROOM', bare: true, draw: ticket('road') });
-    UI.button(bx, 148, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
-    UI.button(bx, 173, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
-    UI.button(cx + 2, 173, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
-    UI.button(bx, 198, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
-    UI.button(cx + 2, 198, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
+    UI.button(bx, 150, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
+    UI.button(bx, 175, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
+    UI.button(cx + 2, 175, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
+    UI.button(bx, 200, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
+    UI.button(cx + 2, 200, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
 
     // Deko: die zwei Brüder - mal zanken sie, mal lachen sie zusammen
     const k = makeBro('kev', 40, { x: cx - 26, y: 266 }), d = makeBro('del', 40, { x: cx + 26, y: 266 });
@@ -529,15 +578,24 @@ const Screens = {
       drawLock(cx - 3, 120, '#aaa');
       txt('NEED ' + ve.starsToUnlock + ' STARS', cx, 134, '#aaa', 1, 'c');
     } else {
+      // aktuelles Level = erstes offenes, das noch nicht geschafft ist
+      const cur = levels.find(l => Save.levelUnlocked(l) && !(Save.level(l.id) || {}).done);
       levels.forEach((lv, i) => {
-        const open = Save.levelUnlocked(lv), rec = Save.level(lv.id);
+        const open = Save.levelUnlocked(lv), rec = Save.level(lv.id), now = lv === cur;
         UI.button(OX + 10, 80 + i * 20, 160, 17, '', () => App.startLevel(lv), {
           disabled: !open,
           draw(b, hl) {
-            const col = !open ? '#555' : hl ? '#ffd84a' : lv.headliner ? '#ffb040' : '#fff';
+            if (!open) { X.fillStyle = 'rgba(0,0,0,.45)'; X.fillRect(b.x, b.y, b.w, b.h); }
+            if (now) {                                   // gelber Rahmen + Play-Pfeil
+              X.fillStyle = '#ffd84a'; X.fillRect(b.x - 1, b.y - 1, b.w + 2, 1); X.fillRect(b.x - 1, b.y + b.h, b.w + 2, 1);
+              X.fillRect(b.x - 1, b.y - 1, 1, b.h + 2); X.fillRect(b.x + b.w, b.y - 1, 1, b.h + 2);
+              const ax = b.x - 8 + ((App.T * 3 | 0) % 2);
+              for (let k = 0; k < 4; k++) X.fillRect(ax + k, b.y + 5 + k, 1, 7 - k * 2);
+            }
+            const col = !open ? '#3c3c44' : hl || now ? '#ffd84a' : lv.headliner ? '#ffb040' : '#fff';
             txt(String(i + 1), b.x + 5, b.y + 6, col);
             if (open) txt(lv.name, b.x + 17, b.y + 6, col);
-            else drawLock(b.x + 17, b.y + 4, '#555');
+            else drawLock(b.x + 17, b.y + 4, '#3c3c44');
             for (let s = 0; s < 3; s++) drawStar(b.x + b.w - 22 + s * 7, b.y + 6, rec && rec.stars > s);
           },
         });
@@ -1142,14 +1200,14 @@ const SANDBOX = {
    Dunkles, abgegriffenes Ticket mit Abriss links. icon = Bild auf dem Abriss
    ('bus', 'road', 'pick', 'star', 'help', 'info'). Beim Drüberfahren wird es gelb.
    Gibt eine draw-Funktion für UI.button zurück. */
-const TICKET = { paper: '#25221e', stub: '#1b1916', edge: '#6e6452', ink: '#cfc3a6', sub: '#7d735f', hot: '#ffd84a', off: '#4a4740' };
+const TICKET = { paper: '#2e2a25', stub: '#221f1b', edge: '#a8987a', ink: '#f2e8cc', sub: '#b4a586', hot: '#ffd84a', off: '#8c8472', offSub: '#a89c84' };
 function ticket(icon) {
   return (b, hl) => {
     const T = TICKET, lift = hl ? -1 : 0, x = b.x, y = b.y + lift, w = b.w, h = b.h;
-    const edge = b.disabled ? T.off : hl ? T.hot : T.edge;
+    const edge = b.disabled ? '#5a5448' : hl || b.main ? T.hot : T.edge;   // Hauptknopf (TOUR) mit gelbem Rand
     const ink = b.disabled ? T.off : hl ? T.hot : T.ink;
     const stub = h >= 26 ? 18 : 14;
-    X.fillStyle = 'rgba(0,0,0,.6)'; X.fillRect(x + 2, y + 2 - lift, w, h);    // Schatten
+    X.fillStyle = '#000'; X.fillRect(x + 2, y + 2 - lift, w, h);              // harter Pixel-Schatten
     X.fillStyle = T.paper; X.fillRect(x, y, w, h);
     X.fillStyle = T.stub; X.fillRect(x + 1, y + 1, stub - 1, h - 2);           // Abriss links
     // abgegriffenes Papier: ein paar dunkle Pixel in festem Muster
@@ -1170,10 +1228,34 @@ function ticket(icon) {
     // Text
     const tx = x + stub + (w - stub) / 2;
     if (b.sub) {
-      txt(b.label, tx, y + Math.floor(h / 2) - 7, ink, 1, 'c');
-      txt(b.sub, tx, y + Math.floor(h / 2) + 2, b.disabled ? T.off : T.sub, 1, 'c');
-    } else txt(b.label, tx, y + Math.floor((h - 5) / 2), ink, 1, 'c');
+      txtS(b.label, tx, y + Math.floor(h / 2) - 7, ink, 1, 'c');
+      txt(b.sub, tx, y + Math.floor(h / 2) + 2, b.disabled ? T.offSub : T.sub, 1, 'c');
+    } else txtS(b.label, tx, y + Math.floor((h - 5) / 2), ink, 1, 'c');
   };
+}
+/**
+ * Spiel-Logo: Kev und Del wie auf dem App-Icon (ohne Blitz), darunter BROTHERS.
+ * cx = Mitte, y = Oberkante, k = Pixelgröße. 32 x 32 Logo-Pixel.
+ */
+function drawLogo(cx, y, k) {
+  const x0 = Math.round(cx - 16 * k);
+  const r = (x, yy, w, h, c) => { X.fillStyle = c; X.fillRect(x0 + x * k, y + yy * k, w * k, h * k); };
+  // Kev: Haare, Sonnenbrille, grüner Parka mit Fellkragen
+  r(2, 18, 12, 6, '#4a5e2a'); r(2, 22, 12, 2, '#36451e'); r(7, 18, 1, 6, '#bbbbbb'); r(2, 17, 12, 1, '#c8b890');
+  r(4, 8, 8, 9, '#e2b38f');
+  r(3, 5, 10, 3, '#3a2412'); r(3, 8, 1, 4, '#3a2412'); r(12, 8, 1, 4, '#3a2412');
+  r(4, 9, 1, 1, '#000'); r(5, 10, 2, 1, '#000'); r(10, 9, 1, 1, '#000'); r(8, 10, 2, 1, '#000');
+  r(4, 11, 8, 2, '#000'); r(5, 11, 1, 1, '#6a8ab0'); r(7, 14, 3, 2, '#000');
+  // Del: Fischerhut, rotes Gesicht, blaue Jacke
+  r(18, 18, 12, 6, '#22346a'); r(18, 22, 12, 2, '#18264d'); r(24, 18, 1, 6, '#bbbbbb');
+  r(20, 9, 8, 8, '#e8906a');
+  r(18, 8, 12, 2, '#d9d1b6'); r(20, 4, 8, 4, '#d9d1b6'); r(20, 7, 8, 1, '#b0a888');
+  r(21, 11, 1, 1, '#000'); r(22, 12, 1, 1, '#000'); r(26, 11, 1, 1, '#000'); r(25, 12, 1, 1, '#000');
+  r(22, 13, 1, 1, '#000'); r(25, 13, 1, 1, '#000'); r(23, 15, 3, 1, '#000');
+  // Dampf über den Köpfen
+  for (const [a, b] of [[2, 3], [1, 2], [29, 2], [30, 1], [13, 3]]) r(a, b, 1, 1, '#9a9aa8');
+  // Schriftzug mit Schatten
+  txtS('BROTHERS', cx, y + 25 * k, '#ffd84a', k, 'c');
 }
 /** Kleine Bilder für die Tickets, (x, y) = Mitte */
 function ticketIcon(icon, x, y, ink) {

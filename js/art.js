@@ -68,7 +68,7 @@ const ART = {
     backstage: (x, y) => x >= 18 && x < 162 && y >= 60 && !(y >= 160 && y < 186 && (x < 78 || x >= 102)),
     festival:  (x, y) => (x >= 18 && x < 162 && y < 238) || y >= 246,
     hotel:     (x, y) => x >= 18 && x < 146 && VENUES.hotel.floors.some(f => y >= f.y0 - 4 && y < f.y1 + 4),
-    flat:      (x, y) => x >= 18 && x < 162 && y >= 66,
+    flat:      (x, y) => y >= MOOR.horizon,
   },
   /** Hellt das Spielfeld leicht auf (letzter Schritt jedes Hintergrunds) */
   lift(g) {
@@ -484,91 +484,68 @@ const ART = {
       return o;
     },
 
-    /* ---------- 7. DIE WOHNUNG: gemütlicher Abend, warmes Licht, Kamin ---------- */
+    /* ---------- 7. DAS MOOR: weites Grasland, blauer Himmel, rosa Wolken (id bleibt 'flat') ---------- */
     flat() {
-      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART;
-      A.rect(g, 0, 0, PLAY_W, H, '#2a2418');
-      // Warme Holzdielen, senkrecht verlegt, jede etwas anders getönt
-      const tones = ['#b8884e', '#b08048', '#bf9058', '#a87a42', '#b4864c'];
-      const r = seeded(77);
-      for (let x = 18, k = 0; x < 162; x += 9, k++) {
-        A.rect(g, x, 26, 9, 278, tones[k % tones.length]);
-        A.rect(g, x, 26, 1, 278, '#8a6236');
-        for (let y = 26 + (r() * 60 | 0); y < 304; y += 50 + (r() * 40 | 0)) A.rect(g, x, y, 9, 1, '#946a3c');   // Stöße
-        A.noise(g, x + 1, 26, 8, 278, '#a07444', 60, k + 1); A.noise(g, x + 1, 26, 8, 278, '#c89a60', 40, k + 50);
+      // Das Moor: weites Grasland bis zum Horizont, blauer Himmel, rosa Wolken
+      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, HZ = MOOR.horizon, r = seeded(91);
+      A.rect(g, 0, 0, PLAY_W, H, '#000');
+      // Himmel
+      moorSky(g, 0, 26, PLAY_W, HZ, y => .3 + .7 * (y - 26) / (HZ - 26));
+      // feine weiße Schleierwolken, schräg nach rechts oben
+      for (const [x1, y1, len] of [[150, 28, 70], [176, 31, 54], [120, 27, 40], [70, 33, 30]]) {
+        for (let k = 0; k < len; k++) {
+          const x = x1 - k, y = Math.round(y1 + k * .22);
+          if (y >= HZ - 6) break;
+          g.fillStyle = k % 5 === 0 ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.32)'; g.fillRect(x, y, 2, 1);
+          if (k % 3 === 0) { g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(x - 1, y + 1, 3, 1); }
+        }
       }
-      // Wände: außen dicker Mauerschnitt (Grundriss-Look), innen warme Tapete mit Fußleiste
-      for (const x0 of [0, 162]) {
-        const cut = x0 === 0 ? 0 : 170, face = x0 === 0 ? 10 : 162;
-        A.rect(g, cut, 26, 10, 278, '#3a2c20');
-        g.fillStyle = '#46362a'; for (let y = 26; y < 304; y += 4) g.fillRect(cut, y, 10, 1);          // Schraffur
-        A.rect(g, x0 === 0 ? 9 : 170, 26, 1, 278, '#1e160f');                                          // Kante zum Raum
-        A.rect(g, face, 26, 8, 278, '#d9b47a'); g.fillStyle = '#cfa86c'; for (let y = 28; y < 304; y += 6) g.fillRect(face + 1, y, 6, 2);   // Tapete
-        A.rect(g, x0 === 0 ? 16 : 162, 26, 2, 278, '#efe2c4');
+      // weiche Quellwolke und rosa Wolkenband über dem Horizont
+      for (const [cx, cy, rx] of [[30, 38, 14], [44, 36, 10], [140, 40, 12]]) {
+        for (let y = -3; y <= 2; y++) { const w = Math.round(rx * Math.sqrt(1 - (y * y) / 12)); g.fillStyle = y < 0 ? 'rgba(250,250,255,.45)' : 'rgba(230,236,250,.35)'; g.fillRect(cx - w, cy + y, w * 2, 1); }
       }
-      // Rückwand mit Erkerfenster, draußen Abendsonne
-      A.rect(g, 10, 26, 160, 40, '#d9b47a'); g.fillStyle = '#cfa86c'; for (let x = 12; x < 170; x += 6) g.fillRect(x, 30, 2, 32);
-      A.rect(g, 18, 62, 144, 4, '#efe2c4');
-      A.rect(g, 0, 26, 180, 3, '#3a2c20'); A.rect(g, 0, 29, 180, 1, '#1e160f');
-      A.rect(g, 50, 28, 80, 34, '#efe6d0');
-      for (let y = 31; y < 59; y++) { A.rect(g, 54, y, 22, 1, lerpCol('#f0b878', '#f8dca0', (y - 31) / 28)); A.rect(g, 79, y, 22, 1, lerpCol('#f4c080', '#fbe4aa', (y - 31) / 28)); A.rect(g, 104, y, 22, 1, lerpCol('#f0b878', '#f8dca0', (y - 31) / 28)); }
-      for (const x of [54, 79, 104]) { A.rect(g, x + 10, 31, 1, 28, '#efe6d0'); A.rect(g, x, 44, 22, 1, '#efe6d0'); }
-      A.rect(g, 52, 30, 4, 30, '#a8483a'); A.rect(g, 124, 30, 4, 30, '#a8483a');                     // Vorhänge
-      A.rect(g, 48, 61, 84, 3, '#f6eedc');                                                          // Fensterbrett
-      A.rect(g, 60, 58, 4, 3, '#c86a3a'); A.rect(g, 61, 56, 2, 2, '#4a7a3a'); A.rect(g, 112, 57, 3, 4, '#e8e0c8'); A.rect(g, 112, 56, 1, 1, '#ffd060');   // Topf, Kerze
-      // Lichterkette an der Rückwand (leuchtet in der Animation)
-      for (let x = 14; x < 168; x += 2) A.rect(g, x, 27 + Math.round(Math.abs(Math.sin(x / 10)) * 3), 1, 1, '#4a3a28');
-      // Zimmerpalme links vom Fenster
-      A.rect(g, 30, 64, 10, 8, '#b0603a'); A.rect(g, 30, 64, 10, 2, '#c8784a');
-      g.fillStyle = '#3e6e32';
-      for (let k = 0; k < 7; k++) { const a = -2.6 + k * .5; for (let t = 2; t < 14; t++) g.fillRect(Math.round(35 + Math.cos(a) * t), Math.round(64 + Math.sin(a) * t * .8), 1, 1); }
-      g.fillStyle = '#5a8a42'; for (let k = 0; k < 7; k++) { const a = -2.6 + k * .5; g.fillRect(Math.round(35 + Math.cos(a) * 12), Math.round(64 + Math.sin(a) * 9.6), 2, 1); }
-      // Plattenspieler auf dem Schrank, Plattenstapel, Gitarre am Ständer
-      A.rect(g, 136, 64, 24, 14, '#6a4628'); A.rect(g, 136, 64, 24, 1, '#7a5634');
-      A.rect(g, 139, 66, 14, 10, '#2a2420'); A.oval(g, 145, 71, 4, 4, '#111'); A.rect(g, 145, 71, 1, 1, '#c03030'); A.rect(g, 151, 67, 1, 6, '#bbb');
-      for (let k = 0; k < 4; k++) A.rect(g, 124 + k, 66 + k, 10, 2, ['#c03030', '#e8c860', '#3060a0', '#222'][k]);
-      A.rect(g, 116, 66, 1, 14, '#5a3a1a'); A.rect(g, 114, 78, 5, 6, '#7a2a1a'); A.rect(g, 113, 80, 7, 4, '#8a3a22'); A.rect(g, 115, 64, 3, 2, '#222');
-      // Großer runder Webteppich in der Mitte
-      A.oval(g, 92, 176, 40, 31, '#7a3424'); A.oval(g, 92, 176, 37, 28, '#a4462e'); A.oval(g, 92, 176, 30, 22, '#c8783a');
-      A.oval(g, 92, 176, 27, 19, '#a4462e'); A.oval(g, 92, 176, 17, 12, '#d8a050'); A.oval(g, 92, 176, 13, 9, '#a4462e');
-      A.noise(g, 54, 148, 76, 58, 'rgba(60,20,10,.25)', 200, 21);
-      // Sofa (Hindernis): rostrot, mit Kissen und karierter Decke
-      A.shadow(g, 20, 124, 22, 66, .3);
-      A.rect(g, 18, 122, 22, 64, '#8a3e2a'); A.rect(g, 18, 122, 22, 4, '#a8583a'); A.rect(g, 18, 182, 22, 4, '#a8583a');
-      A.rect(g, 20, 127, 6, 54, '#7a3424'); for (const y of [128, 146, 164]) A.rect(g, 27, y, 12, 16, '#a8583a');
-      A.rect(g, 28, 130, 7, 6, '#d8a040'); A.rect(g, 29, 148, 6, 6, '#3a7a7a'); A.rect(g, 28, 166, 7, 6, '#d8a040');   // Kissen
-      for (let y = 156; y < 182; y += 2) for (let x = 26 + ((y >> 1) % 2) * 2; x < 40; x += 4) A.rect(g, x, y, 2, 2, '#e8dcc0');   // Decke
-      A.rect(g, 44, 150, 4, 5, '#e8e0d0'); A.rect(g, 45, 151, 2, 1, '#6a3a1a'); A.rect(g, 48, 151, 1, 2, '#e8e0d0');   // Tasse
-      A.rect(g, 42, 160, 8, 3, '#3060a0'); A.rect(g, 43, 158, 7, 2, '#c03030');                    // Bücher
-      // Sessel (Hindernis): grüner Samt, daneben eine Stehlampe
-      A.shadow(g, 20, 238, 20, 20, .3);
-      A.rect(g, 18, 236, 20, 20, '#2e4a32'); A.rect(g, 18, 236, 20, 4, '#3e5e40'); A.rect(g, 22, 241, 14, 12, '#3a5a3c');
-      A.rect(g, 26, 244, 6, 5, '#d8a040');
-      A.oval(g, 46, 228, 5, 5, '#f0d8a0'); A.oval(g, 46, 228, 3, 3, '#fff0c8');                     // Stehlampe von oben
-      // Bilderrahmen an der Wand, Aschenbecher
-      A.rect(g, 20, 266, 16, 22, '#3a2414'); A.rect(g, 22, 268, 12, 18, '#e8d8b0'); A.rect(g, 24, 272, 8, 8, '#c8783a'); A.rect(g, 24, 280, 8, 4, '#3a7a7a');
-      A.rect(g, 42, 290, 6, 3, '#555'); A.rect(g, 43, 289, 4, 1, '#888');
-      // Kamin rechts (Backstein) mit Schaffell davor, Kerzen auf dem Sims
-      A.oval(g, 138, 228, 20, 14, '#e8e0cc'); A.noise(g, 120, 216, 38, 26, '#d4c8b0', 90, 31);
-      A.rect(g, 157, 186, 13, 76, '#8a4430');
-      for (let y = 186; y < 262; y += 4) for (let x = 157 + ((y >> 2) % 2) * 3; x < 170; x += 6) A.rect(g, x, y, 5, 3, '#9a5038');
-      A.rect(g, 160, 200, 8, 34, '#1a1010'); A.rect(g, 157, 186, 13, 3, '#5a3a22');
-      for (const y of [190, 244, 252]) { A.rect(g, 162, y, 3, 4, '#efe6d0'); A.rect(g, 163, y - 1, 1, 1, '#ffd060'); }
-      // Papier-Kugellampe von oben (hängt über dem Raum) mit Schatten
-      A.oval(g, 134, 126, 12, 6, 'rgba(60,30,10,.2)');
-      A.oval(g, 126, 108, 12, 12, '#f6e6c4'); A.oval(g, 124, 105, 8, 8, '#fff4dc'); for (let k = -10; k <= 10; k += 5) A.rect(g, 126 + k, 98, 1, 20, 'rgba(200,170,120,.5)');
-      // Licht: goldene Abendsonne, warme Lampen, Kaminfeuer
-      A.lights(g, [
-        { x: 90, y: 70, rx: 100, ry: 100, c: '#ffd890', a: .45 },
-        { x: 126, y: 108, rx: 34, ry: 28, c: '#ffe0a8', a: .55 },
-        { x: 46, y: 228, rx: 30, ry: 26, c: '#ffc070', a: .6 },
-        { x: 150, y: 220, rx: 30, ry: 30, c: '#ff9a50', a: .55 },
-      ]);
-      // Warmer Bernstein-Ton über allem (gemütlich statt ausgeblichen)
-      const im = g.getImageData(0, 0, PLAY_W, H), d = im.data;
-      for (let p = 26 * PLAY_W * 4; p < 304 * PLAY_W * 4; p += 4) { d[p] += (255 - d[p]) * .04; d[p + 1] += (200 - d[p + 1]) * .05; d[p + 2] *= .92; }
-      g.putImageData(im, 0, 0);
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.1 - Math.abs(x - 90) / 180 - (y - 26) / 420);
+      for (let k = 0; k < 26; k++) {
+        const x = (r() * 200 | 0) - 10, y = HZ - 9 + (r() * 7 | 0), w = 8 + (r() * 26 | 0);
+        g.fillStyle = r() < .5 ? 'rgba(240,160,150,.55)' : 'rgba(250,196,176,.5)'; g.fillRect(x, y, w, 1);
+        if (r() < .5) { g.fillStyle = 'rgba(255,214,196,.4)'; g.fillRect(x + 3, y - 1, w - 6, 1); }
+      }
+      // Horizont: ferner, flacher Hügelzug
+      for (let x = 0; x < PLAY_W; x++) {
+        const hh = Math.round(1 + Math.max(0, Math.sin(x / 23) * 1.6 + Math.sin(x / 9 + 1) * .6));
+        g.fillStyle = '#5c7066'; g.fillRect(x, HZ - hh, 1, hh);
+      }
+      // Grasland: oben dunstig und klein, nach unten groß und satt
+      moorGrass(g, 0, HZ, PLAY_W, 304 - HZ, 93, y => Math.max(0, 1 - (y - HZ) / 34));
+      // Trampelpfad, der sich zum Horizont schlängelt
+      for (let y = HZ + 2; y < 304; y++) {
+        const t = (y - HZ) / (304 - HZ), w = Math.max(1, Math.round(1 + t * 8)), x = MOOR.pathX(y) - (w >> 1);
+        g.fillStyle = lerpCol('#a8a88c', '#a08e62', t); g.fillRect(x, y, w, 1);
+        if (t > .3 && (y * 7) % 5 === 0) { g.fillStyle = '#8a7a54'; g.fillRect(x + ((y * 13) % w), y, 1, 1); }
+        if (t > .2) { g.fillStyle = 'rgba(40,60,20,.35)'; g.fillRect(x - 1, y, 1, 1); g.fillRect(x + w, y, 1, 1); }
+      }
+      // Heidekraut und kleine Blumen
+      for (let k = 0; k < 9; k++) {
+        const cx = 24 + (r() * 130 | 0), cy = 90 + (r() * 200 | 0);
+        for (let n = 0; n < 14; n++) { g.fillStyle = r() < .5 ? '#8a5a86' : '#a874a0'; g.fillRect(cx + (r() * 10 | 0) - 5, cy + (r() * 6 | 0) - 3, 1, 1); }
+      }
+      for (let k = 0; k < 40; k++) { g.fillStyle = r() < .6 ? '#f0ece0' : '#f0d860'; g.fillRect(20 + (r() * 140 | 0), 80 + (r() * 220 | 0), 1, 1); }
+      // Trockensteinmauer (Hindernis links oben)
+      A.shadow(g, 20, 124, 22, 64, .3);
+      A.rect(g, 18, 122, 22, 64, '#5a5a52');
+      for (let y = 122; y < 186; y += 4) for (let x = 18 + ((y >> 2) % 2) * 3; x < 40; x += 6) {
+        const c = ['#8a8a80', '#9a988c', '#7a7a72', '#a8a69a'][(x * 3 + y) % 4];
+        A.rect(g, x, y, 5, 3, c); A.rect(g, x, y, 5, 1, 'rgba(255,255,255,.18)');
+      }
+      for (let k = 0; k < 30; k++) A.rect(g, 18 + (r() * 22 | 0), 122 + (r() * 64 | 0), 1 + (r() * 2 | 0), 1, r() < .6 ? '#6a8a3a' : '#c8c070');   // Moos und Flechten
+      // Findling (Hindernis links unten)
+      A.shadow(g, 21, 240, 20, 18, .35);
+      A.oval(g, 28, 246, 10, 9, '#7c7a72'); A.oval(g, 27, 244, 8, 7, '#949288'); A.oval(g, 25, 242, 4, 3, '#b4b2a6');
+      for (let k = 0; k < 10; k++) A.rect(g, 21 + (r() * 14 | 0), 240 + (r() * 12 | 0), 1, 1, r() < .5 ? '#c8c070' : '#6a8a3a');
+      // Schafe am rechten Rand (außerhalb des Laufbereichs) und weit hinten am Horizont
+      moorSheep(g, 166, 104, -1); moorSheep(g, 170, 210, 1); moorSheep(g, 162, 276, -1);
+      for (const [x, y] of [[40, 56], [44, 57], [128, 55]]) { A.rect(g, x, y, 2, 1, '#e8e4d8'); }
+      // Licht: Sonne von oben, nach unten etwas satter (leicht, nur auf dem Gras)
+      shadePass(g, PLAY_W, H, (x, y) => y < HZ || y >= 304 ? null : ART.SOFT + 1.25 - (y - HZ) / 520 - Math.abs(x - 90) / 260);
       return o;
     },
   },
@@ -614,27 +591,15 @@ const ART = {
       }
     },
     flat(T) {
-      // Kaminfeuer flackert
-      for (let k = 0; k < 4; k++) {
-        const h = 4 + Math.round(Math.abs(Math.sin(T * 7 + k * 1.9)) * 7);
-        X.fillStyle = k % 2 ? '#ff8a20' : '#ffd040'; X.fillRect(161 + k * 2, 233 - h, 2, h);
+      // zwei Vögel ziehen langsam über den Himmel
+      X.fillStyle = '#2a3a4a';
+      for (let k = 0; k < 2; k++) {
+        const x = Math.round(((T * (5 + k * 2) + k * 110) % 230) - 25), y = 32 + k * 5 + Math.round(Math.sin(T * .8 + k) * 1.5);
+        const up = Math.sin(T * 5 + k * 2) > 0 ? 1 : 0;
+        X.fillRect(x - 2, y - up, 2, 1); X.fillRect(x, y, 1, 1); X.fillRect(x + 1, y - up, 2, 1);
       }
-      X.fillStyle = '#5a2a10'; X.fillRect(160, 231, 8, 3);
-      // Kerzen flackern
-      X.fillStyle = Math.sin(T * 11) > 0 ? '#ffe070' : '#ffb040';
-      for (const y of [190, 244, 252]) X.fillRect(163, y - 1, 1, 1);
-      // Lichterkette funkelt
-      const cols = ['#ffd860', '#ff9a60', '#fff0b0'];
-      for (let x = 15, k = 0; x < 168; x += 8, k++) {
-        const on = Math.sin(T * 2 + k * 1.3) > -.3;
-        X.fillStyle = on ? cols[k % 3] : '#6a5030'; X.fillRect(x, 27 + Math.round(Math.abs(Math.sin(x / 10)) * 3), 1, 1);
-      }
-      // Staubkörnchen tanzen im Licht vor dem Fenster
-      X.fillStyle = 'rgba(255,230,180,.5)';
-      for (let k = 0; k < 8; k++) {
-        const x = 56 + ((k * 37 + T * (3 + k % 3)) % 70), y = 70 + ((k * 53 + Math.sin(T * .7 + k) * 6 + T * 2) % 150);
-        X.fillRect(Math.round(x), Math.round(y), 1, 1);
-      }
+      // ein Schaf hebt ab und zu den Kopf
+      if (Math.sin(T * .7) > .6) { X.fillStyle = '#2a2420'; X.fillRect(171, 208, 2, 2); }
     },
     hotel(T) {
       // (früher Leuchtreklame auf dem Dach - entfernt, oben ist jetzt die Dachdecke)
@@ -648,34 +613,34 @@ const ART = {
      Gemalt wird mit sideKit: d = Abstand vom Spielfeld nach außen.
      Achtung: außen (d 15..27) liegt später die Wut-Leiste, wichtiges also nach innen. */
   side: {
-    /* Tourbus: Karosserie mit Rädern und Spiegel, daneben die Straße */
+    /* Tourbus: Landstraße, daneben Grünstreifen mit Hecke (Bäume ziehen in sideAnim vorbei) */
     bus(g, x, w) {
       const k = sideKit(g, x, w);
       k.r(0, 0, w, H, '#2c2d31');                                                     // Asphalt
       ART.noise(g, x, 0, w, H, '#36373c', 300, x + 5); ART.noise(g, x, 0, w, H, '#232428', 260, x + 6);
-      k.r(18, 0, w - 18, H, '#3a3a38'); k.r(18, 0, 2, H, '#6a6a64'); k.r(18, 0, 1, H, '#84847c');   // Bordstein und Gehweg
-      for (let y = 0; y < H; y += 12) k.r(18, y, 2, 1, '#4a4a46');
+      const c = makeCanvas(w, H); moorGrass(c.getContext('2d'), 0, 0, w, H, x + 7, () => 0);   // Grünstreifen
+      g.save(); g.beginPath(); g.rect(k.L ? x : x + 16, 0, w - 16, H); g.clip(); g.drawImage(c, x, 0); g.restore();
+      k.r(15, 0, 1, H, '#4a5a30'); k.r(16, 0, 1, H, 'rgba(0,0,0,.25)');                // Grasnarbe am Straßenrand
       k.r(0, 0, 3, H, 'rgba(0,0,0,.35)');                                             // Schatten des Busses
       k.r(6, 0, 1, H, '#8a8a7a');                                                       // Randlinie
       for (const y0 of [60, 236]) { k.r(0, y0, 2, 28, '#0c0c0e'); k.r(0, y0 + 10, 1, 8, '#5a5a62'); }   // Räder (Rest)
     },
-    /* Proberaum: dicke Kellerwand, draußen nasses Kopfsteinpflaster im Hinterhof */
+    /* Proberaum: dicke Kellerwand, draußen ein verwilderter Garten mit Trittsteinen */
     rehearsal(g, x, w) {
       const k = sideKit(g, x, w), r = seeded(x + 21);
-      k.r(0, 0, w, H, '#16181c');
-      for (let y = 0, row = 0; y < H; y += 4, row++)                                  // Pflastersteine
-        for (let d = 5 - (row % 2) * 2; d < w; d += 5) k.r(d, y, 4, 3, r() < .5 ? '#262a30' : '#2c3036');
-      for (const [y, d, rx] of [[96, 11, 3], [188, 8, 3], [262, 12, 3]]) {            // Pfützen
-        ART.oval(g, k.X(d), y, rx, 2, '#1c2636'); g.fillStyle = '#3a4a64'; g.fillRect(k.X(d) - 2, y - 1, 3, 1);
+      moorGrass(g, x, 0, w, H, x + 23, () => 0);
+      for (let y = 20; y < H; y += 26) { ART.oval(g, k.X(13, 1), y, 3, 2, '#7a7870'); k.r(11, y - 2, 3, 1, '#9a988e'); }   // Trittsteine
+      for (let n = 0; n < 5; n++) {                                                     // Blumen
+        const yy = 30 + (r() * 260 | 0), d = 7 + (r() * 12 | 0);
+        for (let q = 0; q < 6; q++) k.r(d + (r() * 4 | 0), yy + (r() * 4 | 0), 1, 1, ['#f0d860', '#e87070', '#f0ece0'][q % 3]);
       }
       ART.cut(k, 5, '#4a4440', '#3a3430');
       for (const y of [120, 230]) {                                                    // Kellerfenster mit Gitter
         k.r(0, y, 5, 14, '#c88a4a');
         for (let yy = y + 1; yy < y + 14; yy += 3) k.r(0, yy, 5, 1, '#3a2a1c');
-        k.r(5, y - 2, 6, 18, 'rgba(255,170,90,.14)');
       }
-      for (let n = 0; n < 40; n++) k.r(5 + (r() * 2 | 0), r() * H | 0, 1, 2, '#3a5a2a');   // Unkraut an der Wand
-      k.r(7, 52, 7, 9, '#20262a'); k.r(7, 52, 7, 2, '#2e363c'); k.r(8, 55, 5, 1, '#151a1e');   // Mülltonne
+      for (let n = 0; n < 50; n++) k.r(5 + (r() * 2 | 0), r() * H | 0, 1, 2, '#4a7a2a');   // Efeu an der Wand
+      treeTop(g, k.X(17, 1), 70, 9); treeTop(g, k.X(16, 1), 280, 8);
     },
     /* Pub: Steinwand, Gehweg aus Platten, Bordstein, nasse Straße und Laternen */
     pub(g, x, w) {
@@ -684,8 +649,8 @@ const ART = {
       for (let y = 3; y < H; y += 10) k.r(5, y, 10, 1, '#2c2a26');
       k.r(10, 0, 1, H, '#2c2a26');
       k.r(15, 0, 2, H, '#6a6864'); k.r(15, 0, 1, H, '#84827c');                        // Bordstein
-      k.r(17, 0, w - 17, H, '#18181c');                                                // Straße (nass)
-      for (let y = 0; y < H; y += 7) k.r(18 + (y * 3) % 8, y, 2, 1, '#262630');
+      const c = makeCanvas(w, H); moorGrass(c.getContext('2d'), 0, 0, w, H, x + 17, () => 0);   // Dorfwiese
+      g.save(); g.beginPath(); g.rect(k.L ? x : x + 17, 0, w - 17, H); g.clip(); g.drawImage(c, x, 0); g.restore();
       for (const y of [86, 196]) k.r(5, y - 2, 9, 20, 'rgba(255,190,100,.16)');          // Licht aus den Pub-Fenstern
       for (const y of [40, 140, 250]) {                                                // Laternen
         k.r(8, y - 10, 10, 22, 'rgba(255,210,120,.08)'); k.r(6, y - 6, 14, 14, 'rgba(255,210,120,.08)');
@@ -694,6 +659,8 @@ const ART = {
       ART.cut(k, 5, '#4a3a2a', '#3a2c1e');
       for (const y of [86, 196]) { k.r(0, y, 5, 16, '#d8a050'); k.r(0, y + 7, 5, 1, '#5a3a1a'); k.r(2, y, 1, 16, '#5a3a1a'); }   // Fenster
       k.r(6, 282, 5, 7, '#1a1a1a'); k.r(7, 283, 3, 2, '#ddd'); k.r(7, 286, 3, 1, '#ddd');      // Kreidetafel
+      for (const y of [30, 170]) treeTop(g, k.X(21, 1), y, 9);                              // Bäume auf der Wiese
+      k.r(18, 236, 4, 12, '#7a5a32'); k.r(17, 238, 1, 8, '#5a4024');                          // Biertisch
     },
     /* Backstage: Betonwand, Laderampe mit Warnstreifen, Kisten und Kabeln */
     backstage(g, x, w) {
@@ -709,6 +676,8 @@ const ART = {
         k.r(12, y + (h >> 1), 3, 1, '#333');
       }
       for (let y = 0; y < H; y++) k.r(9 + Math.round(Math.sin(y / 14) * 1.2), y, 1, 1, '#0e0e10');   // Kabel
+      const c = makeCanvas(w, H); moorGrass(c.getContext('2d'), 0, 0, w, H, x + 35, () => 0);   // Festivalwiese
+      g.save(); g.beginPath(); g.rect(k.L ? x : x + 19, 0, w - 19, H); g.clip(); g.drawImage(c, x, 0); g.restore();
       ART.cut(k, 5, '#4a4e56', '#3a3d44');
     },
     /* Festival: Traverse am Bühnenrand, daneben Seitenbühne mit Technik, unten die Menge */
@@ -744,15 +713,18 @@ const ART = {
         k.r(9, y - 4, 1, 8, '#8a7a8e'); k.r(5, y - 4, 5, 1, '#8a7a8e');
       }
     },
-    /* Wohnung: Backsteinfassade des Reihenhauses mit Fallrohr, Efeu und Nachbarfenstern */
+    /* Moor: Himmel und Gras gehen weiter, außen eine Trockensteinmauer als Feldgrenze */
     flat(g, x, w) {
-      const k = sideKit(g, x, w), r = seeded(x + 9);
-      ART.bricks(g, x, 0, w, H, '#4a2418', '#7a3e2a');
-      k.r(11, 0, 3, H, '#26262a'); k.r(11, 0, 1, H, '#3a3a40');                         // Fallrohr
-      for (let y = 20; y < H; y += 48) k.r(10, y, 5, 2, '#1a1a1e');
-      g.fillStyle = '#3a5a2a';                                                          // Efeu
-      for (let n = 0; n < 70; n++) { const yy = 200 + (r() * 120 | 0), xx = x + (r() * w | 0); if (r() < (yy - 200) / 120) g.fillRect(xx, yy, 2, 2); }
-      for (const y of [110, 214]) { k.r(1, y, 7, 22, '#d8d0b8'); k.r(2, y + 1, 5, 20, '#7a98b0'); k.r(2, y + 10, 5, 1, '#d8d0b8'); }   // Nachbarfenster
+      const k = sideKit(g, x, w), r = seeded(x + 9), HZ = MOOR.horizon;
+      moorSky(g, x, 0, w, HZ, y => .3 + .7 * (y - 26) / (HZ - 26));
+      for (let n = 0; n < 6; n++) { g.fillStyle = 'rgba(240,170,156,.5)'; g.fillRect(x + (r() * w | 0), HZ - 9 + (r() * 7 | 0), 4 + (r() * 8 | 0), 1); }
+      g.fillStyle = '#5c7066'; g.fillRect(x, HZ - 1, w, 1);
+      moorGrass(g, x, HZ, w, H - HZ, x + 95, y => Math.max(0, 1 - (y - HZ) / 34));
+      for (let y = 90; y < H; y += 3) {                                                   // Mauer
+        k.r(13 + ((y / 3 | 0) % 2), y, 4, 2, ['#8a8a80', '#9a988c', '#7a7a72'][(y / 3 | 0) % 3]);
+        k.r(13, y + 2, 5, 1, 'rgba(0,0,0,.25)');
+      }
+      for (let y = 100; y < H; y += 60) moorSheep(g, k.X(6 + (y % 7)), y + 20, k.L ? 1 : -1);
     },
   },
 
@@ -760,16 +732,16 @@ const ART = {
   sideAnim: {
     bus(T, x, w) {
       const k = sideKit(X, x, w);
-      for (let n = 0; n < 11; n++) k.r(13, Math.round(((T * 22 + n * 30) % 330) - 20), 1, 14, '#5a5a50');   // Fahrbahnmarkierung
-
+      for (let n = 0; n < 11; n++) k.r(11, Math.round(((T * 22 + n * 30) % 330) - 20), 1, 14, '#5a5a50');   // Fahrbahnmarkierung
+      for (let n = 0; n < 4; n++) {                                                      // Bäume ziehen langsam vorbei
+        const y = Math.round(((T * 22 + n * 97 + (k.L ? 0 : 45)) % 400) - 40);
+        treeTop(X, k.X(20 + (n % 2) * 3, 1), y, 8 + (n % 3));
+      }
     },
     rehearsal(T, x, w) {
-      const k = sideKit(X, x, w);
-      for (const [y, d, o] of [[96, 11, 0], [188, 8, .5], [262, 12, .25]]) {            // Regentropfen in den Pfützen
-        const t = (T * .8 + o) % 1; if (t > .5) continue;
-        const rr = 1 + Math.round(t * 6), cx = k.X(d);
-        X.fillStyle = 'rgba(140,170,220,.35)'; X.fillRect(cx - rr, y, 1, 1); X.fillRect(cx + rr, y, 1, 1);
-      }
+      // ein Schmetterling flattert durch den Garten
+      const k = sideKit(X, x, w), y = Math.round(160 + Math.sin(T * .5 + x) * 90), d = 10 + Math.round(Math.sin(T * 1.3 + x) * 5);
+      k.r(d, y, 1, 1, '#f0f0e0'); if (Math.sin(T * 14) > 0) { k.r(d - 1, y - 1, 1, 1, '#f0d860'); k.r(d + 1, y - 1, 1, 1, '#f0d860'); }
     },
     pub(T, x, w) {
       const k = sideKit(X, x, w);
@@ -825,15 +797,12 @@ const ART = {
       }
     },
     rehearsal(g, k, h, top) {
-      const r = seeded(top ? 61 : 62);
-      k.r(0, 0, PLAY_W, h, '#16181c');
-      for (let d = 0, row = 0; d < h; d += 4, row++)                                      // Pflaster
-        for (let x = -(row % 2) * 2; x < PLAY_W; x += 5) k.r(x, d, 4, 3, r() < .5 ? '#262a30' : '#2c3036');
-      for (const x of [30, 120]) { k.r(x - 4, 12, 9, 3, '#1c2636'); k.r(x - 2, 12, 3, 1, '#3a4a64'); }   // Pfützen
+      const c = makeCanvas(PLAY_W, h); moorGrass(c.getContext('2d'), 0, 0, PLAY_W, h, top ? 61 : 62, () => 0);
+      g.drawImage(c, 0, k.Y(0, h));
       ART.bandCut(k, 5, '#4a4440', '#3a3430');
-      for (let n = 0; n < 30; n++) k.r(r() * PLAY_W | 0, 5, 2, 1, '#3a5a2a');               // Unkraut
-      if (!top) { k.r(140, 8, 12, 10, '#20262a'); k.r(140, 8, 12, 2, '#2e363c'); }            // Mülltonne
-      else { for (let n = 0; n < 4; n++) k.r(70 + n * 3, 0, 2, 5, '#c88a4a'); }              // Kellerfenster
+      for (let x = 0; x < PLAY_W; x += 3) k.r(x, 5, 1, 2, '#4a7a2a');                         // Efeu am Mauerfuß
+      if (!top) { k.r(140, 9, 12, 10, '#20262a'); k.r(140, 9, 12, 2, '#2e363c'); treeTop(g, 40, k.Y(18, 1), 10); }
+      else { for (let n = 0; n < 4; n++) k.r(70 + n * 3, 0, 2, 5, '#c88a4a'); treeTop(g, 150, k.Y(16, 1), 9); }
     },
     pub(g, k, h, top) {
       k.r(0, 0, PLAY_W, h, top ? '#2a2018' : '#3c3a36');
@@ -843,7 +812,9 @@ const ART = {
       } else {                                                                           // draußen: Gehweg, Bordstein, Straße
         for (let d = 3; d < 20; d += 9) k.r(0, d, PLAY_W, 1, '#2c2a26');
         for (let x = 8; x < PLAY_W; x += 16) k.r(x, 6, 1, 14, '#2c2a26');
-        k.r(0, 20, PLAY_W, 2, '#6a6864'); k.r(0, 22, PLAY_W, h, '#18181c');
+        k.r(0, 20, PLAY_W, 2, '#6a6864');
+        const c = makeCanvas(PLAY_W, h); moorGrass(c.getContext('2d'), 0, 0, PLAY_W, h, 63, () => 0); g.drawImage(c, 0, k.Y(22, h));   // Dorfwiese
+        for (const x of [20, 160]) treeTop(g, x, k.Y(34, 1), 10);
         for (const x of [40, 140]) { k.r(x - 10, 6, 22, 12, 'rgba(255,210,120,.1)'); k.r(x, 12, 2, 2, '#ffe0a0'); }   // Laternen
       }
       ART.bandCut(k, 5, '#4a3a2a', '#3a2c1e');
@@ -884,10 +855,20 @@ const ART = {
       }
     },
     flat(g, k, h, top) {
-      ART.bricks(g, 0, 0, PLAY_W, 64, '#4a2418', '#7a3e2a');
-      k.r(0, 0, PLAY_W, 3, '#d8d0b8'); k.r(0, 3, PLAY_W, 2, 'rgba(0,0,0,.4)');             // Fensterbank / Sims
-      if (!top) { for (let x = 0; x < PLAY_W; x += 3) k.r(x, 14 + ((x * 7) % 4), 3, h, '#2a4a20'); k.r(0, 14, PLAY_W, 1, '#3a5a2a'); }   // Hecke im Vorgarten
-      else k.r(0, 18, PLAY_W, 3, '#2a2a30');                                              // Dachrinne
+      if (top) {                                                                         // Himmel wird nach oben tiefer blau
+        for (let d = 0; d < h; d++) {
+          const t = .3 - .3 * d / Math.max(1, h), c = MOOR.sky, f = t * (c.length - 1), i = Math.min(c.length - 2, f | 0);
+          k.r(0, d, PLAY_W, 1, lerpCol(c[i], c[i + 1], f - i));
+        }
+        for (const [x1, d1, len] of [[160, 10, 60], [90, 22, 44], [40, 6, 30]]) {        // Schleierwolken
+          for (let q = 0; q < len; q++) if (d1 + q * .2 < h) k.r(x1 - q, Math.round(d1 + q * .2), 2, 1, 'rgba(255,255,255,.28)');
+        }
+      } else {
+        const c = makeCanvas(PLAY_W, h), cg = c.getContext('2d');
+        moorGrass(cg, 0, 0, PLAY_W, h, 97, () => 0);
+        for (let d = 0; d < h; d++) { const x = MOOR.pathX(304 + d) - 5; cg.fillStyle = '#a08e62'; cg.fillRect(x, d, 10, 1); cg.fillStyle = 'rgba(40,60,20,.35)'; cg.fillRect(x - 1, d, 1, 1); cg.fillRect(x + 10, d, 1, 1); }
+        g.drawImage(c, 0, k.Y(0, h));
+      }
     },
   },
 
@@ -1015,4 +996,61 @@ function pubTable(g, r) {
   ART.rect(g, r.x + 6, r.y + 6, 4, 4, '#e8dcc0'); ART.rect(g, r.x + 7, r.y + 5, 2, 4, '#d8a020'); ART.rect(g, r.x + 7, r.y + 5, 2, 1, '#fff');   // Pint
   ART.rect(g, r.x + r.w - 10, r.y + 7, 4, 3, '#c03030');                                                                                         // Bierdeckel
   ART.rect(g, r.x + r.w - 9, r.y + 5, 2, 4, '#1a0a06'); ART.rect(g, r.x + r.w - 9, r.y + 5, 2, 1, '#e8dcc0');                                     // Stout
+}
+
+/* ---------- Das Moor: Himmel und Grasbüschel (auch für Ränder und Handy-Streifen) ---------- */
+const MOOR = {
+  sky: ['#1f5596', '#2a68aa', '#4a86c0', '#7aaad2', '#a8c4dc'],
+  grass: { base: '#62803a', dark: '#3e5828', mid: '#789648', light: '#a4b864', sun: '#c8c47c' },
+  horizon: 50,                       // Spielfeld-y des Horizonts
+  pathX: y => Math.round(100 + Math.sin(y / 40) * 18),   // Trampelpfad
+};
+/** Himmel von y0 bis y1 (t: 0 = oben/weit weg, 1 = am Horizont) */
+function moorSky(g, x, y0, w, y1, tOf) {
+  for (let y = y0; y < y1; y++) {
+    const t = Math.max(0, Math.min(1, tOf(y))), c = MOOR.sky, f = t * (c.length - 1), i = Math.min(c.length - 2, f | 0);
+    g.fillStyle = lerpCol(c[i], c[i + 1], f - i); g.fillRect(x, y, w, 1);
+  }
+}
+/** Grasbüschel-Teppich. far = 0 (nah, große Büschel) .. 1 (Horizont, klein und dunstig) */
+function moorGrass(g, x0, y0, w, h, seed, farOf) {
+  const G = MOOR.grass, r = seeded(seed);
+  // Grundfläche mit großen, weichen Flecken (heller/dunkler)
+  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x += 2) {
+    const n = Math.sin(x * .07 + y * .05) + Math.sin(x * .021 - y * .033 + 2) + Math.sin(y * .11 + x * .013);
+    const far = farOf(y), base = n > 1 ? G.mid : n < -1.1 ? '#56723a' : G.base;
+    g.fillStyle = far > 0 ? lerpCol(base, '#9aac84', far * .7) : base; g.fillRect(x, y, 2, 1);
+  }
+  // Büschel: Schatten unten, Halme, helle Spitzen
+  const n = Math.round(w * h / 13);
+  for (let k = 0; k < n; k++) {
+    const x = x0 + (r() * w | 0), y = y0 + (r() * h | 0), far = farOf(y);
+    if (far > .2 && r() < .5) continue;
+    const s = far > .5 ? 1 : far > .2 ? 2 : 2 + (r() * 2 | 0);
+    const mix = c => far > 0 ? lerpCol(c, '#9aac84', far * .7) : c;
+    g.fillStyle = mix(G.dark); g.fillRect(x - 1, y + 1, s + 1, 1);
+    g.fillStyle = mix(r() < .3 ? G.light : G.mid); g.fillRect(x, y - s + 1, 1, s); g.fillRect(x + s - 1, y - s + 2, 1, s - 1);
+    if (s > 1) { g.fillStyle = mix(r() < .4 ? G.sun : G.light); g.fillRect(x, y - s + 1, 1, 1); }
+  }
+  // einzelne dunkle Mulden zwischen den Büscheln
+  for (let k = 0; k < w * h / 260; k++) {
+    const x = x0 + (r() * w | 0), y = y0 + (r() * h | 0);
+    if (farOf(y) > .3) continue;
+    g.fillStyle = 'rgba(30,50,20,.35)'; g.fillRect(x, y, 3 + (r() * 3 | 0), 1); g.fillRect(x + 1, y + 1, 2, 1);
+  }
+}
+/** Ein Schaf von oben (x, y = Mitte) */
+function moorSheep(g, x, y, look) {
+  g.fillStyle = 'rgba(30,40,20,.35)'; g.fillRect(x - 3, y + 2, 8, 2);
+  g.fillStyle = '#e8e4d8'; g.fillRect(x - 3, y - 2, 7, 5); g.fillRect(x - 2, y - 3, 5, 7);
+  g.fillStyle = '#c8c4b8'; g.fillRect(x - 2, y + 2, 5, 1);
+  g.fillStyle = '#2a2420'; g.fillRect(look < 0 ? x - 5 : x + 4, y - 1, 2, 3);
+}
+/** Baumkrone von oben (cx, cy = Mitte, r = Radius) mit Schatten */
+function treeTop(g, cx, cy, r) {
+  ART.oval(g, cx + 3, cy + 3, r, r - 1, 'rgba(10,20,10,.35)');
+  ART.oval(g, cx, cy, r, r, '#2e4a22');
+  ART.oval(g, cx - 1, cy - 1, r - 2, r - 2, '#3e6028');
+  for (const [a, b, q] of [[-3, -3, 3], [2, -2, 2], [-1, 2, 2]]) ART.oval(g, cx + Math.round(a * r / 9), cy + Math.round(b * r / 9), q, q, '#56783a');
+  g.fillStyle = '#6e9048'; g.fillRect(cx - Math.round(r / 3), cy - Math.round(r / 2), 2, 1);
 }

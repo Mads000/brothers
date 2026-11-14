@@ -527,13 +527,13 @@ const LEVELS = [
     bonus: { type: 'sleep', n: 6 },
   },
 
-  /* ======================= DIE WOHNUNG (Bonus) ======================= */
+  /* ======================= DAS MOOR (Bonus) ======================= */
   {
     id: 'flat-1', venue: 'flat', name: 'LAZY SUNDAY',
     time: 50, startAnger: [25, 25], ramp: 50,
     items: { wine: 3, beer: 2, tea: 2, record: 2 }, itemEvery: [3.2, 5.2], firstItem: 3,
     events: { insult: [3.5, 6] },
-    hint: 'SUNBEAMS DRIFT ACROSS THE FLOOR. A BROTHER STANDING IN THE SUN CALMS DOWN. RECORDS CALM BOTH!',
+    hint: 'CLOUDS DRIFT, PATCHES OF SUN MOVE OVER THE GRASS. A BROTHER STANDING IN THE SUN CALMS DOWN. RECORDS CALM BOTH!',
     bonus: { type: 'anger', n: 75 },
   },
   {
@@ -541,7 +541,7 @@ const LEVELS = [
     time: 55, startAnger: [30, 30], ramp: 44,
     items: { wine: 3, beer: 2, newspaper: 1, record: 2, tea: 1 }, itemEvery: [3, 5], firstItem: 3,
     events: { insult: [3.5, 6], photographer: [7, 10], fan: [12, 16] },
-    hint: 'THE BIG ALBUM COVER SHOOT. THE PHOTOGRAPHER KEEPS FLASHING. KEEP THEM APART FOR THE PICTURE!',
+    hint: 'THE BIG COVER SHOOT OUT ON THE MOOR. THE PHOTOGRAPHER KEEPS FLASHING. KEEP THEM APART FOR THE PICTURE!',
     bonus: { type: 'calms', n: 10 },
   },
   {
@@ -549,7 +549,7 @@ const LEVELS = [
     time: 65, startAnger: [35, 35], ramp: 36,
     items: { wine: 4, beer: 3, guitar: 2, record: 2, tea: 2, album: 0.3 }, itemEvery: [2.6, 4.4], firstItem: 2,
     events: { insult: [3, 5], photographer: [9, 13], fan: [11, 15] }, extras: ['tambourine'],
-    hint: 'EVERYONE IS OVER. EVEN THE TAMBOURINE MAN. ENJOY THE SUN WHILE IT LASTS.',
+    hint: 'EVERYONE CAME OUT FOR A PICNIC. EVEN THE TAMBOURINE MAN. ENJOY THE SUN WHILE IT LASTS.',
     bonus: { type: 'serve', n: 3 },
   },
 ];

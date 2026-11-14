@@ -413,19 +413,17 @@ MECHANICS.sunbeam = {
     return null;
   },
   drawUnder(game, s) {
-    X.save(); X.beginPath(); X.rect(18, 66, 144, 238); X.clip();   // Sonnenlicht nur auf dem Boden, nicht auf den Wänden
+    X.save(); X.beginPath(); X.rect(0, 66, PLAY_W, 238); X.clip();   // Sonnenflecken nur auf dem Gras, nicht am Himmel
     for (const b of s.beams) {
       const x0 = this.beamX(s, b);
+      // weicher, runder Sonnenfleck (Sonne bricht durch eine Wolkenlücke)
       for (let y = 0; y < b.h; y++) {
-        const edge = y < 3 || y > b.h - 4, xx = Math.round(x0 + y * b.skew);
-        X.fillStyle = edge ? 'rgba(255,250,220,.22)' : 'rgba(255,250,225,.42)';
-        X.fillRect(xx, b.y + y, b.w, 1);
-        X.fillStyle = 'rgba(255,255,240,.5)'; X.fillRect(xx, b.y + y, 1, 1); X.fillRect(xx + b.w - 1, b.y + y, 1, 1);   // helle Kanten
+        const t = (y + .5) / b.h * 2 - 1, cut = Math.round(b.w * .5 * (1 - Math.sqrt(1 - t * t)));
+        const xx = Math.round(x0 + y * b.skew) + cut, w = b.w - cut * 2;
+        if (w <= 0) continue;
+        X.fillStyle = 'rgba(255,236,150,.16)'; X.fillRect(xx - 1, b.y + y, w + 2, 1);
+        X.fillStyle = 'rgba(255,244,190,.28)'; X.fillRect(xx + 1, b.y + y, w - 2, 1);
       }
-      // Fensterkreuz-Schatten im Lichtfleck
-      X.fillStyle = 'rgba(120,90,40,.18)';
-      for (let y = 0; y < b.h; y++) X.fillRect(Math.round(x0 + y * b.skew + b.w / 2), b.y + y, 1, 1);
-      X.fillRect(Math.round(x0 + b.h / 2 * b.skew), b.y + (b.h >> 1), b.w, 1);
     }
     X.restore();
     // Funkeln über Brüdern in der Sonne

@@ -46,7 +46,7 @@ const Game = {
   T: 0, el: 0, endT: 0, diff: 1, diffBase: 1,
   bros: [], items: [], bubbles: [], parts: [], comics: [],
   warnings: [], active: [], mods: [], sys: [], tempWalls: [],
-  evTimers: [], itemT: 0, shake: 0, fight: null, toast: null, manager: null,
+  evTimers: [], itemT: 0, shake: 0, trash: [], bumpT: 5, fight: null, toast: null, manager: null,
   football: 0, slowT: 0, nearT: 0, nearCd: 0,
   phase: 'normal', stageT: 0, stageHold: 0,
   tut: null, slots: [], slotUsed: [false, false],
@@ -72,6 +72,7 @@ const Game = {
     this.mods = opts.mods ? [...opts.mods] : [];
     this.el = 0; this.endT = 0; this.diffBase = opts.diffBase || 1; this.diff = this.diffBase;
     this.shake = 0; this.fight = null; this.toast = null; this.manager = null; this.reason = null;
+    this.trash = []; this.bumpT = 4 + Math.random() * 4;
     this.football = 0; this.slowT = 0; this.nearT = 0; this.nearCd = 0;
     this.phase = 'normal'; this.stageT = 0; this.stageHold = 0;
     this.stats = {
@@ -141,6 +142,7 @@ const Game = {
     if (n > 0) n *= b.ch.angerRate * this.mult('angerRate') * (this.venue.angerMult || 1);
     b.anger = clamp(b.anger + n, 0, 100);
     if (this.level.safe) b.anger = Math.min(b.anger, 94);   // Sandbox ohne Prügeleien
+    if (n >= 7) this.shake = Math.max(this.shake, Math.min(3, n / 5));   // Wut-Spitze: kurzes Ruckeln
   },
   calm(b) {
     const R = CONFIG.RULES;
@@ -158,6 +160,10 @@ const Game = {
     this.burst(b.x, b.y - 18, 5, fat >= 2 ? '#888' : '#9fd8ff', 16);
     if (fat >= 2) this.say(b, 'YEAH YEAH', '#aaa');
     else this.say(b, Math.random() < .03 ? 'THIS IS THE ONE' : 'EASY', '#9fd8ff');
+  },
+  /** Kleine Staubwölkchen an den Füßen */
+  dust(x, y, n) {
+    for (let k = 0; k < n; k++) this.parts.push({ x: x + rnd(-5, 5), y: y - 2 + rnd(-1, 1), vx: rnd(-10, 10), vy: rnd(-12, -4), life: rnd(.25, .45), c: 'rgba(200,190,170,.55)' });
   },
   burst(x, y, n, col, spread = 30) {
     for (let k = 0; k < n; k++) this.parts.push({ x, y, vx: rnd(-spread, spread), vy: rnd(-40, -10), life: .4, c: col });
@@ -255,6 +261,7 @@ const Game = {
     this.stats.binned++;
     if (it.type === 'beer' || it.type === 'minibar') this.stats.beer++;
     this.burst(it.x, it.y - 4, 6, '#fff');
+    this.trash.push({ x: it.x, y: it.y - 6, life: .8 });     // kleiner Mülleimer zeigt: weggeworfen
   },
   collectItem(i) {
     const it = this.items[i];
@@ -390,6 +397,14 @@ const Game = {
     this.slowT = Math.max(0, this.slowT - dtReal);
 
     this.shake = Math.max(0, this.shake - dtReal * 12);
+    for (const t of this.trash) { t.life -= dtReal; t.y -= dtReal * 14; }
+    this.trash = this.trash.filter(t => t.life > 0);
+    // Bus: ab und zu ein Schlagloch - alles ruckelt, Staub fliegt auf
+    if (this.venue.id === 'bus' && this.state === 'play' && (this.bumpT -= dtReal) <= 0) {
+      this.bumpT = 5 + Math.random() * 5;
+      this.shake = Math.max(this.shake, 2.5);
+      for (const b of this.bros) if (!b.hidden) this.dust(b.x, b.y, 3);
+    }
     for (const p of this.parts) { p.x += p.vx * dtReal; p.y += p.vy * dtReal; p.life -= dtReal; }
     this.parts = this.parts.filter(p => p.life > 0);
     for (const bu of this.bubbles) bu.life -= dtReal;
@@ -670,7 +685,9 @@ const Game = {
     b.asleep = false;
     const ox = b.x, oy = b.y;
     this.moveBroTo(b, clamp(p.x, B.x0, B.x1), clamp(p.y + 10, B.y0, B.y1));   // +10: Finger verdeckt den Kopf nicht
-    b.walk += Math.hypot(b.x - ox, b.y - oy) * .05;
+    const moved = Math.hypot(b.x - ox, b.y - oy);
+    b.walk += moved * .05;
+    if (moved > 1.5 && Math.random() < .35) this.dust(b.x, b.y, 1);   // Staubwölkchen an den Füßen
     // Tempo merken (für rutschigen Boden)
     const now = performance.now(), dts = Math.max(8, now - r.tl) / 1000;
     r.vx = r.vx * .5 + (b.x - ox) / dts * .5; r.vy = r.vy * .5 + (b.y - oy) / dts * .5; r.tl = now;
@@ -743,6 +760,15 @@ const Game = {
     for (const it of this.items) if (it.held) drawItem(it);
     if (this.state !== 'fight') for (const bu of this.bubbles) drawBubble(bu);
     for (const p of this.parts) { X.fillStyle = p.c; X.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
+    for (const t of this.trash) {
+      X.globalAlpha = Math.min(1, t.life * 2.5);
+      const x = Math.round(t.x), y = Math.round(t.y);
+      X.fillStyle = '#000'; X.fillRect(x - 4, y - 5, 9, 10);
+      X.fillStyle = '#ccc'; X.fillRect(x - 3, y - 4, 7, 1); X.fillRect(x - 1, y - 5, 3, 1);
+      X.fillStyle = '#9a9aa4'; X.fillRect(x - 3, y - 2, 7, 6);
+      X.fillStyle = '#5a5a64'; X.fillRect(x - 1, y - 1, 1, 4); X.fillRect(x + 1, y - 1, 1, 4);
+      X.globalAlpha = 1;
+    }
     if (this.manager) this.drawManager();
     for (const c of this.comics) drawComic(c);
 

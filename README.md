@@ -18,7 +18,7 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
   4. Backstage: Die Tür lässt sich abschließen, bis einer sie eintritt
   5. Festival: Beide müssen an ihr Mikro, sonst geht die Crowd
   6. Hotel: Mehrere Etagen, Aufzug zum Trennen, Betten für den Nachtbonus
-  7. Bonus: Die Wohnung (3 Levels, ab 12 Sternen). Sonniger Nachmittag in der Band-WG im Look eines 90er-Albumcovers; Sonnenstrahlen wandern über den Boden und beruhigen
+  7. Bonus: Das Moor (3 Levels, ab 12 Sternen). Weites Grasland unter blauem Himmel mit rosa Wolken am Horizont; Sonnenflecken ziehen über das Gras und beruhigen (intern weiter die id `flat`)
 - **Sterne:** geschafft / Wut nie über 90 % / Bonusziel
 - **Never-Ending Tour:** Auf einer Landkarte (Großbritannien und Irland) fährt der Bus ab Manchester von Stadt zu Stadt. Jeder Gig dauert 20 Sekunden und hat eine Mission für Extrapunkte. Die Wut bleibt erhalten, sinkt auf der Busfahrt aber etwas. Nach jeder Stadt wählst du auf der Karte einen von drei Halten in der Nähe:
   - ON THE ROAD: normaler Gig
@@ -134,3 +134,7 @@ Text im Spiel verwendet die eingebaute 3x5-Pixelschrift: Großbuchstaben A–Z, 
 ## Balancing
 
 Alle Levels wurden automatisch mit einem einfachen Bot durchgespielt, der etwa 3 Aktionen pro Sekunde macht. Ohne Eingaben ist kein Level zu gewinnen. Bus, Proberaum, Pub, Backstage und Hotel schafft der Bot fast immer, beim Festival verliert er öfter. Die Werte zum Nachjustieren stehen in `levels.js` (`ramp`, `startAnger`, `itemEvery`, Event-Abstände) und global in `CONFIG.RULES`.
+
+## Backup der alten Karten
+
+Die Karten vor dem Umbau zum Moor liegen in `backup/maps-2026-11-14/` (art.js, venues.js, mechanics.js) und im Git-Tag `maps-backup-2026-11-14`. Zum Zurückholen die Dateien nach `js/` bzw. `js/data/` kopieren.
