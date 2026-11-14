@@ -47,12 +47,26 @@ const ART = {
         if (t <= 0) continue;
         const a = t * L.a * ART.GLOW, b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
         const m = a > b + .55 ? .45 : a > b ? .25 : 0;   // gedithert, zwei Helligkeitsstufen
-        if (!m) continue;
+        if (!m || (ART.floor && !ART.floor(x, y))) continue;   // kein Lichtmuster auf Wänden
         const i = (y * PLAY_W + x) * 4;
         d[i] += (c[0] - d[i]) * m; d[i + 1] += (c[1] - d[i + 1]) * m; d[i + 2] += (c[2] - d[i + 2]) * m;
       }
     }
     g.putImageData(im, 0, 0);
+  },
+  /**
+   * Wo ist Boden? Nur dort kommt das Punktmuster hin (Licht und Schatten),
+   * Wände werden glatt abgedunkelt. Wird beim Bauen eines Hintergrunds gesetzt.
+   */
+  floor: null,
+  FLOOR: {
+    bus:       (x, y) => x >= 18 && x < 162 && y >= 48,
+    rehearsal: (x, y) => x >= 18 && x < 162 && y >= 66,
+    pub:       (x, y) => x >= 20 && x < 160 && y >= 66,
+    backstage: (x, y) => x >= 18 && x < 162 && y >= 60 && !(y >= 160 && y < 186 && (x < 78 || x >= 102)),
+    festival:  (x, y) => (x >= 18 && x < 162 && y < 238) || y >= 246,
+    hotel:     (x, y) => x >= 18 && x < 146 && VENUES.hotel.floors.some(f => y >= f.y0 - 4 && y < f.y1 + 4),
+    flat:      (x, y) => x >= 18 && x < 162 && y >= 66,
   },
   /** Hellt das Spielfeld leicht auf (letzter Schritt jedes Hintergrunds) */
   lift(g) {

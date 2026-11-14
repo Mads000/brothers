@@ -189,9 +189,17 @@ function shadePass(g, w, h, fn) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const v = fn(x, y);
     if (v === null) continue;
-    // PS1-Dithering: Punktmuster (Bayer 4x4) statt weichem Verlauf (v = 1 hell, v = 0 dunkel)
+    const i = (y * w + x) * 4;
+    // Wände (alles außer Boden, siehe ART.FLOOR): glatt abdunkeln, ohne Punktmuster
+    if (ART.floor && !ART.floor(x, y)) {
+      const m = 1 - .35 * Math.max(0, Math.min(1, 1.2 - v));
+      d[i] *= m; d[i + 1] *= m; d[i + 2] *= m * 1.04; continue;
+    }
+    // PS1-Dithering (Bayer 4x4), zwei Stufen: weiter innen ein feines helles Raster,
+    // zum Dunklen hin das kräftige Muster (v = 1 hell, v = 0 dunkel)
     const b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
-    if (v < b) { const i = (y * w + x) * 4; d[i] *= .55; d[i + 1] *= .55; d[i + 2] *= .65; }
+    if (v < b) { d[i] *= .58; d[i + 1] *= .58; d[i + 2] *= .66; }
+    else if (v < b + .32) { d[i] *= .84; d[i + 1] *= .84; d[i + 2] *= .88; }
   }
   g.putImageData(im, 0, 0);
 }
@@ -210,7 +218,10 @@ function seeded(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 10
    optional gespiegelt) und malt Hintergrund + Animation des Schauplatzes. */
 function getVenueBG(ve) {
   if (!ve._bg) {
-    if (ve.buildBackground) ve._bg = ve.buildBackground();
+    if (ve.buildBackground) {
+      ART.floor = ART.FLOOR[ve.id] || null;    // Punktmuster nur auf dem Boden
+      try { ve._bg = ve.buildBackground(); } finally { ART.floor = null; }
+    }
     else {
       ve._bg = makeCanvas(PLAY_W, H);
       const g = ve._bg.getContext('2d');
