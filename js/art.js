@@ -405,18 +405,13 @@ const ART = {
     hotel() {
       const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, ve = VENUES.hotel;
       A.rect(g, 0, 0, PLAY_W, H, '#060814');
-      // Nachthimmel mit Mond und Skyline
-      for (let y = 26; y < 56; y++) A.rect(g, 0, y, 180, 1, lerpCol('#060814', '#141c3a', (y - 26) / 30));
-      A.noise(g, 0, 26, 180, 18, '#c8d0ff', 26, 9);
-      A.oval(g, 154, 33, 4, 4, '#f0f0d0'); A.oval(g, 156, 32, 3, 3, '#0c1024');
-      const r = seeded(13);
-      for (let x = 0; x < 180;) {
-        const w = 8 + (r() * 14 | 0), h = 8 + (r() * 18 | 0);
-        A.rect(g, x, 56 - h, w - 1, h, '#0c0e1e');
-        for (let yy = 56 - h + 2; yy < 54; yy += 3) for (let xx = x + 2; xx < x + w - 2; xx += 3) if (r() < .3) A.rect(g, xx, yy, 1, 1, '#f0d080');
-        x += w;
-      }
+      // Oben: Dachdecke im Schnitt (Beton mit Schraffur), darunter Stuckleiste und Lampen
+      A.rect(g, 0, 26, 180, 30, '#3a2a22');
+      g.fillStyle = '#33251e'; for (let y = 26; y < 56; y++) for (let x = (y % 4); x < 180; x += 4) g.fillRect(x, y, 1, 1);
+      A.rect(g, 0, 26, 180, 1, '#5a4232');
+      A.rect(g, 0, 50, 180, 6, '#4a3428'); A.rect(g, 0, 50, 180, 1, '#6a4c38');
       A.rect(g, 0, 56, 180, 6, '#2a1a1a'); A.rect(g, 0, 56, 180, 1, '#4a2e28');
+      for (let x = 40; x < 146; x += 50) A.rect(g, x, 62, 6, 1, '#fff0c0');
       // Etagen: jedes ein Hotelzimmer
       const carpets = [['#4a2440', '#552c4a'], ['#24304a', '#2c3a56'], ['#3a3a24', '#46462c']];
       ve.floors.forEach((f, i) => {
@@ -469,70 +464,91 @@ const ART = {
       return o;
     },
 
-    /* ---------- 7. DIE WOHNUNG: sonniger Nachmittag, ausgeblichenes 90er-Foto ---------- */
+    /* ---------- 7. DIE WOHNUNG: gemütlicher Abend, warmes Licht, Kamin ---------- */
     flat() {
       const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART;
       A.rect(g, 0, 0, PLAY_W, H, '#2a2418');
-      // Helle Dielen, senkrecht verlegt, jede etwas anders getönt
-      const tones = ['#c9a66c', '#c29e62', '#cfae76', '#bd985c', '#c6a268'];
+      // Warme Holzdielen, senkrecht verlegt, jede etwas anders getönt
+      const tones = ['#b8884e', '#b08048', '#bf9058', '#a87a42', '#b4864c'];
       const r = seeded(77);
       for (let x = 18, k = 0; x < 162; x += 9, k++) {
         A.rect(g, x, 26, 9, 278, tones[k % tones.length]);
-        A.rect(g, x, 26, 1, 278, '#9a7a46');
-        for (let y = 26 + (r() * 60 | 0); y < 304; y += 50 + (r() * 40 | 0)) A.rect(g, x, y, 9, 1, '#a8854e');   // Stöße
-        A.noise(g, x + 1, 26, 8, 278, '#b38c54', 60, k + 1); A.noise(g, x + 1, 26, 8, 278, '#dcc08c', 40, k + 50);
+        A.rect(g, x, 26, 1, 278, '#8a6236');
+        for (let y = 26 + (r() * 60 | 0); y < 304; y += 50 + (r() * 40 | 0)) A.rect(g, x, y, 9, 1, '#946a3c');   // Stöße
+        A.noise(g, x + 1, 26, 8, 278, '#a07444', 60, k + 1); A.noise(g, x + 1, 26, 8, 278, '#c89a60', 40, k + 50);
       }
-      // Wände: außen dicker Mauerschnitt (Grundriss-Look), innen blassgelbe Wandfläche mit weißer Fußleiste
+      // Wände: außen dicker Mauerschnitt (Grundriss-Look), innen warme Tapete mit Fußleiste
       for (const x0 of [0, 162]) {
         const cut = x0 === 0 ? 0 : 170, face = x0 === 0 ? 10 : 162;
         A.rect(g, cut, 26, 10, 278, '#3a2c20');
         g.fillStyle = '#46362a'; for (let y = 26; y < 304; y += 4) g.fillRect(cut, y, 10, 1);          // Schraffur
         A.rect(g, x0 === 0 ? 9 : 170, 26, 1, 278, '#1e160f');                                          // Kante zum Raum
-        A.rect(g, face, 26, 8, 278, '#e6d6a0'); A.noise(g, face, 26, 8, 278, '#d8c68e', 60, x0 + 5);
-        A.rect(g, x0 === 0 ? 16 : 162, 26, 2, 278, '#f4eedc');
+        A.rect(g, face, 26, 8, 278, '#d9b47a'); g.fillStyle = '#cfa86c'; for (let y = 28; y < 304; y += 6) g.fillRect(face + 1, y, 6, 2);   // Tapete
+        A.rect(g, x0 === 0 ? 16 : 162, 26, 2, 278, '#efe2c4');
       }
-      // Rückwand mit großem Erkerfenster
-      A.rect(g, 10, 26, 160, 40, '#ece0b0'); A.rect(g, 18, 62, 144, 4, '#f4eedc');
+      // Rückwand mit Erkerfenster, draußen Abendsonne
+      A.rect(g, 10, 26, 160, 40, '#d9b47a'); g.fillStyle = '#cfa86c'; for (let x = 12; x < 170; x += 6) g.fillRect(x, 30, 2, 32);
+      A.rect(g, 18, 62, 144, 4, '#efe2c4');
       A.rect(g, 0, 26, 180, 3, '#3a2c20'); A.rect(g, 0, 29, 180, 1, '#1e160f');
-      A.rect(g, 50, 28, 80, 34, '#f4f0e0');
-      A.rect(g, 54, 31, 22, 28, '#e8f0f0'); A.rect(g, 79, 30, 22, 30, '#fffbe8'); A.rect(g, 104, 31, 22, 28, '#e8f0f0');
-      for (const x of [54, 79, 104]) { A.rect(g, x + 10, 31, 1, 28, '#f4f0e0'); A.rect(g, x, 44, 22, 1, '#f4f0e0'); }
-      A.noise(g, 54, 31, 72, 14, '#c8dce8', 30, 3);                                                  // Himmel draußen
-      A.rect(g, 48, 61, 84, 3, '#fbf8ec');                                                          // Fensterbrett
+      A.rect(g, 50, 28, 80, 34, '#efe6d0');
+      for (let y = 31; y < 59; y++) { A.rect(g, 54, y, 22, 1, lerpCol('#f0b878', '#f8dca0', (y - 31) / 28)); A.rect(g, 79, y, 22, 1, lerpCol('#f4c080', '#fbe4aa', (y - 31) / 28)); A.rect(g, 104, y, 22, 1, lerpCol('#f0b878', '#f8dca0', (y - 31) / 28)); }
+      for (const x of [54, 79, 104]) { A.rect(g, x + 10, 31, 1, 28, '#efe6d0'); A.rect(g, x, 44, 22, 1, '#efe6d0'); }
+      A.rect(g, 52, 30, 4, 30, '#a8483a'); A.rect(g, 124, 30, 4, 30, '#a8483a');                     // Vorhänge
+      A.rect(g, 48, 61, 84, 3, '#f6eedc');                                                          // Fensterbrett
+      A.rect(g, 60, 58, 4, 3, '#c86a3a'); A.rect(g, 61, 56, 2, 2, '#4a7a3a'); A.rect(g, 112, 57, 3, 4, '#e8e0c8'); A.rect(g, 112, 56, 1, 1, '#ffd060');   // Topf, Kerze
+      // Lichterkette an der Rückwand (leuchtet in der Animation)
+      for (let x = 14; x < 168; x += 2) A.rect(g, x, 27 + Math.round(Math.abs(Math.sin(x / 10)) * 3), 1, 1, '#4a3a28');
       // Zimmerpalme links vom Fenster
       A.rect(g, 30, 64, 10, 8, '#b0603a'); A.rect(g, 30, 64, 10, 2, '#c8784a');
-      g.fillStyle = '#4a7a3a';
+      g.fillStyle = '#3e6e32';
       for (let k = 0; k < 7; k++) { const a = -2.6 + k * .5; for (let t = 2; t < 14; t++) g.fillRect(Math.round(35 + Math.cos(a) * t), Math.round(64 + Math.sin(a) * t * .8), 1, 1); }
-      g.fillStyle = '#6a9a4a'; for (let k = 0; k < 7; k++) { const a = -2.6 + k * .5; g.fillRect(Math.round(35 + Math.cos(a) * 12), Math.round(64 + Math.sin(a) * 9.6), 2, 1); }
-      // Fernseher auf dem Schrank, Plattenstapel, Gitarre am Ständer
-      A.rect(g, 136, 64, 24, 14, '#5a4630'); A.rect(g, 140, 58, 16, 12, '#222'); A.rect(g, 142, 60, 12, 8, '#7a8a90'); A.rect(g, 138, 72, 20, 3, '#333');
+      g.fillStyle = '#5a8a42'; for (let k = 0; k < 7; k++) { const a = -2.6 + k * .5; g.fillRect(Math.round(35 + Math.cos(a) * 12), Math.round(64 + Math.sin(a) * 9.6), 2, 1); }
+      // Plattenspieler auf dem Schrank, Plattenstapel, Gitarre am Ständer
+      A.rect(g, 136, 64, 24, 14, '#6a4628'); A.rect(g, 136, 64, 24, 1, '#7a5634');
+      A.rect(g, 139, 66, 14, 10, '#2a2420'); A.oval(g, 145, 71, 4, 4, '#111'); A.rect(g, 145, 71, 1, 1, '#c03030'); A.rect(g, 151, 67, 1, 6, '#bbb');
       for (let k = 0; k < 4; k++) A.rect(g, 124 + k, 66 + k, 10, 2, ['#c03030', '#e8c860', '#3060a0', '#222'][k]);
       A.rect(g, 116, 66, 1, 14, '#5a3a1a'); A.rect(g, 114, 78, 5, 6, '#7a2a1a'); A.rect(g, 113, 80, 7, 4, '#8a3a22'); A.rect(g, 115, 64, 3, 2, '#222');
-      // Sofa (Hindernis) und Sessel (Hindernis)
-      A.shadow(g, 20, 124, 22, 66, .25);
-      A.rect(g, 18, 122, 22, 64, '#cdbb92'); A.rect(g, 18, 122, 22, 4, '#e0d0a8'); A.rect(g, 18, 182, 22, 4, '#e0d0a8');
-      A.rect(g, 20, 127, 6, 54, '#bba880'); for (const y of [128, 146, 164]) A.rect(g, 27, y, 12, 16, '#d8c8a0');
-      A.rect(g, 30, 140, 6, 5, '#a8483a');                                                         // Kissen
-      A.shadow(g, 20, 238, 20, 20, .25);
-      A.rect(g, 18, 236, 20, 20, '#7a4a2a'); A.rect(g, 18, 236, 20, 4, '#8a5a34'); A.rect(g, 22, 241, 14, 12, '#946240');
-      // Bilderrahmen, der an der Wand lehnt (nur Umriss, kein echtes Foto)
-      A.rect(g, 20, 266, 16, 22, '#1a1a1a'); A.rect(g, 22, 268, 12, 18, '#d8d0b8'); A.rect(g, 25, 271, 6, 7, '#9a9080'); A.rect(g, 24, 278, 8, 7, '#8a8070');
-      A.rect(g, 42, 290, 6, 3, '#555'); A.rect(g, 43, 289, 4, 1, '#888');                          // Aschenbecher
-      // Kamin rechts mit dunklem Teppich davor
-      A.rect(g, 116, 200, 44, 52, '#3a3e4a'); A.noise(g, 116, 200, 44, 52, '#444858', 80, 12); A.frame(g, 116, 200, 44, 52, '#2a2e38');
-      for (let y = 201; y < 252; y += 3) A.rect(g, 115, y, 1, 1, '#d8d0c0');
-      A.rect(g, 157, 186, 13, 76, '#f2ecdc'); A.rect(g, 160, 200, 8, 34, '#1a1414'); A.rect(g, 157, 186, 13, 4, '#fbf8f0');
-      A.rect(g, 161, 228, 6, 4, '#6a4a2a'); A.rect(g, 159, 182, 2, 4, '#f4f0e0'); A.rect(g, 165, 182, 2, 4, '#f4f0e0');
+      // Großer runder Webteppich in der Mitte
+      A.oval(g, 92, 176, 40, 31, '#7a3424'); A.oval(g, 92, 176, 37, 28, '#a4462e'); A.oval(g, 92, 176, 30, 22, '#c8783a');
+      A.oval(g, 92, 176, 27, 19, '#a4462e'); A.oval(g, 92, 176, 17, 12, '#d8a050'); A.oval(g, 92, 176, 13, 9, '#a4462e');
+      A.noise(g, 54, 148, 76, 58, 'rgba(60,20,10,.25)', 200, 21);
+      // Sofa (Hindernis): rostrot, mit Kissen und karierter Decke
+      A.shadow(g, 20, 124, 22, 66, .3);
+      A.rect(g, 18, 122, 22, 64, '#8a3e2a'); A.rect(g, 18, 122, 22, 4, '#a8583a'); A.rect(g, 18, 182, 22, 4, '#a8583a');
+      A.rect(g, 20, 127, 6, 54, '#7a3424'); for (const y of [128, 146, 164]) A.rect(g, 27, y, 12, 16, '#a8583a');
+      A.rect(g, 28, 130, 7, 6, '#d8a040'); A.rect(g, 29, 148, 6, 6, '#3a7a7a'); A.rect(g, 28, 166, 7, 6, '#d8a040');   // Kissen
+      for (let y = 156; y < 182; y += 2) for (let x = 26 + ((y >> 1) % 2) * 2; x < 40; x += 4) A.rect(g, x, y, 2, 2, '#e8dcc0');   // Decke
+      A.rect(g, 44, 150, 4, 5, '#e8e0d0'); A.rect(g, 45, 151, 2, 1, '#6a3a1a'); A.rect(g, 48, 151, 1, 2, '#e8e0d0');   // Tasse
+      A.rect(g, 42, 160, 8, 3, '#3060a0'); A.rect(g, 43, 158, 7, 2, '#c03030');                    // Bücher
+      // Sessel (Hindernis): grüner Samt, daneben eine Stehlampe
+      A.shadow(g, 20, 238, 20, 20, .3);
+      A.rect(g, 18, 236, 20, 20, '#2e4a32'); A.rect(g, 18, 236, 20, 4, '#3e5e40'); A.rect(g, 22, 241, 14, 12, '#3a5a3c');
+      A.rect(g, 26, 244, 6, 5, '#d8a040');
+      A.oval(g, 46, 228, 5, 5, '#f0d8a0'); A.oval(g, 46, 228, 3, 3, '#fff0c8');                     // Stehlampe von oben
+      // Bilderrahmen an der Wand, Aschenbecher
+      A.rect(g, 20, 266, 16, 22, '#3a2414'); A.rect(g, 22, 268, 12, 18, '#e8d8b0'); A.rect(g, 24, 272, 8, 8, '#c8783a'); A.rect(g, 24, 280, 8, 4, '#3a7a7a');
+      A.rect(g, 42, 290, 6, 3, '#555'); A.rect(g, 43, 289, 4, 1, '#888');
+      // Kamin rechts (Backstein) mit Schaffell davor, Kerzen auf dem Sims
+      A.oval(g, 138, 228, 20, 14, '#e8e0cc'); A.noise(g, 120, 216, 38, 26, '#d4c8b0', 90, 31);
+      A.rect(g, 157, 186, 13, 76, '#8a4430');
+      for (let y = 186; y < 262; y += 4) for (let x = 157 + ((y >> 2) % 2) * 3; x < 170; x += 6) A.rect(g, x, y, 5, 3, '#9a5038');
+      A.rect(g, 160, 200, 8, 34, '#1a1010'); A.rect(g, 157, 186, 13, 3, '#5a3a22');
+      for (const y of [190, 244, 252]) { A.rect(g, 162, y, 3, 4, '#efe6d0'); A.rect(g, 163, y - 1, 1, 1, '#ffd060'); }
       // Papier-Kugellampe von oben (hängt über dem Raum) mit Schatten
-      A.oval(g, 134, 126, 12, 6, 'rgba(60,40,10,.18)');
-      A.oval(g, 126, 108, 12, 12, '#f6f0dc'); A.oval(g, 124, 105, 8, 8, '#fffbee'); for (let k = -10; k <= 10; k += 5) A.rect(g, 126 + k, 98, 1, 20, 'rgba(200,190,160,.5)');
-      // Licht: viel Sonne vom Fenster, alles warm und ausgeblichen
-      A.lights(g, [{ x: 90, y: 70, rx: 110, ry: 120, c: '#fff6d8', a: .4 }, { x: 90, y: 210, rx: 100, ry: 100, c: '#fff0c8', a: .2 }, { x: 126, y: 108, rx: 30, ry: 26, c: '#fffbe8', a: .5 }]);
-      // Ausgeblichener Foto-Look: alles leicht Richtung Cremegelb
+      A.oval(g, 134, 126, 12, 6, 'rgba(60,30,10,.2)');
+      A.oval(g, 126, 108, 12, 12, '#f6e6c4'); A.oval(g, 124, 105, 8, 8, '#fff4dc'); for (let k = -10; k <= 10; k += 5) A.rect(g, 126 + k, 98, 1, 20, 'rgba(200,170,120,.5)');
+      // Licht: goldene Abendsonne, warme Lampen, Kaminfeuer
+      A.lights(g, [
+        { x: 90, y: 70, rx: 100, ry: 100, c: '#ffd890', a: .45 },
+        { x: 126, y: 108, rx: 34, ry: 28, c: '#ffe0a8', a: .55 },
+        { x: 46, y: 228, rx: 30, ry: 26, c: '#ffc070', a: .6 },
+        { x: 150, y: 220, rx: 30, ry: 30, c: '#ff9a50', a: .55 },
+      ]);
+      // Warmer Bernstein-Ton über allem (gemütlich statt ausgeblichen)
       const im = g.getImageData(0, 0, PLAY_W, H), d = im.data;
-      for (let p = 26 * PLAY_W * 4; p < 304 * PLAY_W * 4; p += 4) { d[p] += (255 - d[p]) * .1; d[p + 1] += (240 - d[p + 1]) * .1; d[p + 2] += (190 - d[p + 2]) * .1; }
+      for (let p = 26 * PLAY_W * 4; p < 304 * PLAY_W * 4; p += 4) { d[p] += (255 - d[p]) * .04; d[p + 1] += (200 - d[p + 1]) * .05; d[p + 2] *= .92; }
       g.putImageData(im, 0, 0);
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.15 - Math.abs(x - 90) / 220 - (y - 26) / 500);
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.1 - Math.abs(x - 90) / 180 - (y - 26) / 420);
       return o;
     },
   },
@@ -586,18 +602,30 @@ const ART = {
       for (let k = 0; k < 4; k++) X.fillRect(Math.round(((T * 8 + k * 60) % 240) - 60), 180 + k * 12, 70, 8);
     },
     flat(T) {
+      // Kaminfeuer flackert
+      for (let k = 0; k < 4; k++) {
+        const h = 4 + Math.round(Math.abs(Math.sin(T * 7 + k * 1.9)) * 7);
+        X.fillStyle = k % 2 ? '#ff8a20' : '#ffd040'; X.fillRect(161 + k * 2, 233 - h, 2, h);
+      }
+      X.fillStyle = '#5a2a10'; X.fillRect(160, 231, 8, 3);
+      // Kerzen flackern
+      X.fillStyle = Math.sin(T * 11) > 0 ? '#ffe070' : '#ffb040';
+      for (const y of [190, 244, 252]) X.fillRect(163, y - 1, 1, 1);
+      // Lichterkette funkelt
+      const cols = ['#ffd860', '#ff9a60', '#fff0b0'];
+      for (let x = 15, k = 0; x < 168; x += 8, k++) {
+        const on = Math.sin(T * 2 + k * 1.3) > -.3;
+        X.fillStyle = on ? cols[k % 3] : '#6a5030'; X.fillRect(x, 27 + Math.round(Math.abs(Math.sin(x / 10)) * 3), 1, 1);
+      }
       // Staubkörnchen tanzen im Licht vor dem Fenster
-      X.fillStyle = 'rgba(255,250,220,.7)';
-      for (let k = 0; k < 14; k++) {
+      X.fillStyle = 'rgba(255,230,180,.5)';
+      for (let k = 0; k < 8; k++) {
         const x = 56 + ((k * 37 + T * (3 + k % 3)) % 70), y = 70 + ((k * 53 + Math.sin(T * .7 + k) * 6 + T * 2) % 150);
         X.fillRect(Math.round(x), Math.round(y), 1, 1);
       }
     },
     hotel(T) {
-      // Leuchtreklame auf dem Dach
-      const on = (T * 1.2 % 4) > .4;
-      X.fillStyle = '#111'; X.fillRect(70, 49, 40, 8);
-      txt('HOTEL', 90, 50, on ? '#ff4a6a' : '#4a1a22', 1, 'c');
+      // (früher Leuchtreklame auf dem Dach - entfernt, oben ist jetzt die Dachdecke)
     },
   },
 
@@ -691,7 +719,6 @@ const ART = {
     hotel(g, x, w) {
       const k = sideKit(g, x, w), r = seeded(x + 51);
       for (let y = 0; y < H; y += 4) k.r(0, y, w, 4, lerpCol('#0c0a1e', '#1a1430', y / H));   // Himmel
-      for (let n = 0; n < 16; n++) k.r(5 + (r() * 24 | 0), 30 + (r() * 90 | 0), 1, 1, '#8a88a8');
       for (const [d, top] of [[9, 120], [14, 170]]) {                                  // Häuser in der Ferne
         k.r(d, top, w - d, 290 - top, d === 9 ? '#141222' : '#1c1830');
         for (let y = top + 6; y < 286; y += 7) for (let dd = d + 2; dd < w - 1; dd += 4)
@@ -835,9 +862,9 @@ const ART = {
     },
     hotel(g, k, h, top) {
       const r = seeded(top ? 81 : 82);
-      if (top) {                                                                         // Nachthimmel über der Skyline
-        for (let d = 0; d < h; d += 2) k.r(0, d, PLAY_W, 2, lerpCol('#141030', '#06050f', d / h));
-        for (let n = 0; n < 26; n++) k.r(r() * PLAY_W | 0, 3 + (r() * (h - 3) | 0), 1, 1, r() < .3 ? '#d8d8f0' : '#6a6888');
+      if (top) {                                                                         // oben: Dachschnitt, kein Himmel
+        k.r(0, 0, PLAY_W, h, '#2a1e1a');
+        ART.bandCut(k, 6, '#3a2a22', '#33251e');
       } else {                                                                           // Straße vor dem Hotel
         k.r(0, 0, PLAY_W, h, '#1a1a20');
         k.r(0, 0, PLAY_W, 8, '#2a2830'); k.r(0, 8, PLAY_W, 1, '#4a4a54');
@@ -871,7 +898,7 @@ const ART = {
       }
     },
     hotel(T, k, h, top) {
-      if (top) { if (Math.sin(T * .9) > .97) k.r(((T * 40) % 220) - 20 | 0, h - 6, 3, 1, '#fff'); return; }   // Sternschnuppe
+      if (top) return;
       const x = Math.round(((T * 30) % 240) - 30);                                       // Taxi fährt vorbei
       k.r(x, 12, 14, 6, '#d8b020'); k.r(x + 3, 13, 7, 4, '#2a2a30'); k.r(x + 13, 13, 1, 1, '#fff0b0'); k.r(x + 13, 16, 1, 1, '#fff0b0');
     },
