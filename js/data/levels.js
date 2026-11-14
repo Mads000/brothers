@@ -554,6 +554,25 @@ const LEVELS = [
   },
 ];
 
+/* ---------- Mehr Abwechslung: neue Events pro Schauplatz ----------
+   [Schauplatz, Level-Nummer (1 = erstes), Event, Abstand in Sekunden].
+   Kommt ein Event in einem Schauplatz zum ersten Mal vor, zeigt die Startkarte "NEW!". */
+const TWISTS = [
+  ['bus', 3, 'brakes', [12, 16]], ['bus', 5, 'brakes', [11, 15]], ['bus', 8, 'brakes', [10, 14]],
+  ['rehearsal', 3, 'gust', [11, 15]], ['rehearsal', 4, 'frog', [10, 14]], ['rehearsal', 6, 'frog', [9, 13]],
+  ['rehearsal', 7, 'gust', [10, 14]], ['rehearsal', 9, 'frog', [9, 13]], ['rehearsal', 10, 'gust', [11, 15]],
+  ['pub', 2, 'lastorders', [14, 18]], ['pub', 4, 'lastorders', [13, 17]], ['pub', 5, 'lastorders', [12, 16]], ['pub', 8, 'lastorders', [12, 16]],
+  ['backstage', 2, 'fan', [12, 16]], ['backstage', 3, 'setlist', [12, 16]], ['backstage', 5, 'jukebox', [12, 16]], ['backstage', 9, 'blackout', [14, 18]],
+  ['festival', 4, 'pyro', [10, 14]], ['festival', 7, 'pyro', [9, 13]], ['festival', 8, 'pyro', [9, 13]], ['festival', 10, 'pyro', [10, 14]],
+  ['hotel', 2, 'housekeeping', [12, 16]], ['hotel', 3, 'housekeeping', [11, 15]], ['hotel', 6, 'knock', [12, 16]],
+  ['hotel', 7, 'housekeeping', [10, 14]], ['hotel', 8, 'housekeeping', [10, 14]],
+  ['flat', 1, 'sheep', [11, 15]], ['flat', 2, 'sheep', [10, 14]], ['flat', 3, 'sheep', [10, 14]], ['flat', 3, 'rain', [16, 20]],
+];
+for (const [v, n, ev, gap] of TWISTS) {
+  const lv = LEVELS.filter(l => l.venue === v)[n - 1];
+  if (lv) lv.events = { ...(lv.events || {}), [ev]: gap };
+}
+
 /* ---------- Hilfsfunktionen (musst du nicht anfassen) ---------- */
 
 /** Alle Levels eines Schauplatzes in Reihenfolge */
@@ -568,3 +587,11 @@ function levelLabel(lv) {
 
 /** Das Level nach lv (auch über Schauplätze hinweg) oder null */
 function levelAfter(lv) { return LEVELS[LEVELS.indexOf(lv) + 1] || null; }
+
+/** Events, die in diesem Level zum ersten Mal (in seinem Schauplatz) vorkommen */
+function newEventsIn(lv) {
+  if (!lv || lv.sandbox || lv.endless) return [];
+  const before = new Set();
+  for (const l of levelsOf(lv.venue)) { if (l === lv) break; for (const e in l.events || {}) before.add(e); }
+  return Object.keys(lv.events || {}).filter(e => e !== 'insult' && !before.has(e) && EVENTS[e]);
+}

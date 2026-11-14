@@ -31,4 +31,6 @@ const PAINTS = {
   // Geheim: nur per Code (secret = nicht im Shop, solange man sie nicht hat)
   gold: { name: 'FOOLS GOLD', price: 0, secret: true, wall: '#8a6a1a', trim: '#ffe070', pattern: 'gold' },
   splatter: { name: 'PAINT SPLATTER', price: 0, secret: true, wall: '#e8e0cc', trim: '#2a2a2a', pattern: 'splatter' },
+  // Belohnung: alle Gig-Plakate gesammelt
+  posters: { name: 'TOUR POSTERS', price: 0, secret: true, wall: '#2a2420', trim: '#efe4c8', pattern: 'posters' },
 };

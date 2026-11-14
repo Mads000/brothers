@@ -120,6 +120,7 @@ function wrapText(s, max) {
 /** Kurz vibrieren (wenn Gerät und Einstellung es erlauben) */
 function buzz(ms) {
   try { if (Save.data.settings.vibrate && navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* egal */ }
+  if (ms >= 60 && typeof sfx === 'function') sfx('thud');
 }
 
 /* ---------- Farben ---------- */

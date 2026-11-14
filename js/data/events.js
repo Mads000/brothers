@@ -252,4 +252,178 @@ const EVENTS = {
       game.spawnItem('chips');
     },
   },
+
+  /* ---------- Neue Events für mehr Abwechslung (je Schauplatz) ---------- */
+
+  brakes: {
+    desc: 'HARD BRAKES! EVERYONE SLIDES TO THE FRONT.',
+    name: 'EMERGENCY STOP', icon: '^', warn: 1,
+    run(game) {
+      for (const b of game.bros) {
+        if (b.hidden) continue;
+        game.dropBro(b); game.pushBro(b, 0, -30);
+        b.st.stun = Math.max(b.st.stun, .4); game.addAnger(b, 3);
+      }
+      const S = game.venue.spawn;
+      for (const it of game.items) if (!it.held) it.y = Math.max(S.y0, it.y - 24);
+      game.comic('SCREECH!', 90, 110, '#ff8a3a'); game.shake = 4; buzz(60);
+    },
+  },
+
+  gust: {
+    desc: 'WIND! STUFF BLOWS INTO THE WATER. HOLD ON TIGHT.',
+    name: 'GUST OF WIND', warn: 1, duration: 2.6,
+    prepare(game, ctx) { ctx.dir = Math.random() < .5 ? -1 : 1; },
+    icon(ctx) { return ctx.dir < 0 ? '<' : '>'; },
+    run(game, ctx) { game.toastMsg('WINDY!', '#9fd8ff'); },
+    update(game, dt, ctx) {
+      for (const b of game.bros) if (b.drag == null && !b.hidden) game.pushBro(b, ctx.dir * 22 * dt, 0);
+      for (let i = game.items.length - 1; i >= 0; i--) {
+        const it = game.items[i];
+        if (it.held) continue;
+        it.x += ctx.dir * 46 * dt;
+        if (it.x < 6 || it.x > PLAY_W - 6) { game.items.splice(i, 1); game.burst(clamp(it.x, 8, PLAY_W - 8), it.y, 6, '#bfe8f0'); sfx('splash'); }
+      }
+    },
+    drawScreen(game, ctx) {
+      X.fillStyle = 'rgba(230,245,255,.35)';
+      for (let k = 0; k < 14; k++) {
+        const x = VIEW.OX + (((k * 53 + game.T * 160 * ctx.dir) % (PLAY_W + 40)) + PLAY_W + 40) % (PLAY_W + 40) - 20, y = 40 + ((k * 71) % 250);
+        X.fillRect(Math.round(x), y, 12, 1);
+      }
+    },
+  },
+
+  frog: {
+    desc: 'A FROG HOPS ONTO THE BOARDWALK. TAP IT BEFORE IT REACHES A BROTHER!',
+    name: 'FROG', icon: 'F', warn: .8, duration: 7,
+    prepare(game, ctx) { const left = Math.random() < .5; ctx.x = left ? 22 : PLAY_W - 22; ctx.y = rnd(100, 270); },
+    run(game, ctx) { ctx.hop = 0; sfx('croak'); },
+    update(game, dt, ctx) {
+      const t = game.bros.filter(b => !b.hidden).sort((a, b) => Math.hypot(a.x - ctx.x, a.y - ctx.y) - Math.hypot(b.x - ctx.x, b.y - ctx.y))[0];
+      if (!t) return;
+      ctx.hop += dt;
+      if (ctx.hop > .55) {                                 // hüpft in Sprüngen
+        ctx.hop = 0; const d = Math.hypot(t.x - ctx.x, t.y - ctx.y) || 1;
+        ctx.x += (t.x - ctx.x) / d * 14; ctx.y += (t.y - ctx.y) / d * 14; sfx('croak');
+      }
+      if (Math.hypot(t.x - ctx.x, t.y - ctx.y) < 10) {
+        game.addAnger(t, 10); game.say(t, 'A FROG!!', '#7cfc6a'); game.dropBro(t); t.st.stun = .5; ctx.end = true;
+      }
+    },
+    pointerDown(game, p, ctx) {
+      if (Math.hypot(p.x - ctx.x, p.y - ctx.y) < 14) { ctx.end = true; game.burst(ctx.x, ctx.y, 6, '#7cfc6a'); sfx('splash'); return true; }
+      return false;
+    },
+    draw(game, ctx) {
+      const x = Math.round(ctx.x), y = Math.round(ctx.y), up = ctx.hop < .15 ? 2 : 0;
+      X.fillStyle = 'rgba(0,0,0,.3)'; X.fillRect(x - 3, y + 1, 7, 2);
+      X.fillStyle = '#3a8a2a'; X.fillRect(x - 3, y - 4 - up, 7, 5);
+      X.fillStyle = '#5ab03a'; X.fillRect(x - 2, y - 5 - up, 5, 2);
+      X.fillStyle = '#fff'; X.fillRect(x - 3, y - 6 - up, 2, 2); X.fillRect(x + 2, y - 6 - up, 2, 2);
+      X.fillStyle = '#000'; X.fillRect(x - 2, y - 5 - up, 1, 1); X.fillRect(x + 3, y - 5 - up, 1, 1);
+      if ((game.T * 4 | 0) % 2) txt('!', x, y - 14, '#7cfc6a', 1, 'c');
+    },
+  },
+
+  lastorders: {
+    desc: 'THE BELL RINGS. BOTH RUSH TO THE BAR - TOO CLOSE! TAP THE BAR TO STOP IT.',
+    name: 'LAST ORDERS', icon: 'B', warn: 1, duration: 3.5,
+    run(game, ctx) {
+      sfx('bell'); game.comic('DING DING!', 90, 80, '#ffd84a');
+      game.bros.forEach((b, i) => { if (!b.hidden) { b.goal = { x: 76 + i * 28, y: 74 }; game.say(b, 'MY ROUND!', '#ffd84a'); } });
+    },
+    pointerDown(game, p, ctx) {
+      if (p.y < 70) { ctx.end = true; game.toastMsg('NOT YET, LADS!', '#7cfc6a'); return true; }
+      return false;
+    },
+    end(game) { for (const b of game.bros) b.goal = null; },
+  },
+
+  pyro: {
+    desc: 'FLAMES SHOOT UP FROM THE STAGE. KEEP THEM OFF THE MARKED SPOTS!',
+    name: 'PYRO', icon: '*', warn: 1.2, duration: 2.4,
+    prepare(game, ctx) {
+      const B = game.venue.bounds;
+      ctx.spots = [0, 1, 2].map(() => ({ x: rnd(B.x0 + 10, B.x1 - 10), y: rnd(B.y0 + 30, B.y1 - 20) }));
+    },
+    run(game, ctx) { ctx.t = 0; ctx.hit = new Set(); },
+    update(game, dt, ctx) {
+      const was = ctx.t; ctx.t += dt;
+      if (was < .8 && ctx.t >= .8) sfx('boom');
+      if (ctx.t < .8) return;
+      for (const s of ctx.spots) for (const b of game.bros) {
+        if (b.hidden || ctx.hit.has(b)) continue;
+        if (Math.hypot(b.x - s.x, b.y - s.y) < 13) { ctx.hit.add(b); game.addAnger(b, 9); game.say(b, 'HOT!', '#ff8a3a'); game.pushBro(b, b.x < s.x ? -14 : 14, 0); }
+      }
+    },
+    draw(game, ctx) {
+      for (const s of ctx.spots) {
+        const x = Math.round(s.x), y = Math.round(s.y);
+        if (ctx.t < .8) {                                  // Warnkreis
+          if ((game.T * 8 | 0) % 2) { X.fillStyle = 'rgba(255,90,40,.5)'; X.fillRect(x - 8, y - 1, 16, 2); X.fillRect(x - 1, y - 6, 2, 8); }
+        } else {
+          for (let k = 0; k < 6; k++) {
+            const h = 10 + Math.round(Math.abs(Math.sin(game.T * 13 + k * 1.7)) * 16);
+            X.fillStyle = k % 2 ? '#ff8a20' : '#ffd040'; X.fillRect(x - 6 + k * 2, y - h, 2, h);
+          }
+          X.fillStyle = '#fff6c0'; X.fillRect(x - 2, y - 6, 4, 6);
+        }
+      }
+    },
+  },
+
+  housekeeping: {
+    desc: 'THE CLEANING TROLLEY ROLLS THROUGH A ROOM AND BUMPS ANYONE IN THE WAY.',
+    name: 'HOUSEKEEPING', icon: 'H', warn: 1, duration: 3,
+    prepare(game, ctx) {
+      const fl = game.venue.floors || [{ y0: 70, y1: 280 }];
+      const b = pickOne(game.bros.filter(x => !x.hidden)) || game.bros[0];
+      const f = fl.find(q => b.y >= q.y0 - 6 && b.y <= q.y1 + 6) || pickOne(fl);
+      ctx.y = clamp(b.y, f.y0 + 6, f.y1); ctx.dir = Math.random() < .5 ? -1 : 1;
+    },
+    run(game, ctx) { ctx.x = ctx.dir > 0 ? 10 : 150; ctx.hit = new Set(); game.say(game.bros[0], 'HOUSEKEEPING!', '#fff'); },
+    update(game, dt, ctx) {
+      ctx.x += ctx.dir * 55 * dt;
+      for (const b of game.bros) {
+        if (b.hidden || ctx.hit.has(b)) continue;
+        if (Math.abs(b.x - ctx.x) < 10 && Math.abs(b.y - ctx.y) < 10) {
+          ctx.hit.add(b); game.dropBro(b); game.pushBro(b, ctx.dir * 16, 0); b.st.stun = .4; game.addAnger(b, 6); game.say(b, 'OI!', '#ff8a3a'); sfx('thud');
+        }
+      }
+      if (ctx.x < 0 || ctx.x > 150) ctx.end = true;
+    },
+    draw(game, ctx) {
+      const x = Math.round(ctx.x), y = Math.round(ctx.y);
+      X.fillStyle = 'rgba(0,0,0,.35)'; X.fillRect(x - 7, y + 1, 15, 2);
+      X.fillStyle = '#d8d8e0'; X.fillRect(x - 7, y - 10, 14, 10);
+      X.fillStyle = '#8a8a96'; X.fillRect(x - 7, y - 10, 14, 1); X.fillRect(x - 1, y - 9, 1, 9);
+      X.fillStyle = '#e8e0f0'; X.fillRect(x - 6, y - 8, 4, 3); X.fillStyle = '#9fd8ff'; X.fillRect(x + 2, y - 8, 3, 5);
+      X.fillStyle = '#222'; X.fillRect(x - 6, y, 2, 2); X.fillRect(x + 4, y, 2, 2);
+    },
+  },
+
+  sheep: {
+    desc: 'A FLOCK OF SHEEP WANDERS ACROSS AND PUSHES THE BROTHERS APART (OR TOGETHER).',
+    name: 'SHEEP', icon: 'S', warn: 1, duration: 6,
+    prepare(game, ctx) { const B = game.venue.bounds; ctx.y = rnd(B.y0 + 20, B.y1 - 10); ctx.dir = Math.random() < .5 ? -1 : 1; },
+    run(game, ctx) { ctx.x = ctx.dir > 0 ? -10 : PLAY_W + 10; sfx('baa'); },
+    update(game, dt, ctx) {
+      ctx.x += ctx.dir * 34 * dt;
+      for (let k = 0; k < 3; k++) {
+        const sx = ctx.x - ctx.dir * k * 16, sy = ctx.y + (k % 2) * 10 - 5;
+        for (const b of game.bros) {
+          if (b.hidden || b.drag != null) continue;
+          if (Math.abs(b.x - sx) < 9 && Math.abs(b.y - sy) < 9) game.pushBro(b, 0, (b.y < sy ? -40 : 40) * dt);
+        }
+      }
+      if ((ctx.dir > 0 && ctx.x > PLAY_W + 50) || (ctx.dir < 0 && ctx.x < -50)) ctx.end = true;
+    },
+    draw(game, ctx) {
+      for (let k = 0; k < 3; k++) {
+        const x = Math.round(ctx.x - ctx.dir * k * 16), y = Math.round(ctx.y + (k % 2) * 10 - 5 + (Math.sin(game.T * 6 + k) > .7 ? -1 : 0));
+        moorSheep(X, x, y, ctx.dir);
+      }
+    },
+  },
 };

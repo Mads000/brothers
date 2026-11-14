@@ -142,7 +142,7 @@ const Game = {
     if (n > 0) n *= b.ch.angerRate * this.mult('angerRate') * (this.venue.angerMult || 1);
     b.anger = clamp(b.anger + n, 0, 100);
     if (this.level.safe) b.anger = Math.min(b.anger, 94);   // Sandbox ohne Prügeleien
-    if (n >= 7) this.shake = Math.max(this.shake, Math.min(3, n / 5));   // Wut-Spitze: kurzes Ruckeln
+    if (n >= 7) { this.shake = Math.max(this.shake, Math.min(3, n / 5)); sfx('spike'); if (n >= 10) buzz(30); }   // Wut-Spitze: Ruckeln, Ton, Vibrieren
   },
   calm(b) {
     const R = CONFIG.RULES;
@@ -158,6 +158,7 @@ const Game = {
     b.cd = R.calmCooldown;
     this.stats.calms++;
     this.burst(b.x, b.y - 18, 5, fat >= 2 ? '#888' : '#9fd8ff', 16);
+    sfx('calm');
     if (fat >= 2) this.say(b, 'YEAH YEAH', '#aaa');
     else this.say(b, Math.random() < .03 ? 'THIS IS THE ONE' : 'EASY', '#9fd8ff');
   },
@@ -250,6 +251,7 @@ const Game = {
   },
   applyItem(b, it) {
     const def = ITEMS[it.type];
+    sfx(def.kind === 'bad' ? 'spike' : 'serve');
     if (def.kind === 'bad') this.noteCause(def.name);
     if (def.onPickup) { def.onPickup(this, b, it); return; }
     if (def.anger) this.addAnger(b, def.anger);
@@ -262,6 +264,7 @@ const Game = {
     if (it.type === 'beer' || it.type === 'minibar') this.stats.beer++;
     this.burst(it.x, it.y - 4, 6, '#fff');
     this.trash.push({ x: it.x, y: it.y - 6, life: .8 });     // kleiner Mülleimer zeigt: weggeworfen
+    sfx('bin');
   },
   collectItem(i) {
     const it = this.items[i];
@@ -278,7 +281,7 @@ const Game = {
     if (!ev) return;
     const ctx = {};
     if (ev.prepare) ev.prepare(this, ctx);
-    if (ev.warn > 0) this.warnings.push({ id, ev, ctx, t: ev.warn });
+    if (ev.warn > 0) { this.warnings.push({ id, ev, ctx, t: ev.warn }); if (this.state === 'play') sfx('warn'); }
     else this.runEvent(id, ctx);
   },
   runEvent(id, ctx = {}) {
@@ -369,7 +372,7 @@ const Game = {
     this.state = 'fight';
     this.fight = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, t: 0 };
     this.releaseAll();
-    buzz(250);
+    buzz(250); sfx('fight');
   },
   finish(win, reason) {
     if (this.state === 'win' || this.state === 'over') return;
@@ -382,6 +385,7 @@ const Game = {
     this.endT = 0; this.slowT = 0; this.nearT = 0;
     this.releaseAll();
     if (!win && reason) buzz(150);
+    if (!this.level.sandbox || win) sfx(win ? 'win' : 'lose');
     if (this.onEnd) this.onEnd({ win, reason: this.reason, level: this.level, time: Math.min(this.el, this.level.time), stats: { ...this.stats }, causes: this.recentCauses() });
   },
 
@@ -730,7 +734,9 @@ const Game = {
   draw() {
     let sx = 0, sy = 0;
     if (this.shake > 0) { sx = Math.round(rnd(-this.shake, this.shake)); sy = Math.round(rnd(-this.shake, this.shake)); }
+    if (this.venue.posterSpots) VENUE_ORDER.forEach(v => { if (Save.data.posters[v]) posterImage(v); });   // vor dem Zeichnen vorbereiten
     drawVenue(this.venue, this.T, sx, sy, this.hasFlag('mirror'));   // setzt Welt-Koordinaten
+    drawWallPosters(this.venue);
 
     // Bühnen-Zone ("Bring beide zur Bühne")
     if (this.phase === 'stagecall') {

@@ -82,6 +82,7 @@ const VENUES = {
     mechanic: 'pubfans', mechDefaults: { fanEvery: [3.5, 5.5] },
     bounds: { x0: 26, x1: 154, y0: 66, y1: 292 },
     spawn: { x0: 30, x1: 150, y0: 70, y1: 288 },
+    posterSpots: [{ x: 10, y: 80, w: 7, h: 12 }, { x: 166, y: 80, w: 7, h: 12 }, { x: 10, y: 140, w: 7, h: 12 }, { x: 166, y: 200, w: 7, h: 12 }],   // gesammelte Plakate an der Wand
     walls: [
       { x: 36, y: 108, w: 26, h: 16 }, { x: 118, y: 108, w: 26, h: 16 },
       { x: 77, y: 168, w: 26, h: 16 },
@@ -109,6 +110,7 @@ const VENUES = {
     bounds: { x0: 26, x1: 154, y0: 66, y1: 290 },
     spawn: { x0: 30, x1: 150, y0: 72, y1: 286 },
     door: { x: 78, y: 166, w: 24, h: 12 },   // Tür in der Trennwand
+    posterSpots: [{ x: 22, y: 30, w: 14, h: 20 }, { x: 40, y: 32, w: 12, h: 16 }, { x: 128, y: 30, w: 13, h: 18 }, { x: 146, y: 32, w: 12, h: 16 }],
     walls: [{ x: 0, y: 166, w: 78, h: 12 }, { x: 102, y: 166, w: 78, h: 12 }, { x: 122, y: 272, w: 36, h: 18 }],
     starts: [{ x: 60, y: 110 }, { x: 120, y: 240 }],
     stageZone: { x: 26, y: 66, w: 128, h: 20 },

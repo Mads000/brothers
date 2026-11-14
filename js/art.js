@@ -361,7 +361,7 @@ const ART = {
       A.rect(g, 0, 0, PLAY_W, H, '#000');
       // Wiese vor der Bühne mit dichter Menge (die Leute der Crowd-Mechanik kommen noch dazu)
       moorGrass(g, 0, 238, PLAY_W, 66, 45, () => 0);
-      festCrowd(g, 0, 246, PLAY_W, 58, 47, .55);
+      festCrowd(g, 0, 246, PLAY_W, 58, 47, .38);
       A.rect(g, 0, 240, 180, 3, '#9a9aa4'); for (let x = 2; x < 180; x += 10) A.rect(g, x, 240, 2, 6, '#6a6a74');   // Wellenbrecher
       // Bühne: helle Holzbretter mit Gaffa und Kabeln
       A.planks(g, 18, 26, 144, 208, '#6a5238', '#5a4430', 8);
@@ -663,7 +663,7 @@ const ART = {
     festival(g, x, w) {
       const k = sideKit(g, x, w);
       moorGrass(g, x, 0, w, H, x + 41, () => 0);
-      festCrowd(g, x, 150, w, H - 150, x + 43, .6);
+      festCrowd(g, x, 150, w, H - 150, x + 43, .4);
       k.r(6, 60, 10, 40, '#4a4c54'); k.r(7, 61, 8, 38, '#2a2c32'); k.r(8, 64, 6, 10, '#1a1a1e'); k.r(8, 78, 6, 10, '#1a1a1e');   // Delay-Turm
       k.r(0, 226, w, 4, '#9a9aa4'); for (let d = 1; d < w; d += 3) k.r(d, 227, 1, 3, '#6a6a74');
       k.r(0, 0, 1, 226, '#9a9ca4'); k.r(4, 0, 1, 226, '#9a9ca4');                       // Traverse: zwei Rohre
@@ -807,7 +807,7 @@ const ART = {
       } else {
         const c = makeCanvas(PLAY_W, h), cg = c.getContext('2d');
         moorGrass(cg, 0, 0, PLAY_W, h, 66, () => 0);
-        festCrowd(cg, 0, 0, PLAY_W, h, 67, .65);
+        festCrowd(cg, 0, 0, PLAY_W, h, 67, .42);
         g.drawImage(c, 0, k.Y(0, h));
       }
     },
@@ -931,6 +931,15 @@ function busWall(g, x, w = 18) {
     for (let k = 0; k < 90; k++) { g.fillStyle = cols[k % 5]; const sx = x + (r() * w | 0), sy = 26 + (r() * 278 | 0); g.fillRect(sx, sy, 1 + (r() * 3 | 0), 1 + (r() * 2 | 0)); }
     const lx = x + (w >> 1) - 3;
     for (let y = 40; y < 300; y += 46) { g.fillStyle = '#fff27a'; g.fillRect(lx, y, 6, 6); g.fillStyle = '#e0c820'; g.fillRect(lx + 2, y + 1, 2, 4); g.fillRect(lx + 1, y + 2, 4, 2); }
+  } else if (p.pattern === 'posters') {
+    // Wand voller kleiner Gig-Plakate
+    const cols = ['#c83a2a', '#3a7ab0', '#e8c050', '#5a8a3a', '#9a4ab0', '#e8e0d0'];
+    for (let y = 26, k = 0; y < 304; y += 13, k++) {
+      const px = x + 1 + (k % 2), pw = w - 3;
+      g.fillStyle = '#efe4c8'; g.fillRect(px, y + 1, pw, 11);
+      g.fillStyle = cols[k % cols.length]; g.fillRect(px + 1, y + 2, pw - 2, 6);
+      g.fillStyle = '#1a1a1a'; g.fillRect(px + 2, y + 9, pw - 4, 1);
+    }
   } else if (p.pattern === 'psych') {
     const cols = ['#e03070', '#f0a020', '#f0e040', '#30c070', '#3080e0', '#9040d0'];
     for (let y = 26; y < 304; y += 3) { g.fillStyle = cols[((y / 3) | 0) % cols.length]; g.fillRect(x + Math.round(Math.sin(y / 9) * 2) + 2, y, w - 4, 3); }
@@ -1025,24 +1034,12 @@ function treeTop(g, cx, cy, r) {
   g.fillStyle = '#6e9048'; g.fillRect(cx - Math.round(r / 3), cy - Math.round(r / 2), 2, 1);
 }
 
-/* ---------- Der Strand (Proberaum draußen): Abendhimmel und Meer ---------- */
+/* ---------- Abendhimmel-Farben (Festival-Streifen am Handy) ---------- */
 const BEACH = {
   sky: ['#3a2e6a', '#6a4a8a', '#c86a7a', '#f0a070', '#ffd0a0'],
   sea: 40,      // Horizont
   shore: 64,    // Brandung
 };
-function beachSky(g, x, y0, w, y1, tOf) {
-  for (let y = y0; y < y1; y++) {
-    const t = Math.max(0, Math.min(1, tOf(y))), c = BEACH.sky, f = t * (c.length - 1), i = Math.min(c.length - 2, f | 0);
-    g.fillStyle = lerpCol(c[i], c[i + 1], f - i); g.fillRect(x, y, w, 1);
-  }
-  // lange, flache Wolkenstreifen im Abendlicht
-  for (const [cx, cy, len] of [[40, 30, 40], [120, 33, 50], [70, 36, 30]]) {
-    if (cy < y0 || cy >= y1) continue;
-    g.fillStyle = 'rgba(255,170,150,.45)'; g.fillRect(x + cx - (len >> 1), cy, len, 1);
-    g.fillStyle = 'rgba(255,214,190,.35)'; g.fillRect(x + cx - (len >> 2), cy - 1, len >> 1, 1);
-  }
-}
 
 /** Festivalmenge von oben: Köpfe in Haut- und Haarfarben, ab und zu T-Shirts und Fahnen */
 function festCrowd(g, x0, y0, w, h, seed, dens) {
@@ -1062,35 +1059,6 @@ function festCrowd(g, x0, y0, w, h, seed, dens) {
   }
 }
 
-/* ---------- Der Wald (Proberaum draußen): Laubboden, Herbstbäume, Farne ---------- */
-function forestFloor(g, x0, y0, w, h, seed) {
-  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x += 2) {
-    const n = Math.sin(x * .08 + y * .05 + seed) + Math.sin(x * .023 - y * .041) + Math.sin(y * .09 + x * .017 + 1);
-    g.fillStyle = n > .9 ? '#56662e' : n < -1 ? '#5a4228' : n < 0 ? '#6a5430' : '#4e5c2a'; g.fillRect(x, y, 2, 1);
-  }
-}
-function forestLeaves(g, x0, y0, w, h, seed, dens) {
-  const r = seeded(seed), cols = ['#b8682a', '#9a3a20', '#d0a040', '#7a4a24', '#c88a3a'];
-  for (let k = 0; k < w * h * dens / 6; k++) {
-    g.fillStyle = cols[(r() * cols.length) | 0];
-    const x = x0 + (r() * w | 0), y = y0 + (r() * h | 0);
-    g.fillRect(x, y, 2, 1); if (r() < .4) g.fillRect(x, y + 1, 1, 1);
-  }
-}
-function forestFern(g, cx, cy) {
-  g.fillStyle = '#3e6a28';
-  for (let k = -3; k <= 3; k++) for (let t = 1; t < 6; t++) g.fillRect(cx + Math.round(k * t * .5), cy - t + Math.abs(k), 1, 1);
-  g.fillStyle = '#5a8a34'; g.fillRect(cx, cy - 5, 1, 5);
-}
-/** Herbstbaum von oben: Krone in Grün, Gold, Orange oder Rot */
-function forestTree(g, cx, cy, rr, seed) {
-  const P = [['#3e5a24', '#56782e', '#6e9040'], ['#8a6a1a', '#b8902a', '#d8b040'], ['#8a3e18', '#b85a24', '#d8803a'], ['#6a2418', '#943420', '#b84a2a']];
-  const p = P[Math.abs(seed * 7 + 3) % P.length];
-  ART.oval(g, cx + 3, cy + 3, rr, rr - 1, 'rgba(10,15,5,.4)');
-  ART.oval(g, cx, cy, rr, rr, p[0]);
-  ART.oval(g, cx - 1, cy - 1, rr - 2, rr - 2, p[1]);
-  for (const [a, b, q] of [[-3, -3, 3], [3, -1, 2], [-1, 3, 2], [2, 3, 2]]) ART.oval(g, cx + Math.round(a * rr / 9), cy + Math.round(b * rr / 9), q, q, p[2]);
-}
 
 /**
  * Strudel: eigenes Band-Emblem (zwei Farben, spiralförmig), (cx, cy) = Mitte, r = Radius.

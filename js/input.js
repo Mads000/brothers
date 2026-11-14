@@ -16,6 +16,7 @@ const Input = {
   init() {
     C.addEventListener('pointerdown', e => {
       e.preventDefault();
+      audioUnlock();                         // Ton erst nach dem ersten Tippen erlaubt
       try { C.setPointerCapture(e.pointerId); } catch (_) { /* egal */ }
       const p = this.toCanvas(e);
       if (e.pointerType === 'mouse') UI.mouse = p;
@@ -41,6 +42,9 @@ const Input = {
       if (e.repeat && !nav) return;   // gedrückt halten soll Pause nicht flackern lassen
       App.key(e.code);
     });
+
+    addEventListener('touchend', audioUnlock, { passive: true });   // iPhone: Ton freischalten
+    addEventListener('keydown', audioUnlock);
 
     // Kein Kontextmenü (langes Drücken auf dem Handy, Rechtsklick)
     document.addEventListener('contextmenu', e => e.preventDefault());

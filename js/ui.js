@@ -363,13 +363,23 @@ function drawIntro(game) {
   txt(goalText(lv), cx, 92, '#9fd8ff', 1, 'c');
   wrapText(lv.hint || '', 38).forEach((l, i) => txt(l, cx, 108 + i * 8, '#ccc', 1, 'c'));
 
-  // Kev <-> Del: worum es immer geht
-  const kb = makeBro('kev', 0, { x: cx - 40, y: 160 }), db = makeBro('del', 0, { x: cx + 40, y: 160 });
-  drawBro(kb); drawBro(db);
-  X.fillStyle = '#ff8a3a';
-  X.fillRect(cx - 17, 146, 35, 1);
-  for (let q = 1; q <= 3; q++) { X.fillRect(cx - 18 + q, 146 - q, 1, q * 2 + 1); X.fillRect(cx + 18 - q, 146 - q, 1, q * 2 + 1); }
-  txtS('KEEP THEM', cx, 134, '#fff', 1, 'c'); txtS('APART', cx, 152, '#fff', 1, 'c');
+  const fresh = newEventsIn(lv);
+  if (fresh.length) {
+    // Neues in diesem Level: kurz erklären (statt Kev <-> Del)
+    const ev = EVENTS[fresh[0]], blink = (App.T * 3 | 0) % 2;
+    X.fillStyle = blink ? '#ffd84a' : '#ff8a3a'; X.fillRect(OX + 16, 133, 22, 9);
+    txt('NEW!', OX + 27, 135, '#000', 1, 'c');
+    txtS(ev.name, OX + 42, 135, '#ffd84a');
+    wrapText(ev.desc, 34).slice(0, 2).forEach((l, i) => txt(l, cx, 146 + i * 8, '#ddd', 1, 'c'));
+  } else {
+    // Kev <-> Del: worum es immer geht
+    const kb = makeBro('kev', 0, { x: cx - 40, y: 160 }), db = makeBro('del', 0, { x: cx + 40, y: 160 });
+    drawBro(kb); drawBro(db);
+    X.fillStyle = '#ff8a3a';
+    X.fillRect(cx - 17, 146, 35, 1);
+    for (let q = 1; q <= 3; q++) { X.fillRect(cx - 18 + q, 146 - q, 1, q * 2 + 1); X.fillRect(cx + 18 - q, 146 - q, 1, q * 2 + 1); }
+    txtS('KEEP THEM', cx, 134, '#fff', 1, 'c'); txtS('APART', cx, 152, '#fff', 1, 'c');
+  }
 
   // Die drei Sterne, jeweils mit kleinem Bild
   const rows = [['gig', 'GIG PLAYED'], ['anger', 'ANGER NEVER OVER 90%'], [lv.bonus ? lv.bonus.type : '', bonusText(lv.bonus) || '-']];
@@ -383,6 +393,13 @@ function drawIntro(game) {
   if ((App.T * 2 | 0) % 2) txtS(VIEW.pc ? 'CLICK OR ENTER TO START' : 'TAP TO START', cx, 244, '#fff', 1, 'c');
 }
 
+/** Knopf "Tour beenden" mit Rückfrage (zweimal tippen) */
+function endTourButton(x, y, w) {
+  const armed = App.quitArm > 0;
+  UI.button(x, y, w, 16, armed ? 'SURE? TAP' : 'END TOUR', () => {
+    if (App.quitArm > 0) { App.quitArm = 0; Endless.quit(); } else App.quitArm = 2.5;
+  }, { noDefault: true, color: armed ? '#ff5a4a' : '#aaa' });
+}
 /** Kleine Bilder für die Sterne-Ziele, (x, y) = Mitte */
 function goalIcon(type, x, y) {
   const r = (a, b, w, h, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, w, h); };
@@ -583,7 +600,14 @@ const Screens = {
     const levels = levelsOf(vid);
     if (!Save.venueUnlocked(vid)) {
       drawLock(cx - 3, 120, '#aaa');
+      const miss = Math.max(0, ve.starsToUnlock - Save.totalStars());
       txt('NEED ' + ve.starsToUnlock + ' STARS', cx, 134, '#aaa', 1, 'c');
+      txt(miss + ' MORE TO GO', cx, 144, '#ffd84a', 1, 'c');
+      // Fortschrittsbalken zu den nötigen Sternen
+      const bw = 100, have = Math.min(1, Save.totalStars() / ve.starsToUnlock);
+      X.fillStyle = '#000'; X.fillRect(cx - bw / 2 - 1, 155, bw + 2, 6);
+      X.fillStyle = '#2a2632'; X.fillRect(cx - bw / 2, 156, bw, 4);
+      X.fillStyle = '#ffd84a'; X.fillRect(cx - bw / 2, 156, Math.round(bw * have), 4);
     } else {
       // aktuelles Level = erstes offenes, das noch nicht geschafft ist
       const cur = levels.find(l => Save.levelUnlocked(l) && !(Save.level(l.id) || {}).done);
@@ -646,7 +670,10 @@ const Screens = {
       txtS('GIG ON!', cx, 44, '#7cfc6a', 3, 'c');
       txt(lv.headliner ? 'LIVE IN ' + lv.city + '!' : 'THE CROWD GOES MAD.', cx, 68, '#fff', 1, 'c');
       for (let s = 0; s < 3; s++) drawStar(cx - 25 + s * 18, 80, r.stars > s, 2);
-      const rows = [['GIG PLAYED', true], ['ANGER NEVER OVER 90%', r.starAnger], [bonusText(lv.bonus) || 'NO BONUS', r.starBonus]];
+      // verpasste Sterne: zeigen, wie knapp es war
+      const mx = Math.round(r.stats.maxAnger), bh = bonusHud(lv, r.stats);
+      const bonusRow = !lv.bonus ? 'NO BONUS' : r.starBonus || !bh ? bonusText(lv.bonus) : bh.boxes ? bh.s + '  ' + bh.boxes.v + '/' + bh.boxes.n : bh.s;
+      const rows = [['GIG PLAYED', true], [r.starAnger ? 'ANGER NEVER OVER 90%' : 'ANGER HIT ' + mx + '% (MAX 90%)', r.starAnger], [bonusRow, r.starBonus]];
       rows.forEach(([t, ok], i) => { drawStar(OX + 24, 98 + i * 10, ok); txt(t, OX + 34, 99 + i * 10, ok ? '#ddd' : '#666'); });
       txt('BINNED ' + r.stats.binned + '   SERVED ' + r.stats.served + '   MAX ' + Math.round(r.stats.maxAnger) + '%', cx, 134, '#888', 1, 'c');
       y = 146;
@@ -654,7 +681,8 @@ const Screens = {
       const fight = !r.reason;
       txtS(fight ? 'FIGHT!' : 'GIG OVER', cx, 44, '#ff4a3a', fight ? 3 : 2, 'c');
       txt(fight ? 'GIG CANCELLED.' : r.reason, cx, 70, '#fff', 1, 'c');
-      txt('LASTED ' + Math.floor(r.time) + ' OF ' + lv.time + 'S', cx, 82, '#aaa', 1, 'c');
+      const left = Math.ceil(lv.time - r.time);
+      txt(left <= 10 && left > 0 ? 'SO CLOSE! ONLY ' + left + 'S LEFT' : 'LASTED ' + Math.floor(r.time) + ' OF ' + lv.time + 'S', cx, 82, left <= 10 ? '#ffd84a' : '#aaa', 1, 'c');
       // Ursachen nur bei einer Prügelei; bei anderen Gründen (z. B. Publikum weg) steht der Grund schon oben
       if (fight && r.causes && r.causes.length) { txt('WHAT HAPPENED:', cx, 98, '#888', 1, 'c'); txt(r.causes.join(' + '), cx, 107, '#ff8a3a', 1, 'c'); }
       y = 122;
@@ -771,6 +799,7 @@ const Screens = {
   /* ----- Extras: Erfolge, Plakate, Highscores ----- */
   extras() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
+    VENUE_ORDER.forEach(v => { if (Save.data.posters[v]) posterImage(v); });   // Plakat-Bilder vorbereiten (vor dem Zeichnen)
     drawBackdrop(VENUES.backstage, App.T);
     txtS('EXTRAS', cx, 7, '#ffd84a', 2, 'c');
     drawTabs(['AWARDS', 'POSTERS', 'SCORES'], App.extrasTab, i => { App.extrasTab = i; });
@@ -791,11 +820,18 @@ const Screens = {
         txt('PAGE ' + (App.awardsPage + 1) + '/' + pages, cx, 236, '#888', 1, 'c');
       }
     } else if (App.extrasTab === 1) {
+      const n = VENUE_ORDER.filter(v => Save.data.posters[v]).length;
       VENUE_ORDER.forEach((vid, i) => {
-        const x = x0 + (i % 3) * 57, y = 54 + ((i / 3) | 0) * 92;
-        drawPoster(x, y, 54, 86, vid, !!Save.data.posters[vid]);
+        const pw = 38, ph = 60, x = x0 + 2 + (i % 4) * 42, y = 50 + ((i / 4) | 0) * 68, have = !!Save.data.posters[vid];
+        if (have) {
+          X.imageSmoothingEnabled = true; X.drawImage(posterImage(vid), x - 1, y - 1, pw + 2, ph + 2); X.imageSmoothingEnabled = false;
+          UI.button(x, y, pw, ph, '', () => { App.posterView = vid; }, { bare: true, noDefault: true, draw(b, hl) { if (hl) { X.fillStyle = '#ffd84a'; X.fillRect(b.x - 2, b.y - 2, b.w + 4, 1); X.fillRect(b.x - 2, b.y + b.h + 1, b.w + 4, 1); } } });
+        } else drawPoster(x, y, pw, ph, vid, false);
       });
-      txt('WIN A HEADLINER TO GET ITS POSTER', cx, 244, '#888', 1, 'c');
+      txt(n + '/' + VENUE_ORDER.length + ' POSTERS', cx, 190, '#ffd84a', 1, 'c');
+      txt('WIN THE LAST LEVEL OF A PLACE', cx, 202, '#888', 1, 'c');
+      txt('TAP A POSTER TO VIEW AND SAVE IT', cx, 212, '#888', 1, 'c');
+      txt('THEY ALSO HANG IN THE PUB AND BACKSTAGE', cx, 222, '#666', 1, 'c');
     } else {
       txt('NEVER-ENDING TOUR', cx, 52, '#ffd84a', 1, 'c');
       txt('BEST: ' + Save.data.endlessBest + ' CITIES', cx, 62, '#ccc', 1, 'c');
@@ -810,9 +846,13 @@ const Screens = {
         txt((PAIRS[h.pair] || PAIRS.brothers).name + '  ' + (h.date || ''), x0 + 18, y + 11, '#777');
       });
     }
-    UI.button(x0, 264, w / 2 - 2, 16, 'VIBRATE: ' + (Save.data.settings.vibrate ? 'ON' : 'OFF'), () => { Save.data.settings.vibrate = !Save.data.settings.vibrate; Save.write(); buzz(40); }, { noDefault: true });
-    UI.button(x0 + w / 2 + 2, 264, w / 2 - 2, 16, 'ENTER CODE', () => App.openCode(), { noDefault: true });
+    const st = Save.data.settings, tog = (k, f) => () => { st[k] = !st[k]; Save.write(); if (f) f(); };
+    UI.button(x0, 246, w / 2 - 2, 15, 'SOUND: ' + (st.sound !== false ? 'ON' : 'OFF'), tog('sound', () => sfx('calm')), { noDefault: true });
+    UI.button(x0 + w / 2 + 2, 246, w / 2 - 2, 15, 'MUSIC: ' + (st.music !== false ? 'ON' : 'OFF'), tog('music'), { noDefault: true });
+    UI.button(x0, 264, w / 2 - 2, 15, 'VIBRATE: ' + (st.vibrate ? 'ON' : 'OFF'), tog('vibrate', () => buzz(40)), { noDefault: true });
+    UI.button(x0 + w / 2 + 2, 264, w / 2 - 2, 15, 'ENTER CODE', () => App.openCode(), { noDefault: true });
     UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    if (App.posterView) { UI.begin(); drawPosterView(App.posterView); }   // Großansicht (nur ihre Knöpfe sind dann aktiv)
   },
 
   /* ----- Never-Ending Tour: Paar wählen ----- */
@@ -875,6 +915,7 @@ const Screens = {
     const ang = E.anger || [0, 0];
     txt('NOW: ' + Game.bros.map((x, i) => x.name + ' ' + Math.round(ang[i]) + '%').join('   '), cx, y, '#888', 1, 'c');
     UI.button(cx - 55, y + 12, 110, 22, 'TO THE MAP', () => App.go('tourmap'), { disabled: App.transT < .6 });
+    if (App.transT >= .6) endTourButton(cx - 35, y + 40, 70);
   },
 
 
@@ -927,7 +968,7 @@ const Screens = {
     }
     R.perks().forEach(p => { txt(p, OX + 10, y, '#bbb'); y += 8; });
     UI.button(OX + PLAY_W - 64, y0 + 54, 56, 16, R.gig ? "LET'S GO" : 'STOP HERE', () => E.choose(sel), { disabled: !!mv });
-    if (VIEW.pc) txt('1-3 OR ARROWS', OX + 10, y0 + 60, '#555');
+    endTourButton(OX + 8, y0 + 54, 56);
   },
 
   /* ----- Sandbox: SOUNDCHECK, alles frei einstellbar ----- */
@@ -1281,27 +1322,112 @@ function ticketIcon(icon, x, y, ink) {
   }
 }
 
-/** Gig-Plakat (Extras) */
+/** Gig-Plakat (Extras, Wände, Speichern). Eigenes Motiv pro Schauplatz. */
 function drawPoster(x, y, w, h, vid, have) {
-  const ve = VENUES[vid], lv = levelsOf(vid).find(l => l.headliner);
+  const ve = VENUES[vid];
   if (!have) {
-    panel(x, y, w, h, '#2a2a30');
-    txt('?', x + w / 2, y + h / 2 - 8, '#444', 2, 'c');
+    X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
+    X.fillStyle = '#1a1a20'; X.fillRect(x, y, w, h);
+    X.fillStyle = '#222228'; for (let k = 0; k < h; k += 4) X.fillRect(x, y + k, w, 1);
+    drawLock(x + w / 2 - 3, y + h / 2 - 8, '#555');
     txt(ve.short, x + w / 2, y + h - 10, '#444', 1, 'c');
     return;
   }
-  const bg = { bus: '#7a2230', rehearsal: '#3a1e22', pub: '#5a3a1c', backstage: '#2a2e36', festival: '#141a3a', hotel: '#3a2440' }[vid] || '#333';
+  const lv = posterLevel(vid), r = (a, b, ww, hh, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, ww, hh); };
   X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
-  X.fillStyle = '#e8dcc0'; X.fillRect(x, y, w, h);
-  X.fillStyle = bg; X.fillRect(x + 3, y + 3, w - 6, h - 6);
-  txt('BROTHERS', x + w / 2, y + 7, '#ffd84a', 1, 'c');
-  // zwei Silhouetten
-  X.fillStyle = '#111';
-  X.fillRect(x + w / 2 - 14, y + 30, 10, 18); X.fillRect(x + w / 2 - 12, y + 22, 6, 7);
-  X.fillRect(x + w / 2 + 4, y + 30, 10, 18); X.fillRect(x + w / 2 + 6, y + 22, 6, 7); X.fillRect(x + w / 2 + 4, y + 21, 10, 2);
-  X.fillStyle = 'rgba(255,216,74,.4)'; X.fillRect(x + 3, y + 48, w - 6, 2);
-  txt('LIVE IN', x + w / 2, y + 56, '#fff', 1, 'c');
-  txt(lv ? lv.city : ve.short, x + w / 2, y + 64, '#fff', 1, 'c');
+  r(0, 0, w, h, '#efe4c8');                                         // Papier
+  const ix = 3, iy = 3, iw = w - 6, ih = 50;                        // Bildfeld
+  const sky = { bus: ['#f0a060', '#ffd890'], rehearsal: ['#8ac0e0', '#d8ecf0'], pub: ['#3a1810', '#6a2a1a'], backstage: ['#1a1c28', '#3a3e54'],
+    festival: ['#c86a7a', '#ffd0a0'], hotel: ['#1a1838', '#4a3a6a'], flat: ['#2a68aa', '#a8c4dc'] }[vid] || ['#333', '#555'];
+  for (let k = 0; k < ih; k++) r(ix, iy + k, iw, 1, lerpCol(sky[0], sky[1], k / ih));
+  const cx = w / 2;
+  if (vid === 'bus') {                                               // Landstraße mit Tourbus von vorn
+    r(ix, iy + 32, iw, 18, '#5a8a3a'); for (let k = 0; k < 18; k++) r(cx - 2 - k, iy + 32 + k, 4 + k * 2, 1, '#3a3a40');
+    r(cx - 1, iy + 36, 2, 3, '#e8e0c0'); r(cx - 1, iy + 42, 2, 4, '#e8e0c0');
+    r(cx - 9, iy + 20, 18, 16, '#8a2430'); r(cx - 7, iy + 22, 14, 6, '#9ac4e0'); r(cx - 8, iy + 31, 3, 2, '#fff4c8'); r(cx + 5, iy + 31, 3, 2, '#fff4c8');
+    r(cx - 9, iy + 36, 3, 2, '#111'); r(cx + 6, iy + 36, 3, 2, '#111');
+  } else if (vid === 'rehearsal') {                                  // Holzsteg über die Sumpfwiese
+    r(ix, iy + 26, iw, 24, '#62803a'); r(ix + 4, iy + 34, 12, 4, '#2e5258'); r(iw - 14, iy + 40, 12, 5, '#2e5258');
+    for (let k = 0; k < 24; k++) r(cx - 2 - (k >> 1), iy + 26 + k, 4 + k, 1, k % 3 ? '#9a7a50' : '#6a5030');
+    for (let k = 0; k < 8; k++) r(ix + 3 + k * 6, iy + 28 + (k % 3), 1, 3, '#8aa04a');
+  } else if (vid === 'pub') {                                        // großes Pint
+    r(cx - 8, iy + 14, 16, 30, '#d8c8a0'); r(cx - 7, iy + 18, 14, 25, '#8a4a14'); r(cx - 7, iy + 15, 14, 4, '#f8f0e0'); r(cx - 7, iy + 18, 2, 25, '#a85a1a');
+    r(cx - 12, iy + 44, 24, 2, '#3a2010');
+  } else if (vid === 'backstage') {                                  // Gitarre im Scheinwerfer
+    for (let k = 0; k < 40; k++) r(cx - 2 - (k >> 2), iy + k, 4 + (k >> 1), 1, 'rgba(255,240,200,.08)');
+    r(cx - 1, iy + 8, 2, 22, '#5a3a1a'); r(cx - 6, iy + 28, 12, 12, '#c83a2a'); r(cx - 4, iy + 26, 8, 4, '#c83a2a'); r(cx - 1, iy + 31, 2, 2, '#111'); r(cx - 2, iy + 6, 4, 3, '#222');
+  } else if (vid === 'festival') {                                   // Bühne vor großer Menge
+    r(ix + 6, iy + 14, iw - 12, 16, '#2a2a30'); r(ix + 6, iy + 14, iw - 12, 2, '#6a6a74'); r(ix + 8, iy + 22, iw - 16, 8, '#6a5238');
+    for (let k = 0; k < 5; k++) r(ix + 9 + k * 8, iy + 16, 2, 2, ['#ff4a4a', '#4a8aff', '#ffd84a', '#e04aff', '#7cfc6a'][k]);
+    for (let yy = iy + 32; yy < iy + ih; yy += 3) for (let xx = ix + ((yy / 3 | 0) % 2) * 2; xx < ix + iw; xx += 4) r(xx, yy, 2, 2, ['#3a2414', '#e0b090', '#8a5a2a', '#1a1410'][(xx + yy) % 4]);
+  } else if (vid === 'hotel') {                                      // Hotel bei Nacht, ein Fernseher fliegt
+    r(cx - 14, iy + 10, 28, 40, '#3a2a3a');
+    for (let yy = 0; yy < 5; yy++) for (let xx = 0; xx < 4; xx++) r(cx - 11 + xx * 6, iy + 13 + yy * 7, 4, 4, (xx + yy) % 3 ? '#e8c070' : '#2a1a2a');
+    r(cx + 14, iy + 8, 7, 5, '#222'); r(cx + 15, iy + 9, 5, 3, '#4a6aaa'); r(cx + 12, iy + 12, 2, 1, '#ddd');
+  } else {                                                           // Moor: Hügel und Wolken
+    r(ix, iy + 30, iw, 20, '#62803a'); r(ix, iy + 28, iw, 3, '#7a9a4a');
+    for (let k = 0; k < 4; k++) r(ix + 4 + k * 12, iy + 24 + (k % 2), 10, 1, 'rgba(240,170,156,.8)');
+    r(ix + 8, iy + 8, 14, 2, '#fff'); r(ix + 10, iy + 6, 8, 2, '#fff');
+  }
+  drawSwirl(X, x + w - 10, y + 10, 4, '#111', '#efe4c8');                  // Band-Emblem
+  r(ix, iy + ih, iw, 1, '#111');
+  txt('BROTHERS', x + cx, y + 57, '#1a1a1a', 1, 'c');
+  r(8, 64, w - 16, 1, '#c83a2a');
+  txt('LIVE IN', x + cx, y + 67, '#8a2a20', 1, 'c');
+  txt(lv && lv.city ? lv.city : ve.name, x + cx, y + 75, '#1a1a1a', 1, 'c');
   const rec = lv && Save.level(lv.id);
-  for (let s = 0; s < 3; s++) drawStar(x + w / 2 - 10 + s * 7, y + 74, rec && rec.stars > s);
+  for (let s = 0; s < 3; s++) drawStar(x + cx - 10 + s * 7, y + h - 3, rec && rec.stars > s);
+}
+/** Level, das das Plakat bringt: Headliner, sonst das letzte Level des Schauplatzes */
+function posterLevel(vid) { const ls = levelsOf(vid); return ls.find(l => l.headliner) || ls[ls.length - 1]; }
+
+/* ---------- Plakate als Bild (Cache), groß ansehen, speichern/teilen, an die Wand hängen ---------- */
+const POSTER_W = 54, POSTER_H = 86, posterCache = {};
+/** Plakat einmal ins Canvas malen und als eigenes Bild merken (vor dem Zeichnen des Bildschirms aufrufen) */
+function posterImage(vid) {
+  const key = vid + (Save.level(posterLevel(vid).id) || {}).stars;
+  if (posterCache[vid] && posterCache[vid].key === key) return posterCache[vid].img;
+  X.save(); X.setTransform(1, 0, 0, 1, 0, 0);
+  drawPoster(1, 1, POSTER_W, POSTER_H, vid, true);
+  const data = X.getImageData(0, 0, POSTER_W + 2, POSTER_H + 2);
+  X.restore();
+  const img = makeCanvas(POSTER_W + 2, POSTER_H + 2); img.getContext('2d').putImageData(data, 0, 0);
+  posterCache[vid] = { key, img };
+  return img;
+}
+/** Plakat als großes PNG speichern bzw. teilen (iPhone: Teilen-Menü -> "Bild sichern") */
+function savePoster(vid) {
+  const src = posterImage(vid), k = 10, c = makeCanvas(src.width * k, src.height * k), g = c.getContext('2d');
+  g.imageSmoothingEnabled = false; g.drawImage(src, 0, 0, c.width, c.height);
+  const name = 'brothers-poster-' + (posterLevel(vid).city || vid).toLowerCase() + '.png';
+  c.toBlob(blob => {
+    if (!blob) return;
+    try {
+      const file = new File([blob], name, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: 'BROTHERS' }).catch(() => {}); return; }
+    } catch (e) { /* weiter mit Download */ }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }, 'image/png');
+}
+/** Großansicht eines Plakats (Extras) */
+function drawPosterView(vid) {
+  const cx = VIEW.W / 2, img = posterImage(vid), k = 2, w = img.width * k, h = img.height * k;
+  X.fillStyle = 'rgba(8,6,12,.92)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY);
+  UI.button(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY, '', () => {}, { bare: true, noDefault: true, draw() {} });   // Klicks dahinter abfangen
+  X.drawImage(img, Math.round(cx - w / 2), 30, w, h);
+  txt(posterReward(vid), cx, 214, '#ffd84a', 1, 'c');
+  UI.button(cx - 60, 230, 120, 20, navigator.share ? 'SAVE / SHARE' : 'SAVE IMAGE', () => savePoster(vid));
+  UI.button(cx - 40, 258, 80, 18, 'CLOSE', () => { App.posterView = null; }, { noDefault: true });
+}
+/** Was ein Plakat gebracht hat */
+function posterReward(vid) { return '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7: SECRET BUS PAINT!'; }
+/** Gesammelte Plakate an den Wänden der Schauplätze (Welt-Koordinaten) */
+function drawWallPosters(ve) {
+  const spots = ve.posterSpots;
+  if (!spots) return;
+  const have = VENUE_ORDER.filter(v => Save.data.posters[v]);
+  X.imageSmoothingEnabled = true;
+  spots.forEach((s, i) => { if (have[i]) X.drawImage(posterImage(have[i]), s.x, s.y, s.w || 10, s.h || 16); });
+  X.imageSmoothingEnabled = false;
 }

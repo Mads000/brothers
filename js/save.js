@@ -11,7 +11,7 @@
      achievements  freigeschaltete Erfolge { firstgig: true, ... }
      highscores    Never-Ending Tour [{ score, cities, pair, date }]
      endlessBest   meiste Städte in einem Run
-     settings      { vibrate }
+     settings      { vibrate, sound, music }
 
    Wenn localStorage nicht geht (privates Fenster o. Ä.), läuft das Spiel
    trotzdem, nur ohne Speichern.
@@ -29,7 +29,7 @@ const Save = {
       owned: { outfits: ['default'], paints: ['default'] },
       outfit: {}, paint: 'default',
       posters: {}, achievements: {}, highscores: [], endlessBest: 0,
-      settings: { vibrate: true },
+      settings: { vibrate: true, sound: true, music: true },
     };
   },
 

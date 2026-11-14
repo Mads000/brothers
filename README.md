@@ -138,3 +138,10 @@ Alle Levels wurden automatisch mit einem einfachen Bot durchgespielt, der etwa 3
 ## Backup der alten Karten
 
 Die Karten vor dem Umbau zum Moor liegen in `backup/maps-2026-11-14/` (art.js, venues.js, mechanics.js) und im Git-Tag `maps-backup-2026-11-14`. Zum Zurückholen die Dateien nach `js/` bzw. `js/data/` kopieren.
+
+## Sound, Ereignisse und Plakate (Update)
+
+- **Sound und Musik:** 8-Bit-Effekte und eine kleine Musik-Schleife pro Schauplatz, komplett im Browser erzeugt (`js/audio.js`). In EXTRAS einzeln abschaltbar (SOUND, MUSIC, VIBRATE).
+- **Neue Ereignisse** (`js/data/events.js`, verteilt über `TWISTS` in `js/data/levels.js`): Vollbremsung im Bus, Windböe und Frosch auf dem Steg, Last Orders im Pub, Pyro auf der Festivalbühne, Zimmerservice-Wagen im Hotel, Schafherde im Moor. Neue Ereignisse zeigt die Startkarte mit „NEW!“ an.
+- **Gig-Plakate:** Für das letzte Level jedes Schauplatzes gibt es ein Plakat mit eigenem Motiv, +60 Plektren und, wenn alle 7 gesammelt sind, die geheime Lackierung TOUR POSTERS. In EXTRAS antippen = groß ansehen und als Bild speichern oder teilen. Gesammelte Plakate hängen im Pub und Backstage an der Wand.
+- **Never-Ending Tour:** END TOUR auf der Karte und nach jeder Stadt (zweimal tippen), die Punkte zählen.

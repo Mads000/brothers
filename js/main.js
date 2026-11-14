@@ -41,7 +41,7 @@ const App = {
 
   /* ---------- Szenenwechsel ---------- */
 
-  go(scene) { this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; if (scene === 'tourmap') { this.mapSel = 0; this.mapMove = null; } },
+  go(scene) { this.posterView = null; this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; if (scene === 'tourmap') { this.mapSel = 0; this.mapMove = null; } },
 
   startLevel(lv, skipIntro) {
     this.level = lv;
@@ -162,7 +162,13 @@ const App = {
 
     // Headliner: Plakat
     res.newPoster = false;
-    if (res.win && lv.headliner && !Save.data.posters[lv.venue]) { Save.data.posters[lv.venue] = true; res.newPoster = true; Save.write(); }
+    const lastOfVenue = levelsOf(lv.venue).slice(-1)[0] === lv;
+    if (res.win && (lv.headliner || lastOfVenue) && !Save.data.posters[lv.venue]) {
+      Save.data.posters[lv.venue] = true; res.newPoster = true;
+      Save.addPicks(CONFIG.REWARDS.poster); res.picks += CONFIG.REWARDS.poster;          // Belohnung fürs Plakat
+      if (VENUE_ORDER.every(v => Save.data.posters[v]) && !Save.data.owned.paints.includes('posters')) Save.data.owned.paints.push('posters');
+      Save.write();
+    }
 
     res.awards = Save.checkAchievements({ result: res });
     const next = res.win ? levelAfter(lv) : null;
@@ -194,7 +200,7 @@ const App = {
     if (TEST_MODE) { const z = this.lpZone(); if (z && inRect(p, z)) this.lp = { id, x: p.x, y: p.y, t: 0 }; }
 
     const b = UI.hit(p);
-    if (b) { b.action(); return; }
+    if (b) { sfx('click'); b.action(); return; }
 
     const s = this.scene;
     if (s === 'play') Game.pointerDown(this.toWorld(p), id);
@@ -287,6 +293,7 @@ const App = {
     if (this.debugMsg && (this.debugMsg.t -= dt) <= 0) this.debugMsg = null;
     if (this.msg && (this.msg.t -= dt) <= 0) this.msg = null;
     if (this.resetArmed > 0) this.resetArmed = Math.max(0, this.resetArmed - dt);
+    if (this.quitArm > 0) this.quitArm = Math.max(0, this.quitArm - dt);
     if (this.lp && (this.lp.t += dt) >= CONFIG.LONG_PRESS) this.openDebug();
     if (this.debugOpen) return;   // Debug-Menü friert das Spiel ein
     const s = this.scene;
@@ -300,7 +307,16 @@ const App = {
     }
   },
 
+  /** Welche Musik gerade läuft: im Spiel die des Schauplatzes, sonst die Titelmusik */
+  musicFor() {
+    const s = this.scene;
+    if (['play', 'pause', 'result', 'transition', 'endlessOver'].includes(s) && Game.venue) return Game.venue.id;
+    if (s === 'gig') return 'festival';
+    return 'menu';
+  },
+
   draw() {
+    Music.set(this.musicFor());
     X.setTransform(1, 0, 0, 1, 0, 0);
     X.fillStyle = '#000'; X.fillRect(0, 0, VIEW.W, VIEW.HC);
     baseT();

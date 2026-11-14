@@ -69,7 +69,7 @@ const CONFIG = {
   NEAR_MISS: { dist: 20, anger: 88, slow: 0.3, time: 0.6, cooldown: 4 },
 
   // Belohnungen in Plektren
-  REWARDS: { win: 5, perStar: 5, maxBinned: 20, firstClear: 10, lossPer10s: 1, endlessPer: 10 },
+  REWARDS: { win: 5, perStar: 5, maxBinned: 20, firstClear: 10, lossPer10s: 1, endlessPer: 10, poster: 60 },
 
   // Never-Ending Tour
   ENDLESS: {

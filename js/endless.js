@@ -216,6 +216,19 @@ const Endless = {
   },
 
   /** Run vorbei */
+  /** Tour freiwillig beenden (Knopf auf der Karte): Punkte zählen, keine Prügelei */
+  quit() {
+    if (!this.active) { App.go('menu'); return; }
+    this.active = false;
+    const picks = Math.floor(this.score / CONFIG.REWARDS.endlessPer);
+    Save.addPicks(picks);
+    const prevBest = Save.data.endlessBest;
+    const rank = Save.addHighscore({ score: this.score, cities: this.section, pair: this.pair, date: new Date().toISOString().slice(0, 10) });
+    const awards = Save.checkAchievements({});
+    const unlockedPairs = Object.keys(PAIRS).filter(id => PAIRS[id].unlockCities > prevBest && PAIRS[id].unlockCities <= this.section);
+    this.last = { score: this.score, cities: this.section, picks, rank, awards, reason: 'YOU ENDED THE TOUR', unlockedPairs, missions: this.missionsDone, newBest: this.section > prevBest };
+    App.go('endlessOver');
+  },
   fail(res) {
     const b = this.breakdown(res, false);
     this.score += b.total;
