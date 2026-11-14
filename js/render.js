@@ -33,8 +33,10 @@ function onViewChange(fn) { viewListeners.push(fn); }
 function fitView() {
   const pc = innerWidth / innerHeight >= CONFIG.PC_ASPECT;
   const W = pc ? CONFIG.PC_W : PLAY_W;
-  // Handy: Bildfläche so hoch wie der Bildschirm, damit oben und unten nichts schwarz bleibt
-  const OY = pc ? 0 : clamp(Math.floor((PLAY_W * innerHeight / innerWidth - H) / 2), 0, CONFIG.MAX_BAND);
+  // Handy (nur echte Touch-Geräte): Bildfläche so hoch wie der Bildschirm, damit oben und
+  // unten nichts schwarz bleibt. Am PC (auch im schmalen Fenster) bleibt es bei 320 Pixeln.
+  const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  const OY = pc || !touch ? 0 : clamp(Math.floor((PLAY_W * innerHeight / innerWidth - H) / 2), 0, CONFIG.MAX_BAND);
   const HC = H + OY * 2;
   const changed = !VIEW.ready || VIEW.W !== W || VIEW.OY !== OY;
   if (C.width !== W || C.height !== HC) { C.width = W; C.height = HC; }
