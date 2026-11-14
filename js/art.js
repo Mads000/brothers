@@ -269,56 +269,58 @@ const ART = {
 
     /* ---------- 3. PUB ---------- */
     pub() {
-      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, ve = VENUES.pub;
+      // Gemütlicher alter Pub: Eichendielen, Holzvertäfelung, Lederbänke an den Wänden, Strudel-Plakat
+      const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, ve = VENUES.pub, r = seeded(17);
       A.rect(g, 0, 0, PLAY_W, H, '#000');
-      // Wände: dunkelgrüne Streifentapete mit Bildern und Wandlampen
+      // Wände: unten dunkle Holzvertäfelung, oben grüne Tapete mit Bildern und Wandlampen
       for (const x0 of [0, 160]) {
-        A.rect(g, x0, 26, 20, 278, '#16221a');
-        for (let x = x0 + 2; x < x0 + 20; x += 6) A.rect(g, x, 26, 2, 278, '#1e2e22');
-        A.rect(g, x0 === 0 ? 18 : 160, 26, 2, 278, '#3a2412');
+        A.rect(g, x0, 26, 20, 278, '#1e3022');
+        for (let y = 26; y < 304; y += 6) A.rect(g, x0, y, 20, 1, '#243a28');
+        const panel = x0 === 0 ? 0 : 172;
+        A.rect(g, panel, 26, 8, 278, '#4a2c16');
+        for (let y = 30; y < 304; y += 18) { A.frame(g, panel + 1, y, 6, 14, '#3a200e'); A.rect(g, panel + 2, y + 1, 4, 1, '#5e3a1e'); }
+        A.rect(g, x0 === 0 ? 18 : 160, 26, 2, 278, '#2a1808');
       }
-      [[3, 80], [3, 140], [164, 80], [164, 200]].forEach(([x, y], i) => {
-        A.rect(g, x, y, 13, 16, '#8a6a20'); A.rect(g, x + 2, y + 2, 9, 12, ['#2a3a5a', '#5a2a2a', '#3a4a2a', '#4a3a5a'][i]);
-        A.rect(g, x + 3, y + 9, 7, 4, 'rgba(0,0,0,.35)');
+      // Lederbänke an den Wänden (rot, mit Knöpfen)
+      for (const x of [20, 155]) {
+        A.rect(g, x, 70, 5, 226, '#7a2420'); A.rect(g, x === 20 ? x : x + 4, 70, 1, 226, '#5a1814');
+        for (let y = 74; y < 296; y += 8) A.rect(g, x + 2, y, 1, 1, '#a8402e');
+      }
+      [[10, 80], [10, 140], [166, 80], [166, 200]].forEach(([x, y], i) => {          // Bilder an der Tapete
+        A.rect(g, x - 1, y, 8, 12, '#a8843a'); A.rect(g, x, y + 1, 6, 10, ['#2a3a5a', '#5a2a2a', '#3a4a2a', '#4a3a5a'][i]);
       });
-      [[9, 110], [9, 260], [170, 170], [170, 260]].forEach(([x, y]) => { A.rect(g, x - 1, y, 3, 3, '#c8a040'); A.rect(g, x, y - 2, 1, 2, '#ffe0a0'); });
-      // Dartscheibe mit Kreidetafel, Kamin, Jukebox
-      A.oval(g, 10, 186, 6, 6, '#111'); A.oval(g, 10, 186, 5, 5, '#c03030'); A.oval(g, 10, 186, 3, 3, '#e8dcc0'); A.rect(g, 9, 185, 2, 2, '#c03030');
-      A.rect(g, 3, 196, 14, 10, '#1a1a1a'); A.frame(g, 3, 196, 14, 10, '#6a4a2a'); A.rect(g, 5, 199, 5, 1, '#ccc'); A.rect(g, 5, 202, 8, 1, '#ccc');
-      A.rect(g, 0, 226, 18, 34, '#5a5450'); A.rect(g, 2, 230, 14, 26, '#1a1210'); A.noise(g, 0, 226, 18, 34, '#3a3632', 40, 8);
+      // Strudel-Plakat der Band (eigenes BROTHERS-Logo)
+      A.rect(g, 8, 156, 10, 16, '#e8e0d0'); drawSwirl(g, 13, 162, 4, '#111', '#e8e0d0'); A.rect(g, 9, 168, 8, 2, '#111');
+      [[13, 110], [13, 262], [167, 170], [167, 262]].forEach(([x, y]) => { A.rect(g, x - 1, y, 3, 3, '#c8a040'); A.rect(g, x, y - 2, 1, 2, '#ffe0a0'); });
+      // Dartscheibe, Kamin, Jukebox
+      A.oval(g, 13, 190, 5, 5, '#111'); A.oval(g, 13, 190, 4, 4, '#c03030'); A.oval(g, 13, 190, 2, 2, '#e8dcc0'); A.rect(g, 12, 189, 2, 2, '#c03030');
+      A.rect(g, 0, 226, 18, 34, '#6a625a'); A.rect(g, 2, 230, 14, 26, '#1a1210'); A.noise(g, 0, 226, 18, 34, '#4a4440', 40, 8); A.rect(g, 0, 226, 18, 2, '#8a8078');
       A.rect(g, 162, 118, 14, 28, '#4a1a4a'); A.oval(g, 169, 121, 7, 4, '#6a1a6a'); A.rect(g, 164, 122, 10, 6, '#f0a020');
       A.rect(g, 164, 130, 10, 2, '#30c0f0'); A.rect(g, 164, 134, 10, 2, '#30c0f0'); A.rect(g, 165, 140, 8, 4, '#222');
-      // Boden: klassischer Pub-Teppich (rot mit goldenem Muster)
-      A.rect(g, 20, 66, 140, 238, '#3e1016');
-      for (let y = 66; y < 304; y += 12) for (let x = 20; x < 160; x += 12) {
-        g.fillStyle = '#56301a'; g.fillRect(x + 5, y + 2, 2, 1); g.fillRect(x + 3, y + 4, 1, 1); g.fillRect(x + 8, y + 4, 1, 1); g.fillRect(x + 2, y + 6, 1, 1); g.fillRect(x + 9, y + 6, 1, 1); g.fillRect(x + 3, y + 8, 1, 1); g.fillRect(x + 8, y + 8, 1, 1); g.fillRect(x + 5, y + 10, 2, 1);
-        g.fillStyle = '#4c1a1e'; g.fillRect(x + 5, y + 5, 2, 3);
-        g.fillStyle = '#1a2e20'; g.fillRect(x, y, 1, 1);
-      }
-      A.noise(g, 20, 66, 140, 238, '#340c10', 500, 11);                 // abgetreten
-      for (let y = 70; y < 300; y++) for (let k = 0; k < 2; k++) { const x = 86 + ((y * 7 + k * 13) % 9); if ((x + y) % 3 === 0) A.rect(g, x, y, 1, 1, '#5e2a28'); }
-      A.planks(g, 20, 56, 140, 10, '#4a2e14', '#3a220e', 5);           // Dielen vor der Theke
+      // Boden: warme Eichendielen
+      A.planks(g, 25, 56, 130, 248, '#6a4426', '#55361c', 6);
+      A.noise(g, 25, 56, 130, 248, '#74502e', 260, 11); A.noise(g, 25, 56, 130, 248, '#5a3a20', 200, 12);
+      // großer Teppich in der Mitte, ruhiges Muster
+      A.shadow(g, 40, 102, 102, 160, .2);
+      A.rect(g, 38, 100, 104, 160, '#5a1a1e'); A.frame(g, 38, 100, 104, 160, '#a8843a'); A.frame(g, 41, 103, 98, 154, '#3a1014');
+      for (let y = 110; y < 252; y += 14) for (let x = 48; x < 134; x += 14) { A.rect(g, x + 3, y, 1, 1, '#8a5a2a'); A.rect(g, x + 2, y + 1, 3, 1, '#8a5a2a'); A.rect(g, x + 3, y + 2, 1, 1, '#8a5a2a'); }
       // Theke: Regal mit Flaschen und Spiegel, Zapfhähne, Messingstange, Hocker
       A.rect(g, 20, 26, 140, 24, '#1e1008');
       A.rect(g, 22, 27, 136, 8, '#2a3a40'); A.rect(g, 22, 27, 136, 1, '#4a5a60');
       const cols = ['#3a8a3a', '#8a2a2a', '#d0a030', '#2a5a8a', '#ddd', '#6a3a1a'];
       for (let x = 24; x < 156; x += 4) { A.rect(g, x, 29, 2, 6, cols[(x * 7) % 6]); A.rect(g, x, 28, 1, 1, '#ccc'); }
       A.rect(g, 22, 36, 136, 2, '#3a2010');
-      for (let x = 26; x < 156; x += 7) A.rect(g, x, 38, 3, 4, ['#c8c8d0', '#a0a8b0'][x % 2]);       // Gläser
-      A.rect(g, 20, 44, 140, 12, '#5a3214'); A.rect(g, 20, 44, 140, 2, '#8a5a2a'); A.rect(g, 20, 54, 140, 2, '#c8a040');
+      for (let x = 26; x < 156; x += 7) A.rect(g, x, 38, 3, 4, ['#c8c8d0', '#a0a8b0'][x % 2]);
+      A.rect(g, 20, 44, 140, 12, '#6a3c18'); A.rect(g, 20, 44, 140, 2, '#9a6a34'); A.rect(g, 20, 54, 140, 2, '#d8b04a');
       for (let x = 34; x < 150; x += 26) { A.rect(g, x, 40, 3, 6, '#d8b040'); A.rect(g, x - 1, 39, 5, 2, ['#c03030', '#3070c0', '#30a030', '#e0e0e0'][(x / 26 | 0) % 4]); }
       for (let x = 30; x < 160; x += 30) { A.oval(g, x, 61, 3, 2, '#8a2a2a'); A.rect(g, x - 2, 60, 5, 1, '#aa3a3a'); }
+      // Topfpflanzen in den Ecken
+      for (const [x, y] of [[30, 290], [150, 72]]) { A.rect(g, x - 3, y, 6, 5, '#8a4a2a'); for (let k = 0; k < 7; k++) { const a = -2.8 + k * .45; A.rect(g, x + Math.round(Math.cos(a) * 5), y + Math.round(Math.sin(a) * 4), 2, 1, k % 2 ? '#4a7a2a' : '#3a6a22'); } }
       // Tische (Positionen aus venues.js) mit Gläsern und Hockern
-      for (const r of ve.walls) pubTable(g, r);
+      for (const t of ve.walls) pubTable(g, t);
       // Tür nach draußen unten
       A.rect(g, 70, 296, 40, 8, '#3a2410'); A.rect(g, 89, 296, 2, 8, '#2a1808'); A.rect(g, 84, 297, 12, 4, '#1a5a2a'); A.text(g, 'EXIT', 84, 298, '#7cfc6a');
-      // Licht: Lampen über den Tischen, Wandlampen, Theke
-      const L = ve.walls.map(r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2, rx: 34, ry: 24, c: '#ffc070', a: .55 }));
-      L.push({ x: 90, y: 50, rx: 80, ry: 18, c: '#ffd080', a: .45 }, { x: 9, y: 110, rx: 16, ry: 14, c: '#ffd080', a: .5 }, { x: 170, y: 170, rx: 16, ry: 14, c: '#ffd080', a: .5 },
-        { x: 9, y: 245, rx: 22, ry: 20, c: '#ff8040', a: .55 }, { x: 169, y: 132, rx: 16, ry: 18, c: '#e070ff', a: .4 });
-      A.lights(g, L);
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.2 - Math.hypot(x - 90, y - 165) / 190);
-      ART.lift(g);
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.3 - Math.hypot(x - 90, y - 165) / 210);
       return o;
     },
 
@@ -424,56 +426,70 @@ const ART = {
 
     /* ---------- 6. HOTEL ---------- */
     hotel() {
-      // Landhotel am Abend: Holzbalkendecke, gemusterte Teppiche, Blick ins Grüne
+      // Landhotel im Querschnitt: drei Zimmer übereinander, jedes mit eigenem Stil.
+      // Oben je eine Tapetenwand mit Bildern, dazwischen Decke mit Stuck und Kronleuchter.
       const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), A = ART, ve = VENUES.hotel;
       A.rect(g, 0, 0, PLAY_W, H, '#1a120e');
-      // Oben: Dachstuhl im Schnitt mit Holzbalken
+      // Dach im Schnitt
       A.rect(g, 0, 26, 180, 30, '#4a3424');
-      for (let x = 0; x < 180; x += 12) { A.rect(g, x, 26, 4, 30, '#5e4430'); A.rect(g, x, 26, 1, 30, '#74563c'); }
-      A.rect(g, 0, 26, 180, 2, '#2a1c12'); A.rect(g, 0, 50, 180, 6, '#6a4c34'); A.rect(g, 0, 50, 180, 1, '#8a6a4a');
-      A.rect(g, 0, 56, 180, 6, '#3a2418'); A.rect(g, 0, 56, 180, 1, '#5a3a28');
-      // Etagen: jedes ein Zimmer mit eigenem Teppichmuster
-      const carpets = [['#5a2a3a', '#6e3848', '#c8a050'], ['#2a3a5a', '#34466a', '#c8b070'], ['#3a4a2a', '#465a34', '#d8c080']];
+      for (let x = 0; x < 180; x += 12) { A.rect(g, x, 26, 4, 24, '#5e4430'); A.rect(g, x, 26, 1, 24, '#74563c'); }
+      A.rect(g, 0, 26, 180, 2, '#2a1c12');
+      hotelCeiling(g, 50, 12);
+      // Zimmer: Tapete, Teppich, Akzentfarbe, Bettdecke
+      const T = [
+        { wall: '#5a2a4a', stripe: '#6a3458', carpet: '#3a1a30', dot: '#5a2a4a', bed: '#c8a040', name: 'SUITE' },   // 301: Rockstar-Suite
+        { wall: '#2a4a6a', stripe: '#34567a', carpet: '#1e2e44', dot: '#2c405a', bed: '#e8e4dc', name: '' },        // 202: klassisch
+        { wall: '#3a5a34', stripe: '#46683e', carpet: '#2a3a22', dot: '#3a4c2c', bed: '#d87a4a', name: '' },        // 103: Gartenzimmer
+      ];
       ve.floors.forEach((f, i) => {
-        const y0 = f.y0 - 4, y1 = f.y1 + 4, room = (3 - i) + '0' + (i + 1), C = carpets[i];
-        A.rect(g, 18, y0, 128, y1 - y0, C[0]);
-        for (let y = y0 + 2; y < y1; y += 8) for (let x = 20 + ((y / 8 | 0) % 2) * 4; x < 146; x += 8) {        // Rautenmuster
-          g.fillStyle = C[1]; g.fillRect(x + 1, y, 1, 1); g.fillRect(x, y + 1, 3, 1); g.fillRect(x + 1, y + 2, 1, 1);
-          if ((x + y) % 3 === 0) { g.fillStyle = C[2]; g.fillRect(x + 1, y + 1, 1, 1); }
-        }
-        A.rect(g, 18, y0, 128, 1, 'rgba(0,0,0,.35)');
-        // Läufer vor dem Bett
-        A.rect(g, 62, ((y0 + y1) >> 1) - 9, 36, 18, '#8a4a2a'); A.frame(g, 62, ((y0 + y1) >> 1) - 9, 36, 18, '#c8a050');
-        A.rect(g, 66, ((y0 + y1) >> 1) - 5, 28, 10, '#a85a34');
-        // Fenster links: draußen grüne Hügel im Abendlicht
-        A.rect(g, 0, y0, 18, y1 - y0, '#3a2a1e');
+        const y0 = f.y0 - 4, y1 = f.y1 + 4, room = (3 - i) + '0' + (i + 1), t = T[i];
+        // Teppich mit dezentem Punktmuster
+        A.rect(g, 18, y0, 128, y1 - y0, t.carpet);
+        for (let y = y0 + 10; y < y1; y += 6) for (let x = 20 + ((y / 6 | 0) % 2) * 3; x < 146; x += 6) A.rect(g, x, y, 1, 1, t.dot);
+        // Tapetenwand oben mit Streifen, Bildern und Wandlampen
+        A.rect(g, 18, y0, 128, 8, t.wall);
+        for (let x = 20; x < 146; x += 4) A.rect(g, x, y0, 1, 7, t.stripe);
+        A.rect(g, 18, y0 + 7, 128, 1, '#e8dcc0'); A.rect(g, 18, y0 + 8, 128, 1, 'rgba(0,0,0,.35)');
+        for (const [x, c] of [[66, '#c8784a'], [84, '#3a7a9a']]) { A.rect(g, x, y0 + 1, 10, 5, '#a8843a'); A.rect(g, x + 1, y0 + 2, 8, 3, c); }
+        for (const x of [60, 98]) { A.rect(g, x, y0 + 2, 2, 2, '#e8c050'); A.rect(g, x, y0 + 1, 2, 1, '#fff0c0'); }
+        // Fenster links: draußen grüne Hügel
+        A.rect(g, 0, y0, 18, y1 - y0, '#4a3424');
         const wy = y0 + 9;
-        for (let y = 0; y < 24; y++) A.rect(g, 3, wy + y, 12, 1, lerpCol('#f0b880', '#ffe0b0', y / 10));
+        for (let y = 0; y < 24; y++) A.rect(g, 3, wy + y, 12, 1, lerpCol('#9ac4e0', '#e8f0e8', y / 12));
         A.rect(g, 3, wy + 12, 12, 12, '#5a8a3a'); A.rect(g, 3, wy + 11, 12, 1, '#6a9a44');
-        A.oval(g, 7, wy + 12, 3, 3, '#3e6028'); A.oval(g, 12, wy + 14, 2, 2, '#2e4a22');
-        A.rect(g, 8, wy, 1, 24, '#e8e0d0'); A.rect(g, 3, wy + 9, 12, 1, '#e8e0d0');
-        A.rect(g, 1, wy - 2, 4, 28, '#8a3a3a'); A.rect(g, 13, wy - 2, 4, 28, '#8a3a3a'); A.rect(g, 1, wy - 2, 16, 2, '#6a2a2a');
-        // Bett mit gepolstertem Kopfteil, Kissen, Tagesdecke
+        A.oval(g, 7, wy + 13, 3, 3, '#3e6028'); A.oval(g, 12, wy + 15, 2, 2, '#2e4a22');
+        A.rect(g, 8, wy, 1, 24, '#f0ece0'); A.rect(g, 3, wy + 9, 12, 1, '#f0ece0');
+        A.rect(g, 1, wy - 2, 4, 28, '#a84a4a'); A.rect(g, 13, wy - 2, 4, 28, '#a84a4a'); A.rect(g, 1, wy - 3, 16, 2, '#7a3434');
+        // Bett mit Kopfteil, Kissen, Decke
         const b = ve.beds[i];
         A.shadow(g, b.x + 2, b.y + 2, b.w, b.h, .4);
         A.rect(g, b.x - 1, b.y, b.w + 2, 4, '#6a4428'); A.rect(g, b.x - 1, b.y, b.w + 2, 1, '#8a6040');
-        A.rect(g, b.x, b.y + 4, b.w, b.h - 4, '#f0ece4');
+        A.rect(g, b.x, b.y + 4, b.w, b.h - 4, '#f4f0e8');
         A.rect(g, b.x + 2, b.y + 5, 9, 5, '#fff'); A.rect(g, b.x + 13, b.y + 5, 9, 5, '#fff');
-        A.rect(g, b.x + 1, b.y + 12, b.w - 2, b.h - 13, ['#9a3044', '#30548a', '#5a7a30'][i]); A.rect(g, b.x + 1, b.y + 12, b.w - 2, 2, '#f8f4ec');
-        for (let x = b.x + 2; x < b.x + b.w - 2; x += 4) A.rect(g, x, b.y + 18, 2, 1, 'rgba(255,255,255,.25)');
-        // Nachttisch mit Lampe, Sessel, Pflanze, Koffer
-        A.rect(g, 52, y0 + 3, 8, 8, '#6a4428'); A.oval(g, 56, y0 + 6, 2, 2, '#ffe0a0');
-        A.rect(g, 68, y0 + 3, 12, 10, '#7a3a2a'); A.rect(g, 70, y0 + 5, 8, 6, '#9a4a34');
-        A.oval(g, 140, y0 + 6, 3, 3, '#3e6028'); A.oval(g, 139, y0 + 5, 2, 2, '#56783a');
-        A.rect(g, 100, y1 - 12, 10, 7, '#3a5a7a'); A.rect(g, 100, y1 - 12, 10, 1, '#5a7a9a'); A.rect(g, 104, y1 - 13, 2, 1, '#222');
+        A.rect(g, b.x + 1, b.y + 12, b.w - 2, b.h - 13, t.bed); A.rect(g, b.x + 1, b.y + 12, b.w - 2, 2, '#fbf8f0');
+        // Nachttisch mit Lampe
+        A.rect(g, 52, y0 + 9, 8, 7, '#6a4428'); A.oval(g, 56, y0 + 12, 2, 2, '#ffe0a0');
         // Kommode mit Fernseher, Minibar
-        A.rect(g, 104, y0 + 2, 32, 8, '#5a3a22'); A.rect(g, 104, y0 + 2, 32, 1, '#7a5a3a');
-        A.rect(g, 114, y0 + 1, 14, 8, '#111'); A.rect(g, 115, y0 + 2, 12, 6, '#1a2a4a'); A.rect(g, 116, y0 + 3, 4, 1, '#4a6aaa');
-        A.rect(g, 92, y0 + 2, 8, 8, '#d8d8d8'); A.rect(g, 92, y0 + 5, 8, 1, '#999');
+        A.rect(g, 104, y0 + 9, 32, 7, '#5a3a22'); A.rect(g, 104, y0 + 9, 32, 1, '#7a5a3a');
+        A.rect(g, 114, y0 + 9, 14, 6, '#111'); A.rect(g, 115, y0 + 10, 12, 4, '#1a2a4a'); A.rect(g, 116, y0 + 11, 4, 1, '#4a6aaa');
+        A.rect(g, 92, y0 + 9, 8, 7, '#d8d8d8'); A.rect(g, 92, y0 + 12, 8, 1, '#999');
+        // Zimmer-eigene Deko
+        if (i === 0) {                                                                 // Rockstar-Suite: Gitarre, Platten, Flaschen
+          A.rect(g, 72, y1 - 16, 3, 12, '#5a3a1a'); A.oval(g, 73, y1 - 6, 4, 3, '#c8783a'); A.rect(g, 72, y1 - 7, 2, 1, '#222');
+          for (let k = 0; k < 3; k++) A.oval(g, 90 + k * 7, y1 - 10, 3, 3, ['#111', '#222', '#111'][k]);
+          for (let k = 0; k < 4; k++) A.rect(g, 116 + k * 4, y1 - 9, 2, 4, '#3a7a3a');
+        } else if (i === 1) {                                                          // klassisch: Sessel, Stehlampe, Koffer
+          A.rect(g, 70, y1 - 18, 12, 10, '#7a3a2a'); A.rect(g, 72, y1 - 16, 8, 6, '#9a4a34');
+          A.oval(g, 88, y1 - 14, 2, 2, '#fff0c0');
+          A.rect(g, 104, y1 - 12, 12, 7, '#3a5a7a'); A.rect(g, 104, y1 - 12, 12, 1, '#5a7a9a'); A.rect(g, 109, y1 - 13, 2, 1, '#222');
+        } else {                                                                       // Gartenzimmer: Pflanzen, Korbsessel
+          for (const [x, y] of [[76, y1 - 10], [124, y1 - 8]]) { A.oval(g, x, y, 4, 4, '#3e6028'); A.oval(g, x - 1, y - 1, 2, 2, '#56783a'); A.rect(g, x - 2, y + 3, 4, 2, '#a85a34'); }
+          A.oval(g, 98, y1 - 12, 5, 4, '#c8a060'); A.oval(g, 98, y1 - 12, 3, 2, '#a88040');
+        }
         // Zimmertür mit Messingnummer
         A.rect(g, 138, y1 - 24, 8, 20, '#5a3420'); A.frame(g, 138, y1 - 24, 8, 20, '#3a2010'); A.rect(g, 144, y1 - 14, 1, 2, '#e8c050');
-        A.text(g, room, 128, y0 + 13, 'rgba(232,192,80,.8)');
-        // Aufzug: Messingrahmen, Holzvertäfelung daneben
+        A.text(g, room, 128, y0 + 17, 'rgba(232,192,80,.85)');
+        // Aufzug: Messingrahmen, daneben Holzvertäfelung
         A.rect(g, 146, y0, 34, y1 - y0, '#3a2418');
         for (let y = y0; y < y1; y += 6) A.rect(g, 146, y, 34, 1, '#2e1c12');
         A.rect(g, 176, y0, 2, y1 - y0, '#2a1a10');
@@ -482,14 +498,14 @@ const ART = {
         A.rect(g, L.x, L.y, L.w, L.h, '#b8b0a0'); A.rect(g, L.x + L.w / 2 - 1, L.y, 1, L.h, '#6a6458'); A.rect(g, L.x + 1, L.y + 1, 2, L.h - 2, '#d0c8b8');
         A.rect(g, L.x + 3, L.y - 8, 10, 5, '#111'); A.text(g, String(3 - i), L.x + 6, L.y - 8, '#ff8a3a');
       });
-      // Decken/Böden zwischen den Etagen: Holzbalken mit Leuchtern
+      // Zwischendecken: Boden im Schnitt, darunter weiße Stuckdecke mit Kronleuchter
       for (const w of ve.walls) {
-        A.rect(g, w.x, w.y, w.w, w.h, '#4a3424'); A.rect(g, w.x, w.y, w.w, 2, '#6a4c34'); A.rect(g, w.x, w.y + w.h - 2, w.w, 2, '#2a1c12');
-        for (let x = 0; x < 180; x += 12) A.rect(g, x, w.y + 2, 4, w.h - 4, '#5e4430');
-        for (let x = 40; x < 146; x += 50) { A.rect(g, x, w.y + w.h, 6, 1, '#fff0c0'); A.rect(g, x + 2, w.y + w.h + 1, 2, 1, '#ffe090'); }
+        A.rect(g, w.x, w.y, w.w, w.h, '#4a3424');
+        A.rect(g, w.x, w.y, w.w, 3, '#6a4c34'); A.rect(g, w.x, w.y, w.w, 1, '#2a1c12');
+        for (let x = 0; x < 180; x += 10) A.rect(g, x, w.y + 3, 6, 7, '#5a4030');                      // Balken im Schnitt
+        hotelCeiling(g, w.y + 10, w.h - 10);
       }
-      // warmes Abendlicht, leicht
-      shadePass(g, PLAY_W, H, (x, y) => y < 56 || y >= 304 ? null : ART.SOFT + 1.2 - Math.abs(x - 80) / 180);
+      shadePass(g, PLAY_W, H, (x, y) => y < 56 || y >= 304 ? null : ART.SOFT + 1.25 - Math.abs(x - 80) / 200);
       return o;
     },
 
@@ -1124,4 +1140,29 @@ function forestTree(g, cx, cy, rr, seed) {
   ART.oval(g, cx, cy, rr, rr, p[0]);
   ART.oval(g, cx - 1, cy - 1, rr - 2, rr - 2, p[1]);
   for (const [a, b, q] of [[-3, -3, 3], [3, -1, 2], [-1, 3, 2], [2, 3, 2]]) ART.oval(g, cx + Math.round(a * rr / 9), cy + Math.round(b * rr / 9), q, q, p[2]);
+}
+
+/** Weiße Stuckdecke (Hotel) mit Zierleiste und kleinem Kronleuchter, y = Oberkante, h = Höhe */
+function hotelCeiling(g, y, h) {
+  g.fillStyle = '#d8d0c0'; g.fillRect(0, y, 180, h);
+  g.fillStyle = '#e8e2d4'; g.fillRect(0, y, 180, 1);
+  g.fillStyle = '#b8ae9a'; g.fillRect(0, y + h - 2, 180, 1);
+  g.fillStyle = '#a89e8a'; for (let x = 2; x < 180; x += 4) g.fillRect(x, y + h - 1, 2, 1);   // Zahnfries
+  for (const cx of [56, 112]) {                                                                // Kronleuchter
+    g.fillStyle = '#a8843a'; g.fillRect(cx - 4, y + 2, 9, 1); g.fillRect(cx, y + 1, 1, 2);
+    g.fillStyle = '#fff0c0'; for (const d of [-4, 0, 4]) g.fillRect(cx + d, y + 3, 1, 1);
+  }
+}
+
+/**
+ * Strudel: eigenes Band-Emblem (zwei Farben, spiralförmig), (cx, cy) = Mitte, r = Radius.
+ * Gemalt pixelweise: Winkel + Abstand ergeben die Spirale.
+ */
+function drawSwirl(g, cx, cy, r, a, b) {
+  for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
+    const d = Math.hypot(x, y);
+    if (d > r + .3) continue;
+    const t = Math.atan2(y, x) / (Math.PI * 2) + d / r * 1.6;
+    g.fillStyle = ((t % 1) + 1) % 1 < .5 ? a : b; g.fillRect(cx + x, cy + y, 1, 1);
+  }
 }

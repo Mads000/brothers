@@ -444,8 +444,8 @@ const Screens = {
 
     // Oben: Sterne links, Plektren rechts (am Handy ganz oben unter der Statusleiste)
     const sy = tall ? 26 : 9;   // Handy: knapp über dem Logo, nicht unter der Statusleiste
-    drawStar(OX + 4, sy, true); txt(String(Save.totalStars()), OX + 12, sy, '#ffd84a');
-    drawPicks(OX + PLAY_W - 4, sy);
+    drawStar(OX + 26, sy, true); txt(String(Save.totalStars()), OX + 34, sy, '#ffd84a');   // weiter innen, nicht am Rand
+    drawPicks(OX + PLAY_W - 26, sy);
 
     // alles etwas tiefer, mittig auf dem Bildschirm (die Brüder sind jetzt im Logo)
     drawLogo(cx, 44, 2);                                           // Logo: die zwei Brüder + Schriftzug
@@ -1246,6 +1246,7 @@ function ticket(icon) {
 function drawLogo(cx, y, k) {
   const x0 = Math.round(cx - 16 * k);
   const r = (x, yy, w, h, c) => { X.fillStyle = c; X.fillRect(x0 + x * k, y + yy * k, w * k, h * k); };
+  drawSwirl(X, Math.round(cx), y + 14 * k, 17 * k, '#4a3a66', '#211a2c');    // Strudel-Emblem hinter den Brüdern
   // Kev: Haare, Sonnenbrille, grüner Parka mit Fellkragen
   r(2, 18, 12, 6, '#4a5e2a'); r(2, 22, 12, 2, '#36451e'); r(7, 18, 1, 6, '#bbbbbb'); r(2, 17, 12, 1, '#c8b890');
   r(4, 8, 8, 9, '#e2b38f');
