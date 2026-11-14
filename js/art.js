@@ -46,7 +46,7 @@ const ART = {
         const dx = (x - L.x) / L.rx, dy = (y - L.y) / L.ry, t = 1 - (dx * dx + dy * dy);
         if (t <= 0) continue;
         const a = t * L.a * ART.GLOW, b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
-        const m = a > b + .55 ? .45 : a > b ? .25 : 0;   // gedithert, zwei Helligkeitsstufen
+        const m = a > b + .55 ? .26 : a > b ? .13 : 0;   // gedithert, zwei dezente Helligkeitsstufen
         if (!m || (ART.floor && !ART.floor(x, y))) continue;   // kein Lichtmuster auf Wänden
         const i = (y * PLAY_W + x) * 4;
         d[i] += (c[0] - d[i]) * m; d[i + 1] += (c[1] - d[i + 1]) * m; d[i + 2] += (c[2] - d[i + 2]) * m;

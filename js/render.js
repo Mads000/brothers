@@ -198,8 +198,9 @@ function shadePass(g, w, h, fn) {
     // PS1-Dithering (Bayer 4x4), zwei Stufen: weiter innen ein feines helles Raster,
     // zum Dunklen hin das kräftige Muster (v = 1 hell, v = 0 dunkel)
     const b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
-    if (v < b) { d[i] *= .58; d[i + 1] *= .58; d[i + 2] *= .66; }
-    else if (v < b + .32) { d[i] *= .84; d[i + 1] *= .84; d[i + 2] *= .88; }
+    // dezent: die Punkte dunkeln nur leicht ab
+    if (v < b) { d[i] *= .76; d[i + 1] *= .76; d[i + 2] *= .8; }
+    else if (v < b + .32) { d[i] *= .92; d[i + 1] *= .92; d[i + 2] *= .94; }
   }
   g.putImageData(im, 0, 0);
 }
