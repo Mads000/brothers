@@ -115,7 +115,20 @@ const MECHANICS = {
      Tür antippen = abschließen. Sind die Brüder getrennt, beruhigen sie sich.
      Nach kickTime Sekunden tritt einer die Tür ein. */
   door: {
-    setup(game, s, p) { s.door = game.venue.door; s.closed = false; s.broken = 0; s.kick = 0; s.kickTime = p.kickTime || 5; },
+    setup(game, s, p) {
+      s.door = game.venue.door; s.closed = false; s.broken = 0; s.kick = 0; s.kickTime = p.kickTime || 5;
+      // Hektik vor dem Auftritt: Roadies rennen durch, die Menge ruft nach der Band
+      s.roadieEvery = p.roadieEvery || null; s.roadieT = s.roadieEvery ? rnd(4, s.roadieEvery[1]) : 0; s.roadies = [];
+      s.chantEvery = p.chantEvery || null; s.chantT = s.chantEvery ? rnd(s.chantEvery[0], s.chantEvery[1]) : 0;
+    },
+    /** Ein Roadie mit Flightcase rennt quer durch den Gang (auf Höhe eines Bruders) */
+    spawnRoadie(game, s) {
+      const vis = game.bros.filter(b => !b.hidden), target = pickOne(vis.length ? vis : game.bros);
+      const room = this.room(target.y), y = clamp(target.y + rnd(-10, 10), room ? 196 : 80, room ? 264 : 158);
+      const dir = Math.random() < .5 ? 1 : -1;
+      s.roadies.push({ x: dir > 0 ? -12 : PLAY_W + 12, y, dir, stop: 0, walk: 0, warn: 1 });
+      game.toastMsg('MIND YOUR BACKS!', '#ff8a3a');
+    },
     room(y) { return y < 172 ? 0 : 1; },
     walls(game, s) { return s.closed ? [s.door] : []; },
     route(game, s, b, tx, ty) {
@@ -127,6 +140,31 @@ const MECHANICS = {
     },
     update(game, s, dt) {
       if (s.broken > 0) s.broken -= dt;
+      // Roadies: kurz Warnpfeil, dann quer durchs Bild. Wer im Weg steht, wird angerempelt.
+      if (s.roadieEvery && (s.roadieT -= dt) <= 0) { this.spawnRoadie(game, s); s.roadieT = rnd(s.roadieEvery[0], s.roadieEvery[1]) / game.diff; }
+      for (const r of s.roadies) {
+        if (r.warn > 0) { r.warn -= dt; continue; }
+        if (r.stop > 0) { r.stop -= dt; continue; }
+        r.x += r.dir * 62 * dt; r.walk += dt;
+        for (const b of game.bros) {
+          if (b.hidden || b.drag != null || b.bumped > 0) continue;
+          if (Math.abs(b.x - r.x) < 9 && Math.abs(b.y - r.y) < 8) {
+            b.bumped = 1;
+            game.moveBroTo(b, b.x, b.y + (b.y >= r.y ? 14 : -14));
+            game.addAnger(b, 7); game.say(b, 'OI!', '#ff8a3a'); game.noteCause('ROADIE');
+            game.shake = Math.max(game.shake, 2);
+          }
+        }
+      }
+      for (const b of game.bros) if (b.bumped > 0) b.bumped -= dt;
+      s.roadies = s.roadies.filter(r => r.x > -20 && r.x < PLAY_W + 20);
+      // Die Menge ruft nach der Band: Wände wackeln, beide werden nervöser
+      if (s.chantEvery && (s.chantT -= dt) <= 0) {
+        s.chantT = rnd(s.chantEvery[0], s.chantEvery[1]);
+        game.comic('BRO-THERS! BRO-THERS!', 90, 84, '#ffd84a');
+        game.shake = Math.max(game.shake, 3); buzz(40);
+        for (const b of game.bros) if (!b.asleep) game.addAnger(b, 4);
+      }
       if (!s.closed) return;
       s.kick += dt;
       const [a, b] = game.bros;
@@ -140,6 +178,10 @@ const MECHANICS = {
       }
     },
     pointerDown(game, s, p) {
+      // Roadie antippen: er bleibt kurz stehen
+      for (const r of s.roadies) if (r.warn <= 0 && r.stop <= 0 && Math.abs(p.x - r.x) < 11 && p.y > r.y - 22 && p.y < r.y + 4) {
+        r.stop = 1.6; game.comic('SORRY!', r.x, r.y - 26, '#9fd8ff'); return true;
+      }
       const d = s.door;
       if (!(p.x >= d.x - 6 && p.x < d.x + d.w + 6 && p.y >= d.y - 8 && p.y < d.y + d.h + 8)) return false;
       if (s.closed) { s.closed = false; return true; }
@@ -149,6 +191,30 @@ const MECHANICS = {
       s.closed = true; s.kick = 0; game.stats.locks++;
       game.comic('LOCKED', d.x + d.w / 2, d.y - 6, '#9fd8ff');
       return true;
+    },
+    entities(game, s) {
+      return s.roadies.filter(r => r.warn <= 0).map(r => ({ y: r.y, draw: () => {
+        drawPerson(r.x, r.y, '#1a1a20', { walk: r.stop > 0 ? 0 : r.walk * 3, hair: '#3a2a1a' });
+        const cx = Math.round(r.x + r.dir * 3);                               // Flightcase vor sich her
+        X.fillStyle = '#000'; X.fillRect(cx - 6, r.y - 17, 12, 9);
+        X.fillStyle = '#9a9aa4'; X.fillRect(cx - 5, r.y - 16, 10, 7);
+        X.fillStyle = '#333'; X.fillRect(cx - 5, r.y - 16, 2, 2); X.fillRect(cx + 3, r.y - 16, 2, 2); X.fillRect(cx - 1, r.y - 13, 2, 1);
+      } }));
+    },
+    drawOver(game, s) {
+      // Warnpfeil, wo gleich ein Roadie reinrennt
+      for (const r of s.roadies) if (r.warn > 0 && (game.T * 6 | 0) % 2) {
+        const x = r.dir > 0 ? 4 : PLAY_W - 12;
+        X.fillStyle = '#000'; X.fillRect(x - 1, r.y - 14, 10, 9);
+        X.fillStyle = '#ff8a3a'; X.fillRect(x, r.y - 13, 8, 7);
+        txt(r.dir > 0 ? '>' : '<', x + 4, r.y - 12, '#000', 1, 'c');
+      }
+      // Letzte 10 Sekunden: rotes Warnlicht und Countdown zum Auftritt
+      const left = game.level.time - game.el;
+      if (game.state === 'play' && game.phase !== 'stagecall' && left <= 10 && left > 0) {
+        if ((game.T * 2 | 0) % 2) { X.fillStyle = 'rgba(255,40,40,.07)'; X.fillRect(0, 26, PLAY_W, 278); }
+        txtS('STAGE IN ' + Math.ceil(left), 90, 146, '#ff5a4a', 2, 'c');
+      }
     },
     drawUnder(game, s) {
       const d = s.door;

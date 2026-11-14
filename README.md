@@ -37,6 +37,8 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
 
 Auf der GitHub-Pages-Seite im Browser-Menü „Zum Home-Bildschirm“ wählen (iPhone: Teilen → „Zum Home-Bildschirm“). Das Spiel startet dann im Vollbild mit eigenem Icon. Die Icons liegen in `icons/`, die App-Angaben in `manifest.webmanifest`.
 
+Nach dem ersten Öffnen ist das Spiel auch **offline** spielbar (Service Worker in `sw.js`). Online wird immer die neueste Version geladen. Neue Dateien bitte in `FILES` in `sw.js` eintragen.
+
 ## Steuerung
 
 | | Handy | PC |
@@ -90,7 +92,8 @@ js/data/levels.js      alle 60 Levels
 js/save.js             Spielstand
 js/mechanics.js        Sonderregeln der Schauplätze, Tamburin-Mann, Drummer
 js/game.js             Spiellogik eines Levels
-js/endless.js          Never-Ending Tour (+ Liste der Städte)
+js/endless.js          Never-Ending Tour (+ Städte mit Lage auf der Karte)
+sw.js                  Service Worker: macht das Spiel offline spielbar
 js/ui.js               HUD und alle Bildschirme
 js/input.js            Touch, Maus, Tastatur
 js/main.js             Szenenwechsel und Game-Loop

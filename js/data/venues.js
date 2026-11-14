@@ -102,10 +102,10 @@ const VENUES = {
 
   /* ===================== 4. BACKSTAGE ===================== */
   backstage: {
-    color: '#9a9ab0', name: 'BACKSTAGE', short: 'BKS', rule: 'TAP THE DOOR TO LOCK ONE IN. BRIEFLY!',
+    color: '#9a9ab0', name: 'BACKSTAGE', short: 'BKS', rule: 'LOCK THE DOOR. TAP ROADIES TO STOP THEM!',
     angerMult: 1.15,
     starsToUnlock: 35,
-    mechanic: 'door', mechDefaults: { kickTime: 5 },
+    mechanic: 'door', mechDefaults: { kickTime: 5, roadieEvery: [8, 12], chantEvery: [11, 15] },   // Roadies und Sprechchöre (Zeitspanne in s)
     bounds: { x0: 26, x1: 154, y0: 66, y1: 290 },
     spawn: { x0: 30, x1: 150, y0: 72, y1: 286 },
     door: { x: 78, y: 166, w: 24, h: 12 },   // Tür in der Trennwand

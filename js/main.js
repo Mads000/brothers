@@ -340,3 +340,8 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+
+// Offline spielbar (z. B. vom Home-Bildschirm): Service Worker anmelden (nur über http/https)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* egal, dann eben nur online */ }); });
+}
