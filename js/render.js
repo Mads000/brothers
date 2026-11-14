@@ -39,7 +39,12 @@ SAFE_PROBE.style.cssText = 'position:fixed;left:0;top:0;width:0;visibility:hidde
 document.body.appendChild(SAFE_PROBE);
 function safeInsets() {
   const cs = getComputedStyle(SAFE_PROBE);
-  return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  let top = parseFloat(cs.paddingTop) || 0, bottom = parseFloat(cs.paddingBottom) || 0;
+  // Vom Home-Bildschirm gestartet (Statusleiste liegt über dem Spiel): Manche iPhones melden
+  // den Abstand zu spät oder gar nicht. Dann lieber einen sicheren Mindestabstand nehmen.
+  const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 54); bottom = Math.max(bottom, 30); }
+  return { top, bottom };
 }
 
 /** Erkennt das Format (Handy hochkant 180x320 oder PC 240x320) und skaliert. */
@@ -66,7 +71,9 @@ function fitView() {
   VIEW.scale = s;
   // Handy: wie viele Spielpixel oben/unten unter Statusleiste bzw. Home-Leiste liegen
   const si = pc ? { top: 0, bottom: 0 } : safeInsets();
-  VIEW.safeT = Math.min(OY, Math.ceil(si.top / s)); VIEW.safeB = Math.min(OY, Math.ceil(si.bottom / s));
+  const sT = Math.min(OY, Math.ceil(si.top / s)), sB = Math.min(OY, Math.ceil(si.bottom / s));
+  const insetsChanged = sT !== VIEW.safeT || sB !== VIEW.safeB;
+  VIEW.safeT = sT; VIEW.safeB = sB;
   SCREEN.style.width = (W * s) + 'px';
   SCREEN.style.height = (HC * s) + 'px';
 
@@ -76,10 +83,14 @@ function fitView() {
     `repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 ${dark}px,transparent ${dark}px ${per}px)`;
 
   document.body.classList.toggle('pc', pc);
-  if (changed) viewListeners.forEach(fn => fn());
+  if (changed || insetsChanged) viewListeners.forEach(fn => fn());
 }
 addEventListener('resize', fitView);
+addEventListener('orientationchange', () => setTimeout(fitView, 200));
+addEventListener('pageshow', fitView);
 fitView();
+// iOS kennt die Ränder (Statusleiste, Home-Leiste) oft erst kurz nach dem Start: nachmessen
+for (const ms of [100, 400, 1200]) setTimeout(fitView, ms);
 
 /* ---------- Kleine Helfer ---------- */
 function rnd(a, b) { return a + Math.random() * (b - a); }
