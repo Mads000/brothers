@@ -37,6 +37,7 @@ const ART = {
    * list: [{ x, y, rx, ry, c: '#ffcc88', a: 0..1 }]
    */
   lights(g, list) {
+    if (!ART.LIGHTS) return;   // Lichtflecken ausgeschaltet (nur noch der normale, leichte Schatten)
     const im = g.getImageData(0, 0, PLAY_W, H), d = im.data;
     for (const L of list) {
       const c = hex(L.c);
@@ -59,6 +60,7 @@ const ART = {
    * Wände werden glatt abgedunkelt. Wird beim Bauen eines Hintergrunds gesetzt.
    */
   floor: null,
+  LIGHTS: false,   // true = geditherte Lichtflecken wieder an
   FLOOR: {
     bus:       (x, y) => x >= 18 && x < 162 && y >= 48,
     rehearsal: (x, y) => x >= 18 && x < 162 && y >= 66,
