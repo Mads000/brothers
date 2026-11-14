@@ -43,10 +43,12 @@ function fitView() {
   VIEW.W = W; VIEW.pc = pc; VIEW.OX = (W - PLAY_W) / 2; VIEW.OY = OY; VIEW.HC = HC; VIEW.ready = true;
   X.imageSmoothingEnabled = false;   // geht beim Ändern der Canvas-Größe verloren
 
-  // Skalierung: PC pixelgenau in ganzen Gerätepixeln, Handy füllt den Bildschirm
+  // Skalierung: Handy füllt den Bildschirm
   const dpr = window.devicePixelRatio || 1;
   let s = Math.min(innerWidth / W, innerHeight / HC);
-  if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1) s = ds / dpr; }
+  // PC: pixelgenau in ganzen Gerätepixeln, aber nur wenn dabei kaum Platz verloren geht.
+  // Sonst (z. B. Fenster knapp unter 960 px hoch) füllt das Spiel die Höhe trotzdem aus.
+  if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1 && ds / dpr >= s * .9) s = ds / dpr; }
   VIEW.scale = s;
   SCREEN.style.width = (W * s) + 'px';
   SCREEN.style.height = (HC * s) + 'px';
