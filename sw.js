@@ -10,7 +10,7 @@
      CACHE hochzählen, dann wird der alte Cache gelöscht.
    ========================================================================= */
 
-const CACHE = 'brothers-v13';   // bei jedem größeren Update hochzählen
+const CACHE = 'brothers-v14';   // bei jedem größeren Update hochzählen
 const FILES = [
   './',
   './index.html',
@@ -35,6 +35,7 @@ const FILES = [
   './js/data/goals.js',
   './js/data/achievements.js',
   './js/data/codes.js',
+  './js/data/rivals.js',
   './js/art.js',
   './js/data/venues.js',
   './js/data/levels.js',

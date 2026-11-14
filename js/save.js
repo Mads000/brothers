@@ -28,7 +28,7 @@ const Save = {
       powerups: { ...CONFIG.START_POWERUPS }, loadout: ['tape', 'mum'],
       owned: { outfits: ['default'], paints: ['default'] },
       outfit: {}, paint: 'default',
-      posters: {}, achievements: {}, highscores: [], endlessBest: 0,
+      posters: {}, rivals: {}, achievements: {}, highscores: [], endlessBest: 0,
       settings: { vibrate: true, sound: true, music: true },
     };
   },
@@ -128,7 +128,8 @@ const Save = {
   usePowerup(id) { if (!TEST_MODE) { this.data.powerups[id] = Math.max(0, (this.data.powerups[id] || 0) - 1); this.write(); } },
 
   /** Plakat vorhanden? Im Playtest (Testmodus) sind alle freigeschaltet. */
-  hasPoster(v) { return TEST_MODE || !!this.data.posters[v]; },
+  hasPoster(v) { return TEST_MODE || !!(RIVALS[v] ? (this.data.rivals || {})[v] : this.data.posters[v]); },
+  freshRivals: [],
   owns(kind, id) { return TEST_MODE || this.data.owned[kind].includes(id); },
   outfitOf(charId) {
     const id = this.data.outfit[charId];
@@ -146,6 +147,14 @@ const Save = {
       let ok = false;
       try { ok = ACHIEVEMENTS[id].check(this.data, ctx || {}); } catch (e) { ok = false; }
       if (ok) { this.data.achievements[id] = true; fresh.push(id); }
+    }
+    // Rivalen-Plakate freischalten (werden auf der Ergebnisseite angezeigt)
+    this.data.rivals = this.data.rivals || {};
+    for (const id in RIVALS) {
+      if (this.data.rivals[id]) continue;
+      let ok = false;
+      try { ok = RIVALS[id].check(this.data); } catch (e) { ok = false; }
+      if (ok) { this.data.rivals[id] = true; this.freshRivals.push(id); this.write(); }
     }
     if (fresh.length) this.write();
     return fresh;

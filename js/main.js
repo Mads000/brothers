@@ -170,7 +170,9 @@ const App = {
       Save.write();
     }
 
+    Save.freshRivals = [];
     res.awards = Save.checkAchievements({ result: res });
+    res.newRivals = Save.freshRivals.slice();
     const next = res.win ? levelAfter(lv) : null;
     res.next = next && Save.levelUnlocked(next) ? next : null;
     this.result = res;

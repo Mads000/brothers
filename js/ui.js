@@ -690,9 +690,10 @@ const Screens = {
     if (r.picks > 0) { drawPick(cx - 16, y); txt('+' + r.picks, cx - 7, y + 1, '#ff8a3a'); }
     r.awards.forEach((id, i) => txtS('NEW AWARD: ' + ACHIEVEMENTS[id].name, cx, y + 12 + i * 9, '#ffd84a', 1, 'c'));
     if (r.newPoster) txtS('NEW GIG POSTER!', cx, y + 12 + r.awards.length * 9, '#ffb0d0', 1, 'c');
+    if (r.newRivals && r.newRivals.length) txtS('NEW POSTER: ' + RIVALS[r.newRivals[0]].band, cx, y + 21 + r.awards.length * 9, '#ffb0d0', 1, 'c');
 
     if (Game.endT < .6 && App.scene === 'result' && !r.fromGig) return;   // kurz warten, damit hektisches Tippen nichts auslöst
-    let by = Math.max(196, y + 16 + (r.awards.length + (r.newPoster ? 1 : 0)) * 9);
+    let by = Math.max(196, y + 16 + (r.awards.length + (r.newPoster ? 1 : 0) + (r.newRivals && r.newRivals.length ? 1 : 0)) * 9);
     if (r.win && r.next) { UI.button(cx - 50, by, 100, 20, 'NEXT LEVEL', () => App.startLevel(r.next)); by += 26; }
     UI.button(cx - 50, by, 100, 20, 'RETRY', () => App.restart()); by += 26;
     UI.button(cx - 50, by, 100, 20, lv.sandbox ? 'SETTINGS' : 'LEVELS', () => App.toSelect(), { noDefault: true });
@@ -799,7 +800,7 @@ const Screens = {
   /* ----- Extras: Erfolge, Plakate, Highscores ----- */
   extras() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
-    VENUE_ORDER.forEach(v => { if (Save.hasPoster(v)) posterImage(v); });   // Plakat-Bilder vorbereiten (vor dem Zeichnen)
+    allPosterKeys().forEach(v => { if (Save.hasPoster(v)) posterImage(v); });   // Plakat-Bilder vorbereiten (vor dem Zeichnen)
     drawBackdrop(VENUES.backstage, App.T);
     txtS('EXTRAS', cx, 7, '#ffd84a', 2, 'c');
     drawTabs(['AWARDS', 'POSTERS', 'SCORES'], App.extrasTab, i => { App.extrasTab = i; });
@@ -820,18 +821,28 @@ const Screens = {
         txt('PAGE ' + (App.awardsPage + 1) + '/' + pages, cx, 236, '#888', 1, 'c');
       }
     } else if (App.extrasTab === 1) {
-      const n = VENUE_ORDER.filter(v => Save.hasPoster(v)).length;
-      VENUE_ORDER.forEach((vid, i) => {
-        const pw = 38, ph = 60, x = x0 + 2 + (i % 4) * 42, y = 50 + ((i / 4) | 0) * 68, have = Save.hasPoster(vid);
+      const rival = App.posterPage === 1, keys = rival ? Object.keys(RIVALS) : VENUE_ORDER;
+      const n = keys.filter(v => Save.hasPoster(v)).length;
+      UI.button(x0, 44, 24, 14, '<', () => { App.posterPage = rival ? 0 : 1; App.posterHint = null; }, { noDefault: true });
+      UI.button(x0 + w - 24, 44, 24, 14, '>', () => { App.posterPage = rival ? 0 : 1; App.posterHint = null; }, { noDefault: true });
+      txtS(rival ? 'RIVAL BANDS' : 'GIG POSTERS', cx, 48, '#ffd84a', 1, 'c');
+      keys.forEach((vid, i) => {
+        const pw = 38, ph = 60, x = x0 + 2 + (i % 4) * 42, y = 62 + ((i / 4) | 0) * 66, have = Save.hasPoster(vid);
         if (have) {
           X.imageSmoothingEnabled = true; X.drawImage(posterImage(vid), x - 1, y - 1, pw + 2, ph + 2); X.imageSmoothingEnabled = false;
           UI.button(x, y, pw, ph, '', () => { App.posterView = vid; }, { bare: true, noDefault: true, draw(b, hl) { if (hl) { X.fillStyle = '#ffd84a'; X.fillRect(b.x - 2, b.y - 2, b.w + 4, 1); X.fillRect(b.x - 2, b.y + b.h + 1, b.w + 4, 1); } } });
-        } else drawPoster(x, y, pw, ph, vid, false);
+        } else {
+          drawPoster(x, y, pw, ph, rival ? 'bus' : vid, false);
+          if (rival) { X.fillStyle = '#1a1a20'; X.fillRect(x + 4, y + ph - 14, pw - 8, 8); txt('???', x + pw / 2, y + ph - 12, '#555', 1, 'c'); }
+          UI.button(x, y, pw, ph, '', () => { App.posterHint = vid; }, { bare: true, noDefault: true, draw() {} });
+        }
       });
-      txt(n + '/' + VENUE_ORDER.length + ' POSTERS', cx, 190, '#ffd84a', 1, 'c');
-      txt('WIN THE LAST LEVEL OF A PLACE', cx, 202, '#888', 1, 'c');
-      txt('TAP A POSTER TO VIEW AND SAVE IT', cx, 212, '#888', 1, 'c');
-      txt('THEY ALSO HANG IN THE PUB AND BACKSTAGE', cx, 222, '#666', 1, 'c');
+      txt(n + '/' + keys.length + ' COLLECTED', cx, 196, '#ffd84a', 1, 'c');
+      const hk = App.posterHint;
+      if (hk && !Save.hasPoster(hk)) txt('LOCKED: ' + (isRival(hk) ? RIVALS[hk].hint : 'WIN THE LAST LEVEL OF ' + VENUES[hk].name), cx, 208, '#ff8a3a', 1, 'c');
+      else txt(rival ? 'TAP A LOCKED ONE TO SEE HOW TO GET IT' : 'WIN THE LAST LEVEL OF A PLACE', cx, 208, '#888', 1, 'c');
+      txt('TAP A POSTER TO VIEW AND SAVE IT', cx, 218, '#888', 1, 'c');
+      txt('THEY ALSO HANG IN THE PUB AND BACKSTAGE', cx, 228, '#666', 1, 'c');
     } else {
       txt('NEVER-ENDING TOUR', cx, 52, '#ffd84a', 1, 'c');
       txt('BEST: ' + Save.data.endlessBest + ' CITIES', cx, 62, '#ccc', 1, 'c');
@@ -1378,6 +1389,72 @@ function drawPoster(x, y, w, h, vid, have) {
   const rec = lv && Save.level(lv.id);
   for (let s = 0; s < 3; s++) drawStar(x + cx - 10 + s * 7, y + h - 3, rec && rec.stars > s);
 }
+/** Plakat einer erfundenen Rivalen-Band (54 x 86), Motiv nach RIVALS[id].style */
+function drawRivalPoster(x, y, w, h, id) {
+  const R = RIVALS[id], rr = seeded(id.length * 31 + id.charCodeAt(0));
+  const r = (a, b, ww, hh, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, ww, hh); };
+  X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
+  let ink = '#111', box = null;
+  switch (R.style) {
+    case 'splatter': {                                            // Farbspritzer-Kunst
+      r(0, 0, w, h, '#efe8d8');
+      const cs = ['#1a1a1a', '#3060c0', '#c03030', '#e8c020', '#30a060', '#e870a0'];
+      for (let k = 0; k < 140; k++) { const c = cs[k % cs.length], px = rr() * w | 0, py = rr() * (h - 22) | 0; r(px, py, 1 + (rr() * 3 | 0), 1 + (rr() * 2 | 0), c); if (rr() < .2) r(px, py, 1, 4 + (rr() * 6 | 0), c); }
+      box = '#efe8d8'; break;
+    }
+    case 'stripes': {                                             // rot-weiße Streifen mit Pint
+      for (let k = 0; k < w; k += 6) r(k, 0, 3, h, '#c83030'), r(k + 3, 0, 3, h, '#f0ece0');
+      r(w / 2 - 8, 14, 16, 26, '#d8c8a0'); r(w / 2 - 7, 18, 14, 21, '#8a4a14'); r(w / 2 - 7, 15, 14, 4, '#fff');
+      box = '#f0ece0'; break;
+    }
+    case 'sky': {                                                 // blauer Himmel, Sonne, Hügel
+      for (let k = 0; k < h; k++) r(0, k, w, 1, lerpCol('#2a68aa', '#bcd8ec', k / h));
+      ART.oval(X, x + 38, y + 16, 7, 7, '#ffd84a'); ART.oval(X, x + 38, y + 16, 5, 5, '#fff0a0');
+      for (const [a, b, l] of [[6, 26, 20], [26, 34, 18], [10, 40, 12]]) { r(a, b, l, 2, '#fff'); r(a + 3, b - 2, l - 6, 2, '#fff'); }
+      r(0, 50, w, 14, '#5a8a3a'); r(0, 48, w, 3, '#7aaa4a');
+      ink = '#fff'; break;
+    }
+    case 'rave': {                                                // bunte Kreise und ein Smiley
+      r(0, 0, w, h, '#111');
+      ['#e03070', '#f0a020', '#f0e040', '#30c070', '#3080e0', '#9040d0'].forEach((c, k) => ART.oval(X, x + w / 2, y + 30, 24 - k * 4, 24 - k * 4, c));
+      ART.oval(X, x + w / 2, y + 30, 6, 6, '#ffe030'); r(w / 2 - 3, 28, 1, 2, '#111'); r(w / 2 + 2, 28, 1, 2, '#111'); r(w / 2 - 3, 33, 6, 1, '#111'); r(w / 2 - 4, 32, 1, 1, '#111'); r(w / 2 + 3, 32, 1, 1, '#111');
+      ink = '#ffe030'; break;
+    }
+    case 'hat': {                                                 // Fischerhut-Silhouette auf Gelb
+      r(0, 0, w, h, '#f0c820');
+      r(w / 2 - 10, 20, 20, 12, '#111'); r(w / 2 - 16, 31, 32, 5, '#111'); r(w / 2 - 10, 26, 20, 2, '#f0c820');
+      break;
+    }
+    case 'neon': {                                                // Neonraster in Lila
+      r(0, 0, w, h, '#1a0a2a');
+      for (let k = 0; k < 8; k++) r(0, 36 + k * k, w, 1, '#e040a0');
+      for (let k = -6; k <= 6; k++) for (let t = 0; t < 30; t++) r(Math.round(w / 2 + k * t * .6), 36 + t, 1, 1, '#30e0e0');
+      ART.oval(X, x + w / 2, y + 22, 9, 9, '#ff6aa0'); for (let k = 0; k < 4; k++) r(w / 2 - 9, 18 + k * 3, 18, 1, '#1a0a2a');
+      ink = '#ff6aa0'; break;
+    }
+    case 'punk': {                                                // Fotokopie mit Erpresser-Buchstaben
+      r(0, 0, w, h, '#d8d8d0');
+      for (let k = 0; k < 220; k++) r(rr() * w | 0, rr() * h | 0, 1, 1, rr() < .5 ? '#888' : '#444');
+      r(8, 10, 38, 30, '#222'); r(10, 12, 34, 26, '#999'); r(18, 18, 8, 10, '#222'); r(30, 18, 8, 10, '#222');   // grobes Foto
+      r(40, 6, 2, 12, '#aaa'); r(38, 6, 6, 2, '#aaa');            // Sicherheitsnadel
+      break;
+    }
+    case 'hazard': {                                              // Warnstreifen, große 92
+      r(0, 0, w, h, '#f0c820');
+      for (let k = -h; k < w; k += 8) for (let t = 0; t < h; t++) { const px = k + t; if (px >= 0 && px < w && (t < 6 || t > h - 7 || px < 5 || px > w - 6)) r(px, t, 4, 1, '#111'); }
+      r(7, 8, w - 14, 48, '#3a3a3e');
+      txt('92', x + w / 2, y + 22, '#f0c820', 3, 'c');
+      ink = '#111'; break;
+    }
+  }
+  // Bandname und Untertitel unten
+  const lines = wrapText(R.band, 12), by = h - 10 - lines.length * 7;
+  if (box) r(2, by - 3, w - 4, lines.length * 7 + 12, box);
+  lines.forEach((l, i) => txt(l, x + w / 2, y + by + i * 7, ink, 1, 'c'));
+  txt(R.line, x + w / 2, y + h - 8, R.style === 'punk' || R.style === 'splatter' || R.style === 'stripes' || R.style === 'hat' || R.style === 'hazard' ? '#7a2a20' : '#ddd', 1, 'c');
+}
+/** Plakat-Schlüssel: Schauplatz-ID (Gig-Plakat) oder Rivalen-ID */
+function isRival(key) { return !!RIVALS[key]; }
 /** Level, das das Plakat bringt: Headliner, sonst das letzte Level des Schauplatzes */
 function posterLevel(vid) { const ls = levelsOf(vid); return ls.find(l => l.headliner) || ls[ls.length - 1]; }
 
@@ -1385,10 +1462,10 @@ function posterLevel(vid) { const ls = levelsOf(vid); return ls.find(l => l.head
 const POSTER_W = 54, POSTER_H = 86, posterCache = {};
 /** Plakat einmal ins Canvas malen und als eigenes Bild merken (vor dem Zeichnen des Bildschirms aufrufen) */
 function posterImage(vid) {
-  const key = vid + (Save.level(posterLevel(vid).id) || {}).stars;
+  const key = isRival(vid) ? vid : vid + (Save.level(posterLevel(vid).id) || {}).stars;
   if (posterCache[vid] && posterCache[vid].key === key) return posterCache[vid].img;
   X.save(); X.setTransform(1, 0, 0, 1, 0, 0);
-  drawPoster(1, 1, POSTER_W, POSTER_H, vid, true);
+  if (isRival(vid)) drawRivalPoster(1, 1, POSTER_W, POSTER_H, vid); else drawPoster(1, 1, POSTER_W, POSTER_H, vid, true);
   const data = X.getImageData(0, 0, POSTER_W + 2, POSTER_H + 2);
   X.restore();
   const img = makeCanvas(POSTER_W + 2, POSTER_H + 2); img.getContext('2d').putImageData(data, 0, 0);
@@ -1399,7 +1476,7 @@ function posterImage(vid) {
 function savePoster(vid) {
   const src = posterImage(vid), k = 10, c = makeCanvas(src.width * k, src.height * k), g = c.getContext('2d');
   g.imageSmoothingEnabled = false; g.drawImage(src, 0, 0, c.width, c.height);
-  const name = 'brothers-poster-' + (posterLevel(vid).city || vid).toLowerCase() + '.png';
+  const name = 'brothers-poster-' + (isRival(vid) ? RIVALS[vid].band.replace(/\s+/g, '-') : (posterLevel(vid).city || vid)).toLowerCase() + '.png';
   c.toBlob(blob => {
     if (!blob) return;
     try {
@@ -1421,12 +1498,14 @@ function drawPosterView(vid) {
   UI.button(cx - 40, 258, 80, 18, 'CLOSE', () => { App.posterView = null; }, { noDefault: true });
 }
 /** Was ein Plakat gebracht hat */
-function posterReward(vid) { return '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7: SECRET BUS PAINT!'; }
+function posterReward(vid) { return isRival(vid) ? 'RIVAL BAND: ' + RIVALS[vid].band : '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7: SECRET BUS PAINT!'; }
+/** Alle Plakate: erst die Gig-Plakate, dann die Rivalen */
+function allPosterKeys() { return [...VENUE_ORDER, ...Object.keys(RIVALS)]; }
 /** Gesammelte Plakate an den Wänden der Schauplätze (Welt-Koordinaten) */
 function drawWallPosters(ve) {
   const spots = ve.posterSpots;
   if (!spots) return;
-  const have = VENUE_ORDER.filter(v => Save.hasPoster(v));
+  const have = allPosterKeys().filter(v => Save.hasPoster(v));
   X.imageSmoothingEnabled = true;
   spots.forEach((s, i) => { if (have[i]) X.drawImage(posterImage(have[i]), s.x, s.y, s.w || 10, s.h || 16); });
   X.imageSmoothingEnabled = false;
