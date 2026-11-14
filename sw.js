@@ -46,9 +46,11 @@ const FILES = [
 ];
 
 self.addEventListener('install', e => {
-  // jede Datei einzeln: scheitert eine (z. B. kurz kein Netz), klappt der Rest trotzdem
+  // jede Datei einzeln: scheitert eine (z. B. kurz kein Netz), klappt der Rest trotzdem.
+  // Klappt der Speicher gar nicht, wird der Worker trotzdem aktiv (dann eben nur online).
   e.waitUntil(caches.open(CACHE)
     .then(c => Promise.allSettled(FILES.map(f => c.add(new Request(f, { cache: 'reload' })))))
+    .catch(() => {})
     .then(() => self.skipWaiting()));
 });
 
@@ -56,28 +58,31 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .catch(() => {})
       .then(() => self.clients.claim())
   );
 });
 
-// Erst Netz (mit Zeitlimit), dann Cache
+// Erst Netz (nach 4 s ohne Antwort lieber aus dem Cache), sonst Cache. Fehler im
+// Speicher dürfen das Laden nie blockieren.
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith((async () => {
-    const cache = await caches.open(CACHE);
+    const net = fetch(req);
+    let cache = null;
+    try { cache = await caches.open(CACHE); } catch (_) { /* kein Speicher */ }
     try {
-      const res = await Promise.race([
-        fetch(req),
-        new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 4000)),
-      ]);
-      if (res && res.ok) cache.put(req, res.clone());
+      const res = await Promise.race([net, new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 4000))]);
+      if (cache && res && res.ok) cache.put(req, res.clone()).catch(() => {});
       return res;
     } catch (err) {
-      const hit = await cache.match(req, { ignoreSearch: true });
-      if (hit) return hit;
-      if (req.mode === 'navigate') return (await cache.match('./index.html')) || Response.error();
-      return Response.error();
+      if (cache) {
+        let hit = null;
+        try { hit = (await cache.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? await cache.match('./index.html') : null); } catch (_) { /* egal */ }
+        if (hit) return hit;
+      }
+      return net;   // nichts im Cache: auf das Netz warten (offline gibt es dann den normalen Fehler)
     }
   })());
 });
