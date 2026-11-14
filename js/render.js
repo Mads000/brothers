@@ -173,8 +173,10 @@ function shadePass(g, w, h, fn) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const v = fn(x, y);
     if (v === null) continue;
-    const b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
-    if (v < b) { const i = (y * w + x) * 4; d[i] *= .55; d[i + 1] *= .55; d[i + 2] *= .65; }
+    // weicher Verlauf statt Punktmuster (ruhiger fürs Auge): v = 1 hell, v = 0 dunkel
+    const k = 1 - clamp(v, 0, 1);
+    if (k <= 0) continue;
+    const i = (y * w + x) * 4; d[i] *= 1 - .45 * k; d[i + 1] *= 1 - .45 * k; d[i + 2] *= 1 - .35 * k;
   }
   g.putImageData(im, 0, 0);
 }

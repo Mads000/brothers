@@ -1042,7 +1042,7 @@ function getMapImage() {
     const i = y * PLAY_W + x, k = i * 4;
     if (!land[i]) { d[k + 3] = 0; continue; }
     const coast = !land[i - 1] || !land[i + 1] || !land[i - PLAY_W] || !land[i + PLAY_W];
-    const c = coast ? sand : (BAYER[(y & 3) * 4 + (x & 3)] < 4 ? grass2 : grass);
+    const c = coast ? sand : ((x * 7 + y * 13) % 23 === 0 ? grass2 : grass);
     d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
   }
   g.putImageData(im, 0, 0);
