@@ -430,7 +430,7 @@ const Screens = {
     else { drawBackdrop(VENUES.bus, T); shade(.6); }
 
     // Oben: Sterne links, Plektren rechts (am Handy ganz oben unter der Statusleiste)
-    const sy = tall ? -VIEW.OY + VIEW.safeT + 9 : 9;
+    const sy = tall ? 26 : 9;   // Handy: knapp über dem Logo, nicht unter der Statusleiste
     drawStar(OX + 4, sy, true); txt(String(Save.totalStars()), OX + 12, sy, '#ffd84a');
     drawPicks(OX + PLAY_W - 4, sy);
 
