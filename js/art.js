@@ -12,7 +12,7 @@
 const ART = {
   /* ---------------- Stimmung (zum Nachjustieren) ---------------- */
   SOFT: 0.22,     // weniger dunkle Ränder (0 = ganz düster)
-  GLOW: 0.85,     // Stärke der Lichtkegel (1 = normal)
+  GLOW: 1.0,      // Stärke der Lichtkegel (1 = normal)
   LIFT: 0.09,     // alles leicht aufhellen (0 = aus)
 
   /* ---------------- Werkzeuge ---------------- */
@@ -33,7 +33,7 @@ const ART = {
     for (let y = -ry; y <= ry; y++) { const w = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry))); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); }
   },
   /**
-   * Lichtschein: weicher Verlauf in Stufen, an den Rändern leicht gedithert.
+   * Lichtkegel im PS1-Stil: gedithert, in zwei Helligkeitsstufen.
    * list: [{ x, y, rx, ry, c: '#ffcc88', a: 0..1 }]
    */
   lights(g, list) {
@@ -45,10 +45,9 @@ const ART = {
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
         const dx = (x - L.x) / L.rx, dy = (y - L.y) / L.ry, t = 1 - (dx * dx + dy * dy);
         if (t <= 0) continue;
-        // weicher Rand (t²), 4 Stufen, an den Übergängen leicht gedithert
-        const raw = Math.min(1, t * t * L.a * ART.GLOW);
-        const m = Math.floor(raw * 4 + (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16) / 4 * .32;
-        if (m <= 0) continue;
+        const a = t * L.a * ART.GLOW, b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
+        const m = a > b + .55 ? .45 : a > b ? .25 : 0;   // gedithert, zwei Helligkeitsstufen
+        if (!m) continue;
         const i = (y * PLAY_W + x) * 4;
         d[i] += (c[0] - d[i]) * m; d[i + 1] += (c[1] - d[i + 1]) * m; d[i + 2] += (c[2] - d[i + 2]) * m;
       }

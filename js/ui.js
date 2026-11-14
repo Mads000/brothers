@@ -52,18 +52,16 @@ const UI = {
   },
 };
 
-/** Standard-Knopf: Papier wie die Konzert-Tickets im Hauptmenü */
+/** Standard-Knopf: schlichter dunkler Kasten mit heller Oberkante */
 function drawButton(b, hl) {
   if (!b.bare) {
-    const T = TICKET, edge = b.disabled ? '#33302a' : hl ? T.hot : b.active ? '#c8a040' : T.edge;
-    X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(b.x + 1, b.y + 1, b.w + 1, b.h + 1);          // Schatten
-    X.fillStyle = b.disabled ? '#1a1815' : b.active ? '#3a3122' : T.paper; X.fillRect(b.x, b.y, b.w, b.h);
-    X.fillStyle = 'rgba(255,240,200,.05)'; X.fillRect(b.x + 1, b.y + 1, b.w - 2, 1);
-    X.fillStyle = edge;
-    X.fillRect(b.x, b.y, b.w, 1); X.fillRect(b.x, b.y + b.h - 1, b.w, 1); X.fillRect(b.x, b.y, 1, b.h); X.fillRect(b.x + b.w - 1, b.y, 1, b.h);
+    X.fillStyle = '#000'; X.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+    X.fillStyle = b.disabled ? '#141418' : hl ? '#4a3a10' : b.active ? '#2a3a2a' : '#22222a'; X.fillRect(b.x, b.y, b.w, b.h);
+    X.fillStyle = b.disabled ? '#222228' : hl ? '#ffd84a' : b.active ? '#7cfc6a' : '#4a4a58'; X.fillRect(b.x, b.y, b.w, 1);
+    X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(b.x, b.y + b.h - 1, b.w, 1);
   }
   if (b.draw) { b.draw(b, hl); return; }
-  const col = b.disabled ? '#4a4740' : hl ? '#ffd84a' : b.active ? '#ffd84a' : (b.color || TICKET.ink);
+  const col = b.disabled ? '#555' : hl ? '#ffd84a' : (b.color || '#fff');
   const cx = b.x + b.w / 2;
   if (b.sub) {
     const y = b.y + Math.floor((b.h - 12) / 2);
@@ -182,9 +180,9 @@ function drawBackdrop(ve, T, withBros) {
 }
 function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
-function panel(x, y, w, h, border = '#6e6452') {
-  X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(x + 1, y + 1, w + 1, h + 1);
-  X.fillStyle = '#1c1a17'; X.fillRect(x, y, w, h);
+function panel(x, y, w, h, border = '#4a4a58') {
+  X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
+  X.fillStyle = '#121218'; X.fillRect(x, y, w, h);
   X.fillStyle = border; X.fillRect(x, y, w, 1); X.fillRect(x, y + h - 1, w, 1); X.fillRect(x, y, 1, h); X.fillRect(x + w - 1, y, 1, h);
 }
 

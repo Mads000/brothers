@@ -73,7 +73,7 @@ function fitView() {
   // Scanlines: bei großer Skalierung eine Linie pro Spielpixel, sonst alle 3 CSS-px
   const per = Math.max(3, s), dark = Math.max(1, per / 3);
   SCAN.style.background =
-    `repeating-linear-gradient(0deg,rgba(0,0,0,.19) 0 ${dark}px,transparent ${dark}px ${per}px)`;
+    `repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 ${dark}px,transparent ${dark}px ${per}px)`;
 
   document.body.classList.toggle('pc', pc);
   if (changed) viewListeners.forEach(fn => fn());
@@ -189,10 +189,9 @@ function shadePass(g, w, h, fn) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const v = fn(x, y);
     if (v === null) continue;
-    // Verlauf in 5 Stufen, nur an den Stufen-Übergängen leicht gedithert (v = 1 hell, v = 0 dunkel)
-    const k = Math.floor((1 - clamp(v, 0, 1)) * 5 + (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16) / 5;
-    if (k <= 0) continue;
-    const i = (y * w + x) * 4; d[i] *= 1 - .45 * k; d[i + 1] *= 1 - .45 * k; d[i + 2] *= 1 - .35 * k;
+    // PS1-Dithering: Punktmuster (Bayer 4x4) statt weichem Verlauf (v = 1 hell, v = 0 dunkel)
+    const b = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
+    if (v < b) { const i = (y * w + x) * 4; d[i] *= .55; d[i + 1] *= .55; d[i + 2] *= .65; }
   }
   g.putImageData(im, 0, 0);
 }
