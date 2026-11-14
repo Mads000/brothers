@@ -178,6 +178,33 @@ function drawBackdrop(ve, T, withBros) {
   X.fillStyle = HUD_BG; X.fillRect(0, 0, VIEW.W, 26); X.fillRect(0, 304, VIEW.W, 16);
   shade();
 }
+/**
+ * Handy-Startbildschirm: der Bus über die ganze Bildschirmhöhe (vorne Frontscheibe,
+ * dazwischen so viele Sitzreihen wie passen, hinten die Rückbank). Gibt false zurück,
+ * wenn es keinen Platz oben/unten gibt (PC), dann zeichnet der Aufrufer normal.
+ */
+let _tallBus = null, _tallKey = '';
+function drawTallBus() {
+  const h = VIEW.OY;
+  if (h <= 0 || VIEW.OX > 0) return false;
+  const bg = getVenueBG(VENUES.bus), key = h + '|' + JSON.stringify(busPaint());
+  if (key !== _tallKey) {
+    const TH = 320 + 2 * h, o = makeCanvas(PLAY_W, TH), g = o.getContext('2d');
+    const TOP = [26, 60], ROW = 38, BOT = [282, 304];   // Front, eine Sitzreihe, Rückbank
+    const topH = TOP[1] - TOP[0], botH = BOT[1] - BOT[0];
+    const mid = TH - topH - botH, n = Math.floor(mid / ROW), gap = mid - n * ROW;
+    g.drawImage(bg, 0, TOP[0], PLAY_W, topH, 0, 0, PLAY_W, topH);
+    for (let k = 0; k < n; k++) g.drawImage(bg, 0, 60 + (k % 6) * ROW, PLAY_W, ROW, 0, topH + k * ROW, PLAY_W, ROW);
+    // Restplatz als Gang vor der Rückbank: Bodenstück zwischen letzter Reihe und Rückbank wiederholen
+    for (let y = topH + n * ROW; y < TH - botH; y += 6) g.drawImage(bg, 0, 276, PLAY_W, 6, 0, y, PLAY_W, Math.min(6, TH - botH - y));
+    g.drawImage(bg, 0, BOT[0], PLAY_W, botH, 0, TH - botH, PLAY_W, botH);
+    _tallBus = o; _tallKey = key;
+  }
+  baseT();
+  X.drawImage(_tallBus, 0, -h);
+  X.fillStyle = 'rgba(0,0,0,.5)'; X.fillRect(0, -h, VIEW.W, 320 + 2 * h);
+  return true;
+}
 function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
 function panel(x, y, w, h, border = '#4a4a58') {
@@ -348,12 +375,15 @@ const Screens = {
   /* ----- Hauptmenü ----- */
   menu() {
     const cx = VIEW.W / 2, T = App.T, OX = VIEW.OX;
-    drawBackdrop(VENUES.bus, T);
-    shade(.35);
+    // Handy: Bus über die ganze Höhe, kräftig abgedunkelt, damit die Knöpfe klar vorne stehen
+    const tall = drawTallBus();
+    if (tall) { baseT(); X.fillStyle = 'rgba(10,8,14,.45)'; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY); }
+    else { drawBackdrop(VENUES.bus, T); shade(.35); }
 
-    // Oben: Sterne links, Plektren rechts
-    drawStar(OX + 4, 9, true); txt(String(Save.totalStars()), OX + 12, 9, '#ffd84a');
-    drawPicks(OX + PLAY_W - 4, 9);
+    // Oben: Sterne links, Plektren rechts (am Handy ganz oben unter der Statusleiste)
+    const sy = tall ? -VIEW.OY + VIEW.safeT + 9 : 9;
+    drawStar(OX + 4, sy, true); txt(String(Save.totalStars()), OX + 12, sy, '#ffd84a');
+    drawPicks(OX + PLAY_W - 4, sy);
 
     txtS('BROTHERS', cx, 40, '#ffd84a', 3, 'c');
     txt('TWO BROTHERS. ONE BAND. ONE BUS.', cx, 64, '#ccc', 1, 'c');
@@ -381,7 +411,7 @@ const Screens = {
     else if ((T * 1.5 | 0) % 2) txtS('#@%!', cx, 236, '#ff8a3a', 1, 'c');
 
     if (TEST_MODE) txt(VIEW.pc ? 'TEST MODE  -  F2 = DEBUG' : 'TEST MODE  -  HOLD LOGO = DEBUG', cx, 290, '#a06030', 1, 'c');
-    txt('V' + CONFIG.VERSION, cx, 309, '#444', 1, 'c');
+    txt('V' + CONFIG.VERSION, cx, tall ? 320 + VIEW.OY - VIEW.safeB - 14 : 309, '#444', 1, 'c');
   },
 
   /* ----- Spielanleitung ----- */
