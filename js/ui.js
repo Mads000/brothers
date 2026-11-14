@@ -277,7 +277,8 @@ function drawHUD(game, interactive) {
   if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH >> 1) - 4, bh.ok); txt(bh.s, cx + 1, BB + (BH >> 1) - 3, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
-  if (interactive) UI.button(W - 26, TY, 26, HY - TY + 14, '',   // Trefferfläche bis zum Bildschirmrand () => App.pause(), {
+  // Trefferfläche reicht bis zum Bildschirmrand
+  if (interactive) UI.button(W - 26, TY, 26, HY - TY + 14, '', () => App.pause(), {
     bare: true, noDefault: true,
     draw(b, hl) { X.fillStyle = hl ? '#ffd84a' : '#aaa'; X.fillRect(W - 9, HY + 2, 2, 7); X.fillRect(W - 5, HY + 2, 2, 7); },
   });
