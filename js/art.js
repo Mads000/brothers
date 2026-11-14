@@ -277,10 +277,9 @@ const ART = {
       // Boden: warme Eichendielen
       A.planks(g, 25, 56, 130, 248, '#6a4426', '#55361c', 6);
       A.noise(g, 25, 56, 130, 248, '#74502e', 260, 11); A.noise(g, 25, 56, 130, 248, '#5a3a20', 200, 12);
-      // großer Teppich in der Mitte, ruhiges Muster
+      // großer einfarbiger Teppich in der Mitte
       A.shadow(g, 40, 102, 102, 160, .2);
       A.rect(g, 38, 100, 104, 160, '#5a1a1e'); A.frame(g, 38, 100, 104, 160, '#a8843a'); A.frame(g, 41, 103, 98, 154, '#3a1014');
-      for (let y = 110; y < 252; y += 14) for (let x = 48; x < 134; x += 14) { A.rect(g, x + 3, y, 1, 1, '#8a5a2a'); A.rect(g, x + 2, y + 1, 3, 1, '#8a5a2a'); A.rect(g, x + 3, y + 2, 1, 1, '#8a5a2a'); }
       // Theke: Regal mit Flaschen und Spiegel, Zapfhähne, Messingstange, Hocker
       A.rect(g, 20, 26, 140, 24, '#1e1008');
       A.rect(g, 22, 27, 136, 8, '#2a3a40'); A.rect(g, 22, 27, 136, 1, '#4a5a60');
@@ -413,15 +412,11 @@ const ART = {
       for (let x = 0; x < 180; x += 12) { A.rect(g, x, 26, 4, 30, '#5e4430'); A.rect(g, x, 26, 1, 30, '#74563c'); }
       A.rect(g, 0, 26, 180, 2, '#2a1c12'); A.rect(g, 0, 50, 180, 6, '#6a4c34'); A.rect(g, 0, 50, 180, 1, '#8a6a4a');
       A.rect(g, 0, 56, 180, 6, '#3a2418'); A.rect(g, 0, 56, 180, 1, '#5a3a28');
-      // Etagen: jedes ein Zimmer mit eigenem Teppichmuster
+      // Etagen: jedes ein Zimmer mit eigener Teppichfarbe (einfarbig)
       const carpets = [['#5a2a3a', '#6e3848', '#c8a050'], ['#2a3a5a', '#34466a', '#c8b070'], ['#3a4a2a', '#465a34', '#d8c080']];
       ve.floors.forEach((f, i) => {
         const y0 = f.y0 - 4, y1 = f.y1 + 4, room = (3 - i) + '0' + (i + 1), C = carpets[i];
         A.rect(g, 18, y0, 128, y1 - y0, C[0]);
-        for (let y = y0 + 2; y < y1; y += 8) for (let x = 20 + ((y / 8 | 0) % 2) * 4; x < 146; x += 8) {        // Rautenmuster
-          g.fillStyle = C[1]; g.fillRect(x + 1, y, 1, 1); g.fillRect(x, y + 1, 3, 1); g.fillRect(x + 1, y + 2, 1, 1);
-          if ((x + y) % 3 === 0) { g.fillStyle = C[2]; g.fillRect(x + 1, y + 1, 1, 1); }
-        }
         A.rect(g, 18, y0, 128, 1, 'rgba(0,0,0,.35)');
         // Läufer vor dem Bett
         A.rect(g, 62, ((y0 + y1) >> 1) - 9, 36, 18, '#8a4a2a'); A.frame(g, 62, ((y0 + y1) >> 1) - 9, 36, 18, '#c8a050');
