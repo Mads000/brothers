@@ -52,15 +52,18 @@ const UI = {
   },
 };
 
+/** Standard-Knopf: Papier wie die Konzert-Tickets im Hauptmenü */
 function drawButton(b, hl) {
   if (!b.bare) {
-    X.fillStyle = '#000'; X.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
-    X.fillStyle = b.disabled ? '#141418' : hl ? '#4a3a10' : b.active ? '#2a3a2a' : '#22222a'; X.fillRect(b.x, b.y, b.w, b.h);
-    X.fillStyle = b.disabled ? '#222228' : hl ? '#ffd84a' : b.active ? '#7cfc6a' : '#4a4a58'; X.fillRect(b.x, b.y, b.w, 1);
-    X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(b.x, b.y + b.h - 1, b.w, 1);
+    const T = TICKET, edge = b.disabled ? '#33302a' : hl ? T.hot : b.active ? '#c8a040' : T.edge;
+    X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(b.x + 1, b.y + 1, b.w + 1, b.h + 1);          // Schatten
+    X.fillStyle = b.disabled ? '#1a1815' : b.active ? '#3a3122' : T.paper; X.fillRect(b.x, b.y, b.w, b.h);
+    X.fillStyle = 'rgba(255,240,200,.05)'; X.fillRect(b.x + 1, b.y + 1, b.w - 2, 1);
+    X.fillStyle = edge;
+    X.fillRect(b.x, b.y, b.w, 1); X.fillRect(b.x, b.y + b.h - 1, b.w, 1); X.fillRect(b.x, b.y, 1, b.h); X.fillRect(b.x + b.w - 1, b.y, 1, b.h);
   }
   if (b.draw) { b.draw(b, hl); return; }
-  const col = b.disabled ? '#555' : hl ? '#ffd84a' : (b.color || '#fff');
+  const col = b.disabled ? '#4a4740' : hl ? '#ffd84a' : b.active ? '#ffd84a' : (b.color || TICKET.ink);
   const cx = b.x + b.w / 2;
   if (b.sub) {
     const y = b.y + Math.floor((b.h - 12) / 2);
@@ -98,6 +101,7 @@ function getFrame(ve) {
     const d = px < OX ? OX - px : px - (W - OX) + 1;
     return 1 - d / OX * .5;
   });
+  g.fillStyle = 'rgba(14,12,20,.3)'; g.fillRect(0, 0, OX, H); g.fillRect(W - OX, 0, OX, H);   // gedämpft
   return (frameCache[key] = o);
 }
 
@@ -113,6 +117,7 @@ function getBand(ve, top) {
   if (ART.band[ve.id]) ART.band[ve.id](g, bandKit(g, 0, h, top), h, top);
   // nach außen etwas dunkler, wie die Seitenränder am PC
   shadePass(g, PLAY_W, h, (px, py) => 1 - (top ? h - 1 - py : py) / Math.max(h, 40) * .5);
+  g.fillStyle = 'rgba(14,12,20,.35)'; g.fillRect(0, 0, PLAY_W, h);   // gedämpft: weniger Ablenkung
   return (bandCache[key] = o);
 }
 /**
@@ -176,9 +181,9 @@ function drawBackdrop(ve, T, withBros) {
 }
 function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
-function panel(x, y, w, h, border = '#4a4a58') {
-  X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
-  X.fillStyle = '#121218'; X.fillRect(x, y, w, h);
+function panel(x, y, w, h, border = '#6e6452') {
+  X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(x + 1, y + 1, w + 1, h + 1);
+  X.fillStyle = '#1c1a17'; X.fillRect(x, y, w, h);
   X.fillStyle = border; X.fillRect(x, y, w, 1); X.fillRect(x, y + h - 1, w, 1); X.fillRect(x, y, 1, h); X.fillRect(x + w - 1, y, 1, h);
 }
 
@@ -204,9 +209,12 @@ function bonusHud(lv, stats) {
 function drawHUD(game, interactive) {
   const W = VIEW.W, OX = VIEW.OX, cx = W / 2, lv = game.level, g = lv.goal || {};
   const TY = -VIEW.OY, BY = VIEW.OY;   // Handy: Leisten an den Bildschirmrand schieben
-  const BH = VIEW.OY >= 12 ? 28 : 16, BB = 320 + BY - BH;   // untere Leiste: Höhe und Oberkante (Handy: große Knöpfe)
+  // Handy: die Leisten werden höher, vom Streifen mit Umgebung bleiben nur ~14 px sichtbar
+  const TB = 26 + Math.max(0, VIEW.OY - 14), dy = TB - 26, tall = dy > 8 ? 4 : 0;
+  const HY = TY + (dy >> 1), RY = TY + dy;          // Kopfzeile / Zeile mit den Wut-Leisten
+  const BH = VIEW.OY >= 12 ? Math.max(28, VIEW.OY + 2) : 16, BB = 320 + BY - BH;   // untere Leiste
   drawFrame(game.venue, game.T, game.bros);
-  X.fillStyle = HUD_BG; X.fillRect(0, TY, W, 26); X.fillRect(0, BB, W, BH);
+  X.fillStyle = HUD_BG; X.fillRect(0, TY, W, TB); X.fillRect(0, BB, W, BH);
 
   // Oben Mitte: Zeit bzw. Ziel
   const left = Math.max(0, lv.time - game.el);
@@ -217,21 +225,21 @@ function drawHUD(game, interactive) {
   else if (lv.sandbox) top = lv.time > 5000 ? 'SOUNDCHECK' : 'SOUNDCHECK ' + fmtTime(left);
   else top = 'GIG IN ' + fmtTime(left);
   if (left <= 10 && game.state === 'play' && game.phase !== 'stagecall' && (game.T * 4 | 0) % 2) col = '#ff5a4a';
-  txtS(top, cx, 3 + TY, col, 1, 'c');
-  txt(levelLabel(lv), OX + 3, 3 + TY, '#666');
+  txtS(top, cx, 3 + HY, col, 1, 'c');
+  txt(levelLabel(lv), OX + 3, 3 + HY, '#666');
   if (lv.endless) {
-    txt(String(Endless.liveScore(game)), W - 24, 3 + TY, '#ffd84a', 1, 'r');
-    if (Endless.cur && Endless.cur.kind === 'rowdy') txt('X2', OX + 4 + textW(levelLabel(lv)) + 4, 3 + TY, '#ff5a4a');
+    txt(String(Endless.liveScore(game)), W - 24, 3 + HY, '#ffd84a', 1, 'r');
+    if (Endless.cur && Endless.cur.kind === 'rowdy') txt('X2', OX + 4 + textW(levelLabel(lv)) + 4, 3 + HY, '#ff5a4a');
   }
 
   // Wut-Leisten oben
   game.bros.forEach((b, i) => {
     const bx = OX + (i ? 94 : 4);
-    X.fillStyle = b.color; X.fillRect(bx, 13 + TY, 6, 8);
-    txt(b.name, bx + 8, 15 + TY, '#ccc');
-    X.fillStyle = '#222'; X.fillRect(bx + 22, 14 + TY, 58, 6);
-    X.fillStyle = angerColor(b.anger); X.fillRect(bx + 23, 15 + TY, Math.round(56 * b.anger / 100), 4);
-    if (b.hidden) txt('LIFT', bx + 51, 15 + TY, '#fff', 1, 'c');
+    X.fillStyle = b.color; X.fillRect(bx, 13 + RY, 6, 8 + tall);
+    txt(b.name, bx + 8, 15 + RY + (tall >> 1), '#ccc');
+    X.fillStyle = '#222'; X.fillRect(bx + 22, 14 + RY, 58, 6 + tall);
+    X.fillStyle = angerColor(b.anger); X.fillRect(bx + 23, 15 + RY, Math.round(56 * b.anger / 100), 4 + tall);
+    if (b.hidden) txt('LIFT', bx + 51, 15 + RY + (tall >> 1), '#fff', 1, 'c');
   });
 
   // Angekündigte Events blinken am rechten Rand
@@ -269,7 +277,7 @@ function drawHUD(game, interactive) {
   if (bh) { drawStar(cx - textW(bh.s) / 2 - 8, BB + (BH >> 1) - 4, bh.ok); txt(bh.s, cx + 1, BB + (BH >> 1) - 3, bh.ok ? '#7cfc6a' : '#999', 1, 'c'); }
 
   // Pause-Knopf oben rechts (große Trefferfläche für Finger)
-  if (interactive) UI.button(W - 22, TY, 22, 12, '', () => App.pause(), {
+  if (interactive) UI.button(W - 22, HY, 22, 12, '', () => App.pause(), {
     bare: true, noDefault: true,
     draw(b, hl) { X.fillStyle = hl ? '#ffd84a' : '#aaa'; X.fillRect(W - 9, b.y + 2, 2, 7); X.fillRect(W - 5, b.y + 2, 2, 7); },
   });

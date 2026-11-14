@@ -25,10 +25,10 @@ const CONFIG = {
 
   // Bildformat
   PLAY_W: 180,      // Breite des Spielfelds, auf jedem Gerät gleich
-  PC_W: 240,        // Render-Breite im PC-Format (3:4), außen 30 px Deko und HUD
+  PC_W: 224,        // Render-Breite im PC-Format, außen je 22 px Rand mit Wut-Leiste
   H: 320,           // Render-Höhe
   MAX_BAND: 56,   // Handy: so viele Pixel darf die Bildfläche oben/unten zusätzlich bekommen
-  PC_ASPECT: 0.7,   // ab diesem Verhältnis Breite/Höhe des Fensters gilt das PC-Format
+  PC_ASPECT: 0.66,   // ab diesem Verhältnis Breite/Höhe des Fensters gilt das PC-Format
 
   SAVE_KEY: 'brothers-save-v1',  // Schlüssel in localStorage
 

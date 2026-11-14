@@ -42,7 +42,7 @@ const VENUES = {
     fanSpots: [74, 114, 154, 194, 234].map(y => ({ x: 9, y: y + 22, tx: 44, ty: y + 18 }))
       .concat([74, 154, 234].map(y => ({ x: 171, y: y + 22, tx: 136, ty: y + 18 }))),
     drumSpot: { x: 90, y: 298 },
-    sway: true,
+    sway: false,   // true = Bild schaukelt leicht
     palette: { side: '#1b1c21', floor: '#262b38' },
     endless: {
       missions: [{ type: 'fans', n: 1 }, { type: 'bin', n: 4 }],

@@ -12,7 +12,7 @@
 const ART = {
   /* ---------------- Stimmung (zum Nachjustieren) ---------------- */
   SOFT: 0.22,     // weniger dunkle Ränder (0 = ganz düster)
-  GLOW: 1.2,      // Lampen etwas stärker (1 = wie vorher)
+  GLOW: 0.85,     // Stärke der Lichtkegel (1 = normal)
   LIFT: 0.09,     // alles leicht aufhellen (0 = aus)
 
   /* ---------------- Werkzeuge ---------------- */
@@ -33,7 +33,7 @@ const ART = {
     for (let y = -ry; y <= ry; y++) { const w = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry))); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); }
   },
   /**
-   * Lichtschein: weicher Verlauf (früher gedithert).
+   * Lichtschein: weicher Verlauf in Stufen, an den Rändern leicht gedithert.
    * list: [{ x, y, rx, ry, c: '#ffcc88', a: 0..1 }]
    */
   lights(g, list) {
@@ -45,8 +45,10 @@ const ART = {
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
         const dx = (x - L.x) / L.rx, dy = (y - L.y) / L.ry, t = 1 - (dx * dx + dy * dy);
         if (t <= 0) continue;
-        const m = Math.min(.45, t * L.a * ART.GLOW * .5);   // weicher Lichtschein ohne Punktmuster
-        if (m < .01) continue;
+        // weicher Rand (t²), 4 Stufen, an den Übergängen leicht gedithert
+        const raw = Math.min(1, t * t * L.a * ART.GLOW);
+        const m = Math.floor(raw * 4 + (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16) / 4 * .32;
+        if (m <= 0) continue;
         const i = (y * PLAY_W + x) * 4;
         d[i] += (c[0] - d[i]) * m; d[i + 1] += (c[1] - d[i + 1]) * m; d[i + 2] += (c[2] - d[i + 2]) * m;
       }
@@ -538,8 +540,8 @@ const ART = {
   /* =================== Animationen (jedes Frame) =================== */
   anim: {
     bus(T) {
-      for (let k = 0; k < 4; k++) {        // Straßenlaternen ziehen an den Fenstern vorbei
-        const yy = Math.round(26 + ((T * 70 + k * 83) % 300));
+      for (let k = 0; k < 2; k++) {        // Straßenlaternen ziehen (langsam) an den Fenstern vorbei
+        const yy = Math.round(26 + ((T * 22 + k * 83) % 300));
         for (const wx of [6, 164]) {
           const m = ((yy - 34) % 40 + 40) % 40;
           if (yy >= 34 && yy < 294 && m < 29) {
@@ -547,9 +549,6 @@ const ART = {
             X.fillStyle = 'rgba(255,200,110,.18)'; X.fillRect(wx < 90 ? 18 : 156, yy - 3, 6, 8);
           }
         }
-      }
-      if (T % 9 > 6 && (T * 3 | 0) % 2) {  // Blinker beim Spurwechsel
-        X.fillStyle = '#ffa020'; X.fillRect(4, 29, 2, 3); X.fillRect(174, 29, 2, 3); X.fillRect(4, 294, 2, 3); X.fillRect(174, 294, 2, 3);
       }
       X.fillStyle = '#ddd';                // Mittelstreifen durch die Frontscheibe
       for (let k = 0; k < 3; k++) X.fillRect(89, Math.round(28 + ((T * 30 + k * 4) % 10)), 2, 1);
@@ -722,12 +721,8 @@ const ART = {
   sideAnim: {
     bus(T, x, w) {
       const k = sideKit(X, x, w);
-      for (let n = 0; n < 11; n++) k.r(13, Math.round(((T * 70 + n * 30) % 330) - 20), 1, 14, '#7a7a6a');   // Fahrbahnmarkierung
-      for (let n = 0; n < 4; n++) {                                                     // Laternen ziehen vorbei (wie in den Fenstern)
-        const yy = Math.round(26 + ((T * 70 + n * 83) % 300));
-        k.r(4, yy - 6, 16, 14, 'rgba(255,200,110,.07)');
-        k.r(16, yy, 2, 2, '#a89060'); k.r(18, yy, 1, 2, '#555');
-      }
+      for (let n = 0; n < 11; n++) k.r(13, Math.round(((T * 22 + n * 30) % 330) - 20), 1, 14, '#5a5a50');   // Fahrbahnmarkierung
+
     },
     rehearsal(T, x, w) {
       const k = sideKit(X, x, w);
@@ -862,13 +857,9 @@ const ART = {
   bandAnim: {
     bus(T, k, h, top) {
       for (let n = 0; n < 4; n++) {                                                      // Mittelstreifen zieht nach unten weg
-        const s = ((T * 70 + n * 30) % 120);
+        const s = ((T * 22 + n * 30) % 120);
         const d = top ? h - s : s - 20;
         k.r(89, d, 2, 14, '#7a7a6a');
-      }
-      if (!top) for (let n = 0; n < 3; n++) {                                            // Auspuff
-        const t = (T * .8 + n / 3) % 1;
-        k.r(150 + Math.round(t * 6), 4 + Math.round(t * 18), 3 + Math.round(t * 4), 3, `rgba(160,160,170,${(.3 * (1 - t)).toFixed(2)})`);
       }
     },
     festival(T, k, h, top) {
