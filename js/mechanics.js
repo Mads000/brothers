@@ -413,6 +413,7 @@ MECHANICS.sunbeam = {
     return null;
   },
   drawUnder(game, s) {
+    X.save(); X.beginPath(); X.rect(18, 66, 144, 238); X.clip();   // Sonnenlicht nur auf dem Boden, nicht auf den Wänden
     for (const b of s.beams) {
       const x0 = this.beamX(s, b);
       for (let y = 0; y < b.h; y++) {
@@ -426,6 +427,7 @@ MECHANICS.sunbeam = {
       for (let y = 0; y < b.h; y++) X.fillRect(Math.round(x0 + y * b.skew + b.w / 2), b.y + y, 1, 1);
       X.fillRect(Math.round(x0 + b.h / 2 * b.skew), b.y + (b.h >> 1), b.w, 1);
     }
+    X.restore();
     // Funkeln über Brüdern in der Sonne
     for (const br of game.bros) if (br.inSun && (game.T * 4 | 0) % 2) {
       X.fillStyle = '#fff6c0'; X.fillRect(Math.round(br.x) + 7, Math.round(br.y) - 26, 1, 3); X.fillRect(Math.round(br.x) + 6, Math.round(br.y) - 25, 3, 1);

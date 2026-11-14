@@ -574,16 +574,7 @@ const ART = {
   /* =================== Animationen (jedes Frame) =================== */
   anim: {
     bus(T) {
-      for (let k = 0; k < 2; k++) {        // Straßenlaternen ziehen (langsam) an den Fenstern vorbei
-        const yy = Math.round(26 + ((T * 22 + k * 83) % 300));
-        for (const wx of [6, 164]) {
-          const m = ((yy - 34) % 40 + 40) % 40;
-          if (yy >= 34 && yy < 294 && m < 29) {
-            X.fillStyle = '#ffcc66'; X.fillRect(wx, yy, 9, 2);
-            X.fillStyle = 'rgba(255,200,110,.18)'; X.fillRect(wx < 90 ? 18 : 156, yy - 3, 6, 8);
-          }
-        }
-      }
+      // (Straßenlaternen an den Fenstern entfernt: kein Licht auf den Wänden)
       X.fillStyle = '#ddd';                // Mittelstreifen durch die Frontscheibe
       for (let k = 0; k < 3; k++) X.fillRect(89, Math.round(28 + ((T * 30 + k * 4) % 10)), 2, 1);
     },
@@ -602,21 +593,23 @@ const ART = {
       if ((T * 1.5 | 0) % 2) { X.fillStyle = '#7cfc6a'; X.fillRect(120, 168, 18, 1); }             // Notausgang-Licht pulsiert
     },
     festival(T) {
-      // Scheinwerfer-Kegel wandern über die Bühne
+      // Scheinwerfer-Kegel und Nebel nur auf der Bühne, nicht auf den Boxentürmen
+      X.save(); X.beginPath(); X.rect(18, 26, 144, 212); X.clip();
       for (let k = 0; k < 3; k++) {
         const cx = 90 + Math.sin(T * .9 + k * 2.1) * 55, cy = 120 + Math.cos(T * .7 + k) * 40;
         X.fillStyle = k === 1 ? 'rgba(255,230,120,.08)' : 'rgba(120,160,255,.07)';
         X.fillRect(Math.round(cx - 18), Math.round(cy - 10), 36, 20); X.fillRect(Math.round(cx - 12), Math.round(cy - 14), 24, 28);
       }
+      // Bühnennebel zieht durch
+      X.fillStyle = 'rgba(200,210,255,.05)';
+      for (let k = 0; k < 4; k++) X.fillRect(Math.round(((T * 8 + k * 60) % 240) - 60), 180 + k * 12, 70, 8);
+      X.restore();
       // Scheinwerfer an der Traverse blinken im Wechsel
       const cols = ['#ff4a4a', '#4a8aff', '#ffd84a', '#e04aff'];
       for (let x = 10, k = 0; x < 175; x += 16, k++) {
         const on = ((T * 4 | 0) + k) % 3 !== 0;
         X.fillStyle = on ? cols[k % 4] : '#333'; X.fillRect(x, 31, 4, 3);
       }
-      // Bühnennebel zieht durch
-      X.fillStyle = 'rgba(200,210,255,.05)';
-      for (let k = 0; k < 4; k++) X.fillRect(Math.round(((T * 8 + k * 60) % 240) - 60), 180 + k * 12, 70, 8);
     },
     flat(T) {
       // Kaminfeuer flackert
