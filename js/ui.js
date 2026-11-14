@@ -434,30 +434,24 @@ const Screens = {
     drawStar(OX + 4, sy, true); txt(String(Save.totalStars()), OX + 12, sy, '#ffd84a');
     drawPicks(OX + PLAY_W - 4, sy);
 
-    drawLogo(cx, 4, 2);                                            // Logo: die zwei Brüder + Schriftzug
-    txt('TWO BROTHERS. ONE BAND. ONE BUS.', cx, 72, '#ccc', 1, 'c');
+    // alles etwas tiefer, mittig auf dem Bildschirm (die Brüder sind jetzt im Logo)
+    drawLogo(cx, 44, 2);                                           // Logo: die zwei Brüder + Schriftzug
+    txt('TWO BROTHERS. ONE BAND. ONE BUS.', cx, 114, '#ccc', 1, 'c');
 
     // Hauptknöpfe, jeweils mit kurzem Stand darunter
-    const bx = cx - 64, bw = 128;
+    const bx = cx - 64, bw = 128, y0 = 128;
     const done = LEVELS.filter(l => (Save.level(l.id) || {}).done).length;
     // Die Knöpfe sehen aus wie Konzert-Tickets (siehe ticket() unten)
-    UI.button(bx, 84, bw, 28, 'TOUR', () => App.go('select'),
-      { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, main: true, draw: ticket('bus') });
+    UI.button(bx, y0, bw, 28, 'TOUR', () => App.go('select'),
+      { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
-    UI.button(bx, 117, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
-      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE REHEARSAL ROOM', bare: true, draw: ticket('road') });
-    UI.button(bx, 150, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
-    UI.button(bx, 175, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
-    UI.button(cx + 2, 175, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
-    UI.button(bx, 200, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
-    UI.button(cx + 2, 200, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
-
-    // Deko: die zwei Brüder - mal zanken sie, mal lachen sie zusammen
-    const k = makeBro('kev', 40, { x: cx - 26, y: 266 }), d = makeBro('del', 40, { x: cx + 26, y: 266 });
-    drawBro(k); drawBro(d);
-    const ph = (T / 3 | 0) % 3;
-    if (ph === 2) txtS('HA HA!', cx, 236, '#7cfc6a', 1, 'c');
-    else if ((T * 1.5 | 0) % 2) txtS('#@%!', cx, 236, '#ff8a3a', 1, 'c');
+    UI.button(bx, y0 + 33, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
+      { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE BEACH JAM', bare: true, draw: ticket('road') });
+    UI.button(bx, y0 + 66, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
+    UI.button(bx, y0 + 91, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
+    UI.button(cx + 2, y0 + 91, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
+    UI.button(bx, y0 + 116, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
+    UI.button(cx + 2, y0 + 116, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
 
     if (TEST_MODE) txt(VIEW.pc ? 'TEST MODE  -  F2 = DEBUG' : 'TEST MODE  -  HOLD LOGO = DEBUG', cx, 290, '#a06030', 1, 'c');
     txt('V' + CONFIG.VERSION, cx, tall ? 320 + VIEW.OY - VIEW.safeB - 14 : 309, '#444', 1, 'c');
@@ -1204,7 +1198,7 @@ const TICKET = { paper: '#2e2a25', stub: '#221f1b', edge: '#a8987a', ink: '#f2e8
 function ticket(icon) {
   return (b, hl) => {
     const T = TICKET, lift = hl ? -1 : 0, x = b.x, y = b.y + lift, w = b.w, h = b.h;
-    const edge = b.disabled ? '#5a5448' : hl || b.main ? T.hot : T.edge;   // Hauptknopf (TOUR) mit gelbem Rand
+    const edge = b.disabled ? '#5a5448' : hl ? T.hot : T.edge;
     const ink = b.disabled ? T.off : hl ? T.hot : T.ink;
     const stub = h >= 26 ? 18 : 14;
     X.fillStyle = '#000'; X.fillRect(x + 2, y + 2 - lift, w, h);              // harter Pixel-Schatten

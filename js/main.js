@@ -175,7 +175,7 @@ const App = {
   /** Bereich, in dem langes Drücken das Debug-Menü öffnet */
   lpZone() {
     const cx = VIEW.W / 2;
-    if (this.scene === 'menu') return { x: cx - 50, y: 36, w: 100, h: 22 };
+    if (this.scene === 'menu') return { x: cx - 50, y: 44, w: 100, h: 64 };   // Logo
     if (['select', 'shop', 'extras', 'howto', 'info'].includes(this.scene)) return { x: cx - 30, y: 4, w: 60, h: 16 };
     if (this.scene === 'play' || this.scene === 'pause') return { x: cx - 32, y: 0, w: 64, h: 12 };
     return null;

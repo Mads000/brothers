@@ -13,7 +13,7 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
 
 - **Tour:** 6 Schauplätze mit je 10 Levels plus ein Bonus-Schauplatz. Level 10 ist jeweils ein Headliner mit Gig-Szene und Plakat.
   1. Tourbus: Kurven und Schlaglöcher
-  2. Proberaum: Lautstärke. Ein lauter Verstärker macht den anderen Bruder wütend, Antippen dreht ihn runter
+  2. Beach Jam (früher Proberaum, intern `rehearsal`): Die Band probt am Strand bei Sonnenuntergang. Lautstärke: Ein lauter Verstärker macht den anderen Bruder wütend, Antippen dreht ihn runter
   3. Pub: Fans rempeln, man kann nur zwischen den Tischen ziehen
   4. Backstage: Die Tür lässt sich abschließen, bis einer sie eintritt
   5. Festival: Beide müssen an ihr Mikro, sonst geht die Crowd
