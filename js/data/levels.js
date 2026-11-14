@@ -562,6 +562,7 @@ function levelsOf(venueId) { return LEVELS.filter(l => l.venue === venueId); }
 /** "BUS 3" – Kurzbezeichnung fürs HUD */
 function levelLabel(lv) {
   if (lv.endless) return 'CITY ' + (lv.cityNo || 1);
+  if (lv.sandbox) return 'FREE';
   return VENUES[lv.venue].short + ' ' + (levelsOf(lv.venue).indexOf(lv) + 1);
 }
 

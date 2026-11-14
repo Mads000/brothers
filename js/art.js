@@ -11,9 +11,9 @@
 
 const ART = {
   /* ---------------- Stimmung (zum Nachjustieren) ---------------- */
-  SOFT: 0.15,     // weniger dunkle Ränder (0 = so düster wie vorher)
+  SOFT: 0.22,     // weniger dunkle Ränder (0 = ganz düster)
   GLOW: 1.2,      // Lampen etwas stärker (1 = wie vorher)
-  LIFT: 0.06,     // alles leicht aufhellen (0 = aus)
+  LIFT: 0.09,     // alles leicht aufhellen (0 = aus)
 
   /* ---------------- Werkzeuge ---------------- */
 
@@ -176,13 +176,9 @@ const ART = {
       for (let x = 30; x < 160; x += 24) A.rect(g, x, 293, 1, 11, '#4a121c');
       A.rect(g, 28, 287, 18, 12, '#b8b8c0'); A.frame(g, 28, 287, 18, 12, '#555'); A.rect(g, 36, 287, 2, 12, '#555');        // Flightcase
       A.rect(g, 120, 292, 30, 7, '#151515'); A.rect(g, 146, 290, 6, 11, '#151515');                                          // zweiter Gitarrenkoffer
-      // Licht: Deckenlampen über dem Gang, warme Bodenlichter
-      const L = [];
-      for (const y of [80, 150, 220, 280]) L.push({ x: 90, y, rx: 56, ry: 30, c: '#ffd8a0', a: .55 });
-      for (let y = 58; y < 288; y += 16) { L.push({ x: 64, y, rx: 5, ry: 4, c: '#ffcc66', a: .7 }); L.push({ x: 115, y, rx: 5, ry: 4, c: '#ffcc66', a: .7 }); }
-      A.lights(g, L);
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + Math.min(1, .45 + (y - 26) / 260));
-      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.15 - Math.abs(x - 90) / 110);
+      // Licht: gleichmäßiges Tageslicht (keine Lichtkegel auf dem Boden), nur sanft zum Rand hin dunkler
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + Math.min(1, .7 + (y - 26) / 400));
+      shadePass(g, PLAY_W, H, (x, y) => y < 26 || y >= 304 ? null : ART.SOFT + 1.2 - Math.abs(x - 90) / 150);
       // Außenhaut ganz außen und abgerundete Ecken vorne/hinten: so sieht man auch am Handy den Bus
       const p = busPaint();
       for (const hx of [4, 174]) { A.rect(g, hx, 26, 2, 278, p.hull || p.wall); A.rect(g, hx === 4 ? 5 : 174, 26, 1, 278, p.hullTrim || p.trim); }

@@ -140,6 +140,7 @@ const Game = {
   addAnger(b, n) {
     if (n > 0) n *= b.ch.angerRate * this.mult('angerRate') * (this.venue.angerMult || 1);
     b.anger = clamp(b.anger + n, 0, 100);
+    if (this.level.safe) b.anger = Math.min(b.anger, 94);   // Sandbox ohne Prügeleien
   },
   calm(b) {
     const R = CONFIG.RULES;
@@ -154,6 +155,7 @@ const Game = {
     b.anger = Math.max(0, b.anger - m);
     b.cd = R.calmCooldown;
     this.stats.calms++;
+    this.burst(b.x, b.y - 18, 5, fat >= 2 ? '#888' : '#9fd8ff', 16);
     if (fat >= 2) this.say(b, 'YEAH YEAH', '#aaa');
     else this.say(b, Math.random() < .03 ? 'THIS IS THE ONE' : 'EASY', '#9fd8ff');
   },
@@ -290,8 +292,10 @@ const Game = {
     const id = this.slots[slot], def = POWERUPS[id];
     if (!def) { this.toastMsg('EMPTY SLOT', '#888'); return; }
     if (this.slotUsed[slot]) { this.toastMsg('ALREADY USED', '#888'); return; }
-    if (Save.powerupCount(id) <= 0) { this.toastMsg('NONE LEFT. VISIT THE SHOP', '#888'); return; }
-    Save.usePowerup(id);
+    if (!this.level.sandbox) {   // im Soundcheck kosten Power-ups nichts
+      if (Save.powerupCount(id) <= 0) { this.toastMsg('NONE LEFT. VISIT THE SHOP', '#888'); return; }
+      Save.usePowerup(id);
+    }
     this.slotUsed[slot] = true;
     this.stats.powerups++;
     def.use(this);
@@ -364,6 +368,10 @@ const Game = {
     if (this.state === 'win' || this.state === 'over') return;
     this.state = win ? 'win' : 'over';
     this.reason = reason || null;
+    if (win) {   // Konfetti
+      const cols = ['#ffd84a', '#ff7aa0', '#7cfc6a', '#9fd8ff', '#ff9a3a'];
+      for (let k = 0; k < 60; k++) this.parts.push({ x: rnd(8, 172), y: rnd(26, 70), vx: rnd(-12, 12), vy: rnd(18, 55), life: rnd(1.2, 2.4), c: cols[k % 5] });
+    }
     this.endT = 0; this.slowT = 0; this.nearT = 0;
     this.releaseAll();
     if (!win && reason) buzz(150);
@@ -498,6 +506,7 @@ const Game = {
     if (a.anger < 40 && b.anger < 40) this.stats.calmTime += dt;
 
     // ---- Prügelei / Trennung / Fast-Prügelei ----
+    if (lv.safe) for (const x of this.bros) x.anger = Math.min(x.anger, 94);   // Sandbox: nie verlieren
     if (!a.hidden && !b.hidden) {
       d = this.dist();
       if (inv) {
@@ -516,7 +525,7 @@ const Game = {
         }
       }
     }
-    const lost = this.sysFirst('lose');
+    const lost = !this.level.safe && this.sysFirst('lose');
     if (lost) return this.finish(false, lost);
 
     if (tutActive) return;   // im Tutorial: keine neuen Gegenstände oder Events

@@ -14,7 +14,9 @@
      'shop'          Shop (Power-ups, Outfits, Lackierungen)
      'extras'        Erfolge, Plakate, Highscores
      'endlessSetup'  Never-Ending Tour: Paar wählen
-     'transition'    Never-Ending Tour: Punkte der Stadt + Wahl der nächsten Station
+     'transition'    Never-Ending Tour: Punkte der Stadt
+     'tourmap'       Never-Ending Tour: Landkarte, nächster Halt
+     'sandbox'       SOUNDCHECK: freies Spiel, alles einstellbar
      'endlessOver'   Never-Ending Tour: Ende
    Das Debug-Menü ist eine Ebene darüber (App.debugOpen) und pausiert alles.
    ========================================================================= */
@@ -31,12 +33,15 @@ const App = {
   codeText: '', codeMsg: null, codeArmed: null,   // Code-Eingabe
   msg: null,         // kurze Meldung im Shop
   transT: 0,         // Zeit im Übergang (Endlos)
+  mapSel: 0,         // gewählter Halt auf der Landkarte
+  mapMove: null,     // Bus fährt gerade: { from, to, t, stop }
+  sb: { venue: 'bus', pair: 'brothers', pace: 0, time: 0, safe: true, items: true, events: true },   // Soundcheck-Einstellungen
   debugOpen: false, debugMsg: null, resetArmed: 0,
   lp: null,          // laufendes langes Drücken: { id, x, y, t }
 
   /* ---------- Szenenwechsel ---------- */
 
-  go(scene) { this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; },
+  go(scene) { this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; if (scene === 'tourmap') { this.mapSel = 0; this.mapMove = null; } },
 
   startLevel(lv, skipIntro) {
     this.level = lv;
@@ -45,9 +50,24 @@ const App = {
     Game.start(lv, { skipIntro });
     this.go('play');
   },
+  /** SOUNDCHECK starten: Level aus den Einstellungen bauen */
+  startSandbox() {
+    const sb = this.sb, ve = VENUES[sb.venue], t = ve.endless || {}, pace = SANDBOX.pace[sb.pace];
+    const lv = {
+      id: 'sandbox', sandbox: true, safe: sb.safe, venue: sb.venue, name: 'SOUNDCHECK',
+      time: SANDBOX.time[sb.time].t, ramp: pace.ramp, startAnger: [15, 15],
+      items: sb.items ? t.items : null, itemEvery: t.itemEvery || [3, 5], firstItem: 2,
+      events: sb.events ? t.events : null, mech: t.mech, prespawn: t.prespawn, extras: [],
+    };
+    this.level = lv; this.result = null; Endless.active = false;
+    Game.start(lv, { pair: sb.pair, diffBase: pace.diff, skipIntro: true });
+    Game.toastMsg('SOUNDCHECK! HAVE FUN.', '#ffd84a');
+    this.go('play');
+  },
   /** Neustart: ohne Startkarte, damit es sofort weitergeht */
   restart() {
     if (Game.level && Game.level.endless) { Endless.start(Endless.pair); return; }
+    if (Game.level && Game.level.sandbox) { this.startSandbox(); return; }
     if (this.level) this.startLevel(this.level, true);
   },
   pause() {
@@ -55,6 +75,7 @@ const App = {
   },
   resume() { if (this.scene === 'pause') this.go('play'); },
   toSelect() {
+    if (this.level && this.level.sandbox) { this.go('sandbox'); return; }
     if (this.level) this.venueIdx = Math.max(0, VENUE_ORDER.indexOf(this.level.venue));
     this.go('select');
   },
@@ -122,6 +143,10 @@ const App = {
   onLevelEnd(res) {
     const lv = res.level, RW = CONFIG.REWARDS;
     if (lv.endless) { if (res.win) Endless.sectionDone(res); else Endless.fail(res); return; }
+    if (lv.sandbox) {   // Soundcheck: keine Sterne, keine Belohnung, nichts wird gespeichert
+      res.stars = 0; res.picks = 0; res.awards = []; res.newPoster = false; res.next = null;
+      this.result = res; this.go('result'); return;
+    }
 
     // Sterne: geschafft / Wut nie über 90 % / Bonusziel
     res.starAnger = res.win && res.stats.maxAnger <= 90;
@@ -213,10 +238,16 @@ const App = {
     if (s === 'gig') { if (this.gig.t > 1) this.endGig(); return; }
     if (s === 'transition') {
       if (this.transT < .6) return;
-      if (code === 'Digit1') Endless.choose(0);
-      else if (code === 'Digit2') Endless.choose(1);
-      else if (code.startsWith('Arrow')) UI.move(code === 'ArrowUp' || code === 'ArrowLeft' ? -1 : 1);
-      else if (enter || code === 'Space') UI.activate();
+      if (enter || code === 'Space') this.go('tourmap');
+      return;
+    }
+    if (s === 'tourmap') {
+      if (this.mapMove) return;
+      const n = Endless.routes.length, m = /^Digit([1-3])$/.exec(code);
+      if (m && +m[1] <= n) this.mapSel = +m[1] - 1;
+      else if (code === 'ArrowLeft' || code === 'ArrowUp') this.mapSel = (this.mapSel - 1 + n) % n;
+      else if (code === 'ArrowRight' || code === 'ArrowDown') this.mapSel = (this.mapSel + 1) % n;
+      else if (enter || code === 'Space') Endless.choose(this.mapSel);
       return;
     }
 
@@ -262,6 +293,11 @@ const App = {
     if (s === 'play' || s === 'result') Game.update(dt);
     if (s === 'gig') { this.gig.t += dt; if (this.gig.t > 7) this.endGig(); }
     if (s === 'transition') this.transT += dt;
+    if (s === 'tourmap') {
+      if (Endless.stopMsg && (Endless.stopMsg.t -= dt) <= 0) Endless.stopMsg = null;
+      const mv = this.mapMove;
+      if (mv && (mv.t += dt) >= 1.4) { this.mapMove = null; this.mapSel = 0; Endless.arrive(mv.stop); }
+    }
   },
 
   draw() {
@@ -283,6 +319,8 @@ const App = {
       case 'result': Game.draw(); drawHUD(Game, false); Screens.result(); break;
       case 'gig': Screens.gig(); break;
       case 'transition': Game.draw(); drawHUD(Game, false); Screens.transition(); break;
+      case 'tourmap': Screens.tourmap(); break;
+      case 'sandbox': Screens.sandbox(); break;
       case 'endlessOver': Game.draw(); drawHUD(Game, false); Screens.endlessOver(); break;
     }
     drawLongPress();

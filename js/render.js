@@ -57,7 +57,7 @@ function fitView() {
   // Scanlines: bei großer Skalierung eine Linie pro Spielpixel, sonst alle 3 CSS-px
   const per = Math.max(3, s), dark = Math.max(1, per / 3);
   SCAN.style.background =
-    `repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 ${dark}px,transparent ${dark}px ${per}px)`;
+    `repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 ${dark}px,transparent ${dark}px ${per}px)`;
 
   document.body.classList.toggle('pc', pc);
   if (changed) viewListeners.forEach(fn => fn());

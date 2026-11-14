@@ -163,17 +163,18 @@ function drawFrame(ve, T, bros) {
   });
 }
 
+const HUD_BG = '#16131b';   // Farbe der HUD-Leisten (statt reinem Schwarz)
 /** Hintergrund für Menüs: Schauplatz abgedunkelt */
 function drawBackdrop(ve, T, withBros) {
   drawVenue(ve, T);
   if (withBros) withBros.forEach(drawBro);
   drawFrame(ve, T, null);
   baseT();
-  X.fillStyle = '#000'; X.fillRect(0, 0, VIEW.W, 26); X.fillRect(0, 304, VIEW.W, 16);
+  X.fillStyle = HUD_BG; X.fillRect(0, 0, VIEW.W, 26); X.fillRect(0, 304, VIEW.W, 16);
   shade();
   if (VIEW.OY) { X.fillStyle = 'rgba(0,0,0,.62)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY); X.fillRect(0, 320, VIEW.W, VIEW.OY); }
 }
-function shade(a = .62) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
+function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
 function panel(x, y, w, h, border = '#4a4a58') {
   X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
@@ -184,6 +185,7 @@ function panel(x, y, w, h, border = '#4a4a58') {
 /** Text für das Ziel eines Levels */
 function goalText(lv) {
   const g = lv.goal || { type: 'survive' };
+  if (lv.sandbox) return lv.time > 5000 ? 'NO LIMIT. JUST HAVE FUN.' : 'PLAY ' + fmtTime(lv.time) + '. NO STRESS.';
   if (g.type === 'collect') return 'COLLECT ' + g.n + ' SETLISTS IN ' + fmtTime(lv.time);
   if (g.type === 'stage') return 'SURVIVE ' + fmtTime(lv.time) + ', THEN BOTH ON STAGE';
   return 'SURVIVE ' + fmtTime(lv.time) + ' TIL THE GIG';
@@ -204,7 +206,7 @@ function drawHUD(game, interactive) {
   const TY = -VIEW.OY, BY = VIEW.OY;   // Handy: Leisten an den Bildschirmrand schieben
   const BH = VIEW.OY >= 12 ? 28 : 16, BB = 320 + BY - BH;   // untere Leiste: Höhe und Oberkante (Handy: große Knöpfe)
   drawFrame(game.venue, game.T, game.bros);
-  X.fillStyle = '#000'; X.fillRect(0, TY, W, 26); X.fillRect(0, BB, W, BH);
+  X.fillStyle = HUD_BG; X.fillRect(0, TY, W, 26); X.fillRect(0, BB, W, BH);
 
   // Oben Mitte: Zeit bzw. Ziel
   const left = Math.max(0, lv.time - game.el);
@@ -212,6 +214,7 @@ function drawHUD(game, interactive) {
   if (game.phase === 'stagecall') { top = 'ON STAGE! ' + fmtTime(game.stageT); col = (game.T * 4 | 0) % 2 ? '#ff5a4a' : '#ffd84a'; }
   else if (g.type === 'collect') top = game.stats.collected + '/' + g.n + ' SETLISTS ' + fmtTime(left);
   else if (lv.endless) top = 'NEXT CITY ' + fmtTime(left);
+  else if (lv.sandbox) top = lv.time > 5000 ? 'SOUNDCHECK' : 'SOUNDCHECK ' + fmtTime(left);
   else top = 'GIG IN ' + fmtTime(left);
   if (left <= 10 && game.state === 'play' && game.phase !== 'stagecall' && (game.T * 4 | 0) % 2) col = '#ff5a4a';
   txtS(top, cx, 3 + TY, col, 1, 'c');
@@ -351,15 +354,18 @@ const Screens = {
     const eu = Save.endlessUnlocked();
     UI.button(bx, 115, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
       { disabled: !eu, sub: eu ? 'BEST: ' + Save.data.endlessBest + ' CITIES' : 'BEAT THE REHEARSAL ROOM', bare: true, draw: ticket('road') });
-    UI.button(bx, 148, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
-    UI.button(cx + 2, 148, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
-    UI.button(bx, 173, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
-    UI.button(cx + 2, 173, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
+    UI.button(bx, 148, bw, 20, 'SOUNDCHECK', () => App.go('sandbox'), { sub: 'FREE PLAY', bare: true, draw: ticket('mic') });
+    UI.button(bx, 173, bw / 2 - 2, 20, 'SHOP', () => App.go('shop'), { noDefault: true, bare: true, draw: ticket('pick') });
+    UI.button(cx + 2, 173, bw / 2 - 2, 20, 'EXTRAS', () => App.go('extras'), { noDefault: true, bare: true, draw: ticket('star') });
+    UI.button(bx, 198, bw / 2 - 2, 20, 'HOW TO PLAY', () => App.go('howto'), { noDefault: true, bare: true, draw: ticket('help') });
+    UI.button(cx + 2, 198, bw / 2 - 2, 20, 'INFO', () => App.go('info'), { noDefault: true, bare: true, draw: ticket('info') });
 
-    // Deko: die zwei Brüder starren sich an
-    const k = makeBro('kev', 55, { x: cx - 26, y: 252 }), d = makeBro('del', 55, { x: cx + 26, y: 252 });
+    // Deko: die zwei Brüder - mal zanken sie, mal lachen sie zusammen
+    const k = makeBro('kev', 40, { x: cx - 26, y: 266 }), d = makeBro('del', 40, { x: cx + 26, y: 266 });
     drawBro(k); drawBro(d);
-    if ((T * 1.5 | 0) % 2) txtS('#@%!', cx, 220, '#ff8a3a', 1, 'c');
+    const ph = (T / 3 | 0) % 3;
+    if (ph === 2) txtS('HA HA!', cx, 236, '#7cfc6a', 1, 'c');
+    else if ((T * 1.5 | 0) % 2) txtS('#@%!', cx, 236, '#ff8a3a', 1, 'c');
 
     if (TEST_MODE) txt(VIEW.pc ? 'TEST MODE  -  F2 = DEBUG' : 'TEST MODE  -  HOLD LOGO = DEBUG', cx, 290, '#a06030', 1, 'c');
     txt('V' + CONFIG.VERSION, cx, 309, '#444', 1, 'c');
@@ -510,7 +516,7 @@ const Screens = {
       Game.mods.forEach((m, i) => txt(MODIFIERS[m].name + ': ' + MODIFIERS[m].desc, cx, 196 + i * 8, '#ff8a3a', 1, 'c'));
     } else {
       UI.button(cx - 50, 130, 100, 20, 'RESTART', () => App.restart());
-      UI.button(cx - 50, 156, 100, 20, 'LEVELS', () => App.toSelect());
+      UI.button(cx - 50, 156, 100, 20, lv.sandbox ? 'SETTINGS' : 'LEVELS', () => App.toSelect());
       UI.button(cx - 50, 182, 100, 20, 'MAIN MENU', () => App.go('menu'));
       txt(goalText(lv), cx, 214, '#9fd8ff', 1, 'c');
       if (lv.bonus) { drawStar(cx - textW(bonusText(lv.bonus)) / 2 - 8, 223, false); txt(bonusText(lv.bonus), cx + 1, 224, '#bbb', 1, 'c'); }
@@ -523,7 +529,12 @@ const Screens = {
     const cx = VIEW.W / 2, OX = VIEW.OX, r = App.result, lv = r.level;
     shade(.78);
     let y;
-    if (r.win) {
+    if (lv.sandbox) {
+      txtS(r.win ? 'NICE ONE!' : 'FIGHT!', cx, 44, r.win ? '#7cfc6a' : '#ff4a3a', 3, 'c');
+      txt(r.win ? 'SOUNDCHECK DONE.' : (r.reason || 'THEY HAD A FIGHT.'), cx, 70, '#fff', 1, 'c');
+      txt('CALMED ' + r.stats.calms + '   BINNED ' + r.stats.binned + '   SERVED ' + r.stats.served, cx, 86, '#888', 1, 'c');
+      y = 110;
+    } else if (r.win) {
       txtS('GIG ON!', cx, 44, '#7cfc6a', 3, 'c');
       txt(lv.headliner ? 'LIVE IN ' + lv.city + '!' : 'THE CROWD GOES MAD.', cx, 68, '#fff', 1, 'c');
       for (let s = 0; s < 3; s++) drawStar(cx - 25 + s * 18, 80, r.stars > s, 2);
@@ -548,7 +559,7 @@ const Screens = {
     let by = Math.max(196, y + 16 + (r.awards.length + (r.newPoster ? 1 : 0)) * 9);
     if (r.win && r.next) { UI.button(cx - 50, by, 100, 20, 'NEXT LEVEL', () => App.startLevel(r.next)); by += 26; }
     UI.button(cx - 50, by, 100, 20, 'RETRY', () => App.restart()); by += 26;
-    UI.button(cx - 50, by, 100, 20, 'LEVELS', () => App.toSelect(), { noDefault: true });
+    UI.button(cx - 50, by, 100, 20, lv.sandbox ? 'SETTINGS' : 'LEVELS', () => App.toSelect(), { noDefault: true });
     if (!r.win && (App.T * 2 | 0) % 2) txtS('TAP ANYWHERE TO RETRY', cx, 284, '#fff', 1, 'c');
   },
 
@@ -703,7 +714,7 @@ const Screens = {
     drawBackdrop(VENUES.festival, App.T);
     txtS('NEVER-ENDING', cx, 4, '#ffd84a', 1, 'c');
     txtS('TOUR', cx, 12, '#ffd84a', 2, 'c');
-    ['20 SECONDS PER CITY. ANGER CARRIES OVER.', 'EACH CITY HAS A MISSION. CHOOSE YOUR ROUTE:', 'CHILL RIDE OR ROWDY NIGHT (X2 POINTS).', 'EVERY 3 CITIES: NEW TWIST + POWER-UPS.'].forEach((s, i) => txt(s, cx, 30 + i * 8, '#ccc', 1, 'c'));
+    ['DRIVE ACROSS THE MAP FROM CITY TO CITY.', '20 SECONDS PER GIG. ANGER CARRIES OVER.', 'PICK YOUR STOPS: GIGS, ROWDY NIGHTS (X2),', 'REST STOPS AND SERVICE STATIONS.'].forEach((s, i) => txt(s, cx, 30 + i * 8, '#ccc', 1, 'c'));
     txt('CHOOSE YOUR PAIR:', cx, 68, '#9fd8ff', 1, 'c');
     Object.keys(PAIRS).forEach((id, i) => {
       const p = PAIRS[id], open = Save.pairUnlocked(id), y = 78 + i * 40;
@@ -752,28 +763,96 @@ const Screens = {
     }
     if (E.restocked) { txt('MANAGER RESTOCKED YOUR POWER-UPS', cx, y, '#9fd8ff', 1, 'c'); y += 10; }
 
-    // Zwei Routen
-    y = Math.max(y + 2, 168);
-    txt('CHOOSE YOUR NEXT STOP:', cx, y, '#fff', 1, 'c');
-    const ready = App.transT > .6;
-    E.routes.forEach((r, k) => {
-      const R = ROUTES[r.kind], ve = VENUES[r.venue], bx = OX + 4 + k * 88;
-      UI.button(bx, y + 9, 84, 82, '', () => E.choose(k), {
-        disabled: !ready,
-        draw(btn, hl) {
-          X.fillStyle = R.color; X.fillRect(btn.x, btn.y, btn.w, 2);
-          txt((VIEW.pc ? (k + 1) + ' ' : '') + R.name, btn.x + 42, btn.y + 5, hl ? '#ffd84a' : R.color, 1, 'c');
-          txtS(r.city, btn.x + 42, btn.y + 14, '#fff', 1, 'c');
-          X.fillStyle = ve.color; X.fillRect(btn.x + 4, btn.y + 23, 4, 4);
-          txt(ve.short === 'BUS' ? 'TOUR BUS' : ve.name.split(' ')[0], btn.x + 11, btn.y + 23, '#9fd8ff');
-          R.perks().forEach((p, i) => txt(p, btn.x + 42, btn.y + 32 + i * 7, R.color, 1, 'c'));
-          txt('MISSION:', btn.x + 42, btn.y + 50, '#888', 1, 'c');
-          wrapText(bonusText(r.mission), 20).slice(0, 2).forEach((l, i) => txt(l, btn.x + 42, btn.y + 58 + i * 7, '#ccc', 1, 'c'));
-        },
-      });
-    });
+    // Weiter zur Landkarte
+    y = Math.max(y + 6, 190);
     const ang = E.anger || [0, 0];
-    txt('NOW: ' + Game.bros.map((x, i) => x.name + ' ' + Math.round(ang[i]) + '%').join('   '), cx, y + 96, '#888', 1, 'c');
+    txt('NOW: ' + Game.bros.map((x, i) => x.name + ' ' + Math.round(ang[i]) + '%').join('   '), cx, y, '#888', 1, 'c');
+    UI.button(cx - 55, y + 12, 110, 22, 'TO THE MAP', () => App.go('tourmap'), { disabled: App.transT < .6 });
+  },
+
+
+  /* ----- Never-Ending Tour: Landkarte, Wahl des nächsten Halts ----- */
+  tourmap() {
+    const cx = VIEW.W / 2, OX = VIEW.OX, E = Endless, T = App.T, mv = App.mapMove;
+    if (!mv) fitMapCam([E.pos, ...E.routes.map(r => r.city)]);
+    drawMapBase(OX, T);
+    // Gefahrene Strecke
+    for (let i = 1; i < E.path.length; i++) mapRoad(E.path[i - 1], E.path[i], '#e8c050', false);
+    for (const c of E.path) { const p = mapXY(c); X.fillStyle = '#e8c050'; X.fillRect(p.x - 1, p.y - 1, 3, 3); }
+    // Die Halte zur Auswahl (gestrichelte Straßen dorthin)
+    const sel = clamp(App.mapSel, 0, E.routes.length - 1);
+    E.routes.forEach((r, k) => {
+      mapRoad(E.pos, r.city, k === sel ? '#ffffff' : '#8a8a96', true);
+      const p = mapXY(r.city), R = ROUTES[r.kind], on = k === sel;
+      if (on) { const s = 7 + ((T * 4 | 0) % 2); X.fillStyle = 'rgba(255,255,255,.25)'; X.fillRect(p.x - s, p.y - s, s * 2 + 1, s * 2 + 1); }
+      mapNode(p.x, p.y, r, on);
+      const lw = textW(r.city), lx = clamp(p.x - lw / 2, OX + 2, OX + PLAY_W - lw - 2), ly = p.y + 8 > 222 ? p.y - 14 : p.y + 8;
+      X.fillStyle = 'rgba(0,0,0,.6)'; X.fillRect(lx - 1, ly - 1, lw + 2, 7);
+      txt(r.city, lx, ly, on ? '#fff' : R.color);
+      UI.button(p.x - 9, p.y - 9, 19, 19, '', () => { if (App.mapSel === k) E.choose(k); else App.mapSel = k; }, { bare: true, noDefault: true, disabled: !!mv, draw() {} });
+    });
+    // Der Bus (fährt bei einer Wahl los)
+    let bp = mapXY(E.pos);
+    if (mv) { const a = mapXY(mv.from), b = mapXY(mv.to), t = Math.min(1, mv.t / 1.2), e = t * t * (3 - 2 * t); bp = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }; }
+    drawMapBus(Math.round(bp.x), Math.round(bp.y), T);
+
+    // Kopfzeile
+    X.fillStyle = 'rgba(14,12,20,.85)'; X.fillRect(OX, 0, PLAY_W, 24);
+    txtS('NEXT STOP?', OX + 4, 4, '#ffd84a', 1);
+    txt('CITY ' + (E.section + 1) + '   SCORE ' + E.score, OX + PLAY_W - 4, 4, '#cfc3a6', 1, 'r');
+    const ang = E.anger || [0, 0];
+    txt(Game.bros.map((x, i) => x.name + ' ' + Math.round(ang[i]) + '%').join('  '), OX + 4, 14, '#9a9a9a');
+    if (E.stopMsg) txtS(E.stopMsg.text, cx, 30, E.stopMsg.c, 1, 'c');
+
+    // Infokasten zum gewählten Halt
+    const r = E.routes[sel];
+    if (!r) return;
+    const R = ROUTES[r.kind], y0 = 230;
+    panel(OX + 4, y0, PLAY_W - 8, 74, R.color);
+    txt(R.name, OX + 10, y0 + 5, R.color);
+    txtS(r.city, OX + PLAY_W - 10, y0 + 5, '#fff', 1, 'r');
+    let y = y0 + 15;
+    if (r.venue) {
+      const ve = VENUES[r.venue];
+      X.fillStyle = ve.color; X.fillRect(OX + 10, y, 4, 4);
+      txt(ve.name, OX + 17, y, '#9fd8ff'); y += 9;
+      txt('MISSION: ' + bonusText(r.mission), OX + 10, y, '#ccc'); y += 9;
+    }
+    R.perks().forEach(p => { txt(p, OX + 10, y, '#bbb'); y += 8; });
+    UI.button(OX + PLAY_W - 64, y0 + 54, 56, 16, R.gig ? "LET'S GO" : 'STOP HERE', () => E.choose(sel), { disabled: !!mv });
+    if (VIEW.pc) txt('1-3 OR ARROWS', OX + 10, y0 + 60, '#555');
+  },
+
+  /* ----- Sandbox: SOUNDCHECK, alles frei einstellbar ----- */
+  sandbox() {
+    const cx = VIEW.W / 2, OX = VIEW.OX, sb = App.sb;
+    const venues = VENUE_ORDER.filter(v => Save.venueUnlocked(v));
+    const pairs = Object.keys(PAIRS).filter(id => Save.pairUnlocked(id));
+    if (!venues.includes(sb.venue)) sb.venue = venues[0];
+    if (!pairs.includes(sb.pair)) sb.pair = pairs[0];
+    drawBackdrop(VENUES[sb.venue], App.T);
+    txtS('SOUNDCHECK', cx, 7, '#ffd84a', 2, 'c');
+    txt('PLAY HOW YOU LIKE. NO STARS, NO STRESS.', cx, 30, '#cfc3a6', 1, 'c');
+    const cyc = (list, v, d) => list[(list.indexOf(v) + d + list.length) % list.length];
+    const rows = [
+      ['PLACE', VENUES[sb.venue].name, d => { sb.venue = cyc(venues, sb.venue, d); }],
+      ['BAND', PAIRS[sb.pair].name, d => { sb.pair = cyc(pairs, sb.pair, d); }],
+      ['PACE', SANDBOX.pace[sb.pace].name, d => { sb.pace = (sb.pace + d + SANDBOX.pace.length) % SANDBOX.pace.length; }],
+      ['TIME', SANDBOX.time[sb.time].name, d => { sb.time = (sb.time + d + SANDBOX.time.length) % SANDBOX.time.length; }],
+      ['FIGHTS', sb.safe ? 'OFF (CAN\'T LOSE)' : 'ON', () => { sb.safe = !sb.safe; }],
+      ['ITEMS', sb.items ? 'ON' : 'OFF', () => { sb.items = !sb.items; }],
+      ['EVENTS', sb.events ? 'ON' : 'OFF', () => { sb.events = !sb.events; }],
+    ];
+    rows.forEach(([label, val, fn], i) => {
+      const y = 46 + i * 24;
+      panel(OX + 6, y, PLAY_W - 12, 20, '#3a3630');
+      txt(label, OX + 11, y + 8, '#9a9080');
+      UI.button(OX + 48, y + 2, 16, 16, '<', () => fn(-1), { noDefault: true });
+      txt(val, OX + 111, y + 8, '#fff', 1, 'c');
+      UI.button(OX + PLAY_W - 26, y + 2, 16, 16, '>', () => fn(1), { noDefault: true });
+    });
+    UI.button(cx - 50, 222, 100, 24, 'START', () => App.startSandbox());
+    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
   /* ----- Ende der Never-Ending Tour ----- */
@@ -902,6 +981,7 @@ function drawTourMap(x0, y0, history, showNext) {
     if (i % per) { X.fillStyle = '#444'; X.fillRect(x - 3, y + 2, 3, 1); }   // Straße zur vorigen Stadt
     const h = history[i];
     if (!h) { if ((App.T * 3 | 0) % 2) txt('?', x + 2, y, '#fff', 1, 'c'); continue; }
+    if (!h.venue) { X.fillStyle = ROUTES[h.kind].color; X.fillRect(x + 1, y + 1, 3, 3); continue; }   // Rast / Tankstelle
     if (h.kind === 'rowdy') { X.fillStyle = '#ff5a4a'; X.fillRect(x - 1, y - 1, 7, 7); }
     X.fillStyle = '#000'; X.fillRect(x, y, 5, 5);
     X.fillStyle = VENUES[h.venue].color; X.fillRect(x, y, 5, 5);
@@ -909,6 +989,111 @@ function drawTourMap(x0, y0, history, showNext) {
     if (h.failed) { X.fillStyle = '#fff'; X.fillRect(x, y, 1, 1); X.fillRect(x + 4, y, 1, 1); X.fillRect(x + 1, y + 1, 3, 3); X.fillStyle = VENUES[h.venue].color; X.fillRect(x + 2, y + 1, 1, 1); X.fillRect(x + 1, y + 2, 1, 1); X.fillRect(x + 3, y + 2, 1, 1); X.fillRect(x + 2, y + 3, 1, 1); }
   }
 }
+
+
+/* ---------- Landkarte für die Never-Ending Tour ----------
+   Großbritannien und Irland, grob als Umriss (Längengrad, Breitengrad).
+   mapXY rechnet eine Stadt in Bildschirm-Pixel um. */
+const MAP_LAND = [
+  // Großbritannien
+  [[-5.7, 50.05], [-5.2, 49.96], [-4.1, 50.33], [-3.6, 50.22], [-3.0, 50.7], [-2.45, 50.55], [-1.3, 50.75], [-0.1, 50.8], [1.35, 51.1],
+   [1.45, 51.38], [0.7, 51.45], [1.1, 51.75], [1.35, 51.95], [1.75, 52.5], [1.3, 52.95], [0.3, 52.85], [0.35, 53.15], [0.12, 53.6],
+   [-0.08, 54.12], [-0.6, 54.48], [-1.15, 54.65], [-1.35, 54.9], [-2.0, 55.77], [-2.6, 56.0], [-2.6, 56.28], [-2.8, 56.45], [-2.05, 57.15],
+   [-2.0, 57.69], [-3.0, 57.65], [-4.1, 57.5], [-3.8, 57.85], [-3.1, 58.45], [-3.37, 58.67], [-5.0, 58.62], [-5.3, 57.9], [-5.8, 57.3],
+   [-5.85, 56.9], [-5.6, 56.4], [-5.7, 55.3], [-4.9, 55.6], [-4.9, 55.0], [-5.15, 54.8], [-4.85, 54.65], [-3.6, 54.95], [-3.6, 54.5],
+   [-2.9, 54.1], [-3.05, 53.8], [-3.05, 53.4], [-4.0, 53.3], [-4.6, 53.3], [-4.75, 52.8], [-4.1, 52.55], [-4.6, 52.1], [-5.3, 51.88],
+   [-5.0, 51.65], [-3.95, 51.57], [-3.15, 51.45], [-2.7, 51.55], [-3.5, 51.2], [-4.55, 51.0], [-5.05, 50.42]],
+  // Irland
+  [[-7.3, 55.38], [-6.15, 55.22], [-5.7, 54.65], [-5.5, 54.35], [-6.3, 54.0], [-6.05, 53.35], [-6.0, 52.95], [-6.35, 52.17], [-7.0, 52.13],
+   [-8.2, 51.8], [-9.8, 51.45], [-10.3, 51.9], [-10.45, 52.15], [-9.6, 52.6], [-9.3, 53.2], [-10.1, 53.5], [-10.0, 54.2], [-8.6, 54.3],
+   [-8.8, 54.75], [-8.3, 55.15]],
+];
+// Kamera der Karte: Mitte (Breite, Länge) und Zoom. Ganze Karte = { lat: 54.4, lon: -4.35, z: 1 }
+let MAPCAM = { lat: 54.4, lon: -4.35, z: 1 };
+function mapLL(lat, lon) { return { x: VIEW.OX + Math.round(90 + (lon - MAPCAM.lon) * 13.3 * MAPCAM.z), y: Math.round(126 + (MAPCAM.lat - lat) * 22.2 * MAPCAM.z) }; }
+/** Kamera so setzen, dass Standort und alle Ziele gut sichtbar sind (möglichst nah heran) */
+function fitMapCam(cities) {
+  const ps = cities.map(c => CITY_POS[c] || CITY_POS[TOUR_START]);
+  const la = ps.map(p => p[0]), lo = ps.map(p => p[1]);
+  const lat0 = Math.min(...la), lat1 = Math.max(...la), lon0 = Math.min(...lo), lon1 = Math.max(...lo);
+  const z = clamp(Math.min(140 / Math.max(.01, (lon1 - lon0) * 13.3), 150 / Math.max(.01, (lat1 - lat0) * 22.2)), 1, 2.25);
+  MAPCAM = { lat: (lat0 + lat1) / 2, lon: (lon0 + lon1) / 2, z: Math.round(z * 4) / 4 };
+}
+function mapXY(city) { const p = CITY_POS[city] || CITY_POS[TOUR_START]; return mapLL(p[0], p[1]); }
+
+let mapCache = null, mapCacheKey = '';
+onViewChange(() => { mapCache = null; });
+/** Land als Pixelbild (neu gemalt, wenn sich die Kamera ändert): Wiese mit Strand am Rand */
+function getMapImage() {
+  const key = MAPCAM.lat + ',' + MAPCAM.lon + ',' + MAPCAM.z + ',' + VIEW.OX;
+  if (mapCache && key === mapCacheKey) return mapCache;
+  mapCacheKey = key;
+  const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), OX = VIEW.OX;
+  g.fillStyle = '#fff';
+  for (const poly of MAP_LAND) {
+    g.beginPath();
+    poly.forEach(([lon, lat], i) => { const p = mapLL(lat, lon); i ? g.lineTo(p.x - OX, p.y) : g.moveTo(p.x - OX, p.y); });
+    g.closePath(); g.fill();
+  }
+  const im = g.getImageData(0, 0, PLAY_W, H), d = im.data, land = new Uint8Array(PLAY_W * H);
+  for (let i = 0; i < land.length; i++) land[i] = d[i * 4 + 3] > 110 ? 1 : 0;
+  const grass = hex('#4e7a3c'), grass2 = hex('#5a8a44'), sand = hex('#d8c890');
+  for (let y = 0; y < H; y++) for (let x = 0; x < PLAY_W; x++) {
+    const i = y * PLAY_W + x, k = i * 4;
+    if (!land[i]) { d[k + 3] = 0; continue; }
+    const coast = !land[i - 1] || !land[i + 1] || !land[i - PLAY_W] || !land[i + PLAY_W];
+    const c = coast ? sand : (BAYER[(y & 3) * 4 + (x & 3)] < 4 ? grass2 : grass);
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  return (mapCache = o);
+}
+/** Meer, Land, alle Städte als kleine Punkte */
+function drawMapBase(OX, T) {
+  baseT();
+  X.fillStyle = '#2a5a8a'; X.fillRect(0, 0, VIEW.W, H);
+  X.fillStyle = '#336aa0';                                                     // Wellen
+  for (let y = 30; y < 228; y += 9) for (let x = ((y / 9) % 2) * 9; x < PLAY_W; x += 18) X.fillRect(OX + x + Math.round(Math.sin(T * .8 + y) * 2), y, 4, 1);
+  X.drawImage(getMapImage(), OX, 0);
+  for (const c in CITY_POS) { const p = mapXY(c); X.fillStyle = Endless.usedCities.includes(c) ? '#6a6a5a' : '#2a3a20'; X.fillRect(p.x, p.y, 2, 2); }
+  X.fillStyle = 'rgba(14,12,20,.85)'; X.fillRect(OX, 226, PLAY_W, H - 226);
+}
+/** Straße zwischen zwei Städten (gestrichelt = mögliche Fahrt) */
+function mapRoad(a, b, col, dashed) {
+  const p = mapXY(a), q = mapXY(b), n = Math.max(1, Math.round(Math.hypot(q.x - p.x, q.y - p.y)));
+  X.fillStyle = col;
+  for (let i = 0; i <= n; i++) {
+    if (dashed && ((i >> 1) % 2)) continue;
+    X.fillRect(Math.round(p.x + (q.x - p.x) * i / n), Math.round(p.y + (q.y - p.y) * i / n), 1, 1);
+  }
+}
+/** Symbol für einen Halt: Gig (Farbe des Schauplatzes), Rast, Tankstelle */
+function mapNode(x, y, r, on) {
+  X.fillStyle = '#000'; X.fillRect(x - 5, y - 5, 11, 11);
+  X.fillStyle = on ? '#fff' : ROUTES[r.kind].color; X.fillRect(x - 4, y - 4, 9, 9);
+  X.fillStyle = '#1a1a1e'; X.fillRect(x - 3, y - 3, 7, 7);
+  if (r.kind === 'rest') { X.fillStyle = '#7cfc6a'; X.fillRect(x - 2, y - 1, 4, 3); X.fillRect(x + 2, y, 1, 1); X.fillStyle = '#ddd'; X.fillRect(x - 1, y - 3, 1, 1); X.fillRect(x, y - 2, 1, 1); }   // Tasse
+  else if (r.kind === 'service') { X.fillStyle = '#9fd8ff'; X.fillRect(x - 2, y - 2, 3, 5); X.fillRect(x + 1, y - 1, 1, 1); X.fillRect(x + 2, y, 1, 2); }   // Zapfsäule
+  else {
+    X.fillStyle = VENUES[r.venue].color; X.fillRect(x - 2, y - 2, 5, 5);
+    if (r.kind === 'rowdy') { X.fillStyle = '#ff5a3a'; X.fillRect(x - 1, y - 6, 3, 2); X.fillStyle = '#ffd84a'; X.fillRect(x, y - 6, 1, 1); }   // Flamme
+  }
+}
+/** Kleiner Tourbus von oben */
+function drawMapBus(x, y, T) {
+  const b = Math.round(Math.sin(T * 6));
+  X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(x - 4, y - 1, 10, 4);
+  X.fillStyle = '#8a2430'; X.fillRect(x - 5, y - 4 + b, 10, 5);
+  X.fillStyle = '#e0d4b0'; X.fillRect(x - 5, y - 2 + b, 10, 1);
+  X.fillStyle = '#9fd8ff'; X.fillRect(x + 3, y - 3 + b, 2, 1);
+  X.fillStyle = '#111'; X.fillRect(x - 4, y + 1 + b, 2, 1); X.fillRect(x + 2, y + 1 + b, 2, 1);
+}
+
+/* ---------- Sandbox (SOUNDCHECK): Auswahl-Listen ---------- */
+const SANDBOX = {
+  pace: [{ name: 'CHILL', diff: .7, ramp: 99999 }, { name: 'NORMAL', diff: 1, ramp: 99999 }, { name: 'WILD', diff: 1.3, ramp: 80 }],
+  time: [{ name: '2 MINUTES', t: 120 }, { name: '5 MINUTES', t: 300 }, { name: 'NO LIMIT', t: 99999 }],
+};
 
 /* ---------- Konzert-Ticket als Knopf (Hauptmenü) ----------
    Dunkles, abgegriffenes Ticket mit Abriss links. icon = Bild auf dem Abriss
@@ -961,6 +1146,7 @@ function ticketIcon(icon, x, y, ink) {
     case 'star': for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (STAR[r][c] === '1') X.fillRect(x - 2 + c, y - 3 + r, 1, 1); break;
     case 'help': txt('?', x, y - 2, ink, 1, 'c'); break;
     case 'info': txt('I', x, y - 2, ink, 1, 'c'); X.fillRect(x - 1, y - 4, 3, 1); break;
+    case 'mic': X.fillRect(x - 1, y - 4, 3, 4); X.fillRect(x - 2, y - 1, 1, 2); X.fillRect(x + 2, y - 1, 1, 2); X.fillRect(x, y + 1, 1, 2); X.fillRect(x - 2, y + 3, 5, 1); break;
   }
 }
 

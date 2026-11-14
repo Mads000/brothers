@@ -20,11 +20,14 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
   6. Hotel: Mehrere Etagen, Aufzug zum Trennen, Betten für den Nachtbonus
   7. Bonus: Die Wohnung (3 Levels, ab 12 Sternen). Sonniger Nachmittag in der Band-WG im Look eines 90er-Albumcovers; Sonnenstrahlen wandern über den Boden und beruhigen
 - **Sterne:** geschafft / Wut nie über 90 % / Bonusziel
-- **Never-Ending Tour:** 20 Sekunden pro Stadt, jede Stadt hat eine Mission für Extrapunkte. Die Wut bleibt erhalten, sinkt auf der Busfahrt aber etwas. Nach jeder Stadt wählst du die nächste Station:
-  - CHILL RIDE: −25 % Wut
+- **Never-Ending Tour:** Auf einer Landkarte (Großbritannien und Irland) fährt der Bus ab Manchester von Stadt zu Stadt. Jeder Gig dauert 20 Sekunden und hat eine Mission für Extrapunkte. Die Wut bleibt erhalten, sinkt auf der Busfahrt aber etwas. Nach jeder Stadt wählst du auf der Karte einen von drei Halten in der Nähe:
+  - ON THE ROAD: normaler Gig
   - ROWDY NIGHT: doppelte Punkte, aber schwerer
+  - REST STOP: kein Gig, −30 % Wut
+  - SERVICE STATION: kein Gig, Power-ups wieder voll, −10 % Wut
 
-  Alle 3 Städte kommt ein neuer Twist dazu, dafür werden die Power-ups aufgefüllt. Eine Tourkarte zeigt den bisherigen Weg. Dazu Highscores und 4 Paare zum Freischalten
+  Alle 3 Städte kommt ein neuer Twist dazu, dafür werden die Power-ups aufgefüllt. Dazu Highscores und 4 Paare zum Freischalten. Städte und ihre Lage stehen in `CITY_POS` in `js/endless.js`
+- **Soundcheck (Freies Spiel):** Schauplatz, Paar, Tempo (CHILL/NORMAL/WILD), Zeit (2 Min., 5 Min., ohne Limit), Prügeleien an/aus, Gegenstände und Events an/aus frei wählbar. Keine Sterne, keine Belohnung, Power-ups kosten nichts. Die Auswahl-Listen stehen in `SANDBOX` in `js/ui.js`
 - **Shop:** 5 Power-ups (2 pro Level mitnehmen), 6 Outfits, 4 Bus-Lackierungen. Bezahlt wird mit Plektren
 - **Extras:** 12 Erfolge, Gig-Plakate, Highscores, Vibration an/aus
 - **How to play** (kurze Anleitung mit Bildern) und **Info** (alle Gegenstände, Events, Schauplätze, Figuren, Power-ups und Twists zum Nachlesen; wird automatisch aus den Daten-Dateien gebaut, das Feld `desc` ist die Beschreibung)

@@ -81,7 +81,8 @@ const CONFIG = {
     binBonus: 5,           // Punkte pro weggetipptem Gegenstand
     missionBonus: 40,      // Punkte für eine geschaffte Stadt-Mission
     busRelief: 10,         // so viel Wut verlieren beide auf jeder Busfahrt
-    chillRelief: 25,       // zusätzlich bei der Route CHILL RIDE
+    restRelief: 30,        // REST STOP auf der Karte: so viel Wut weniger
+    serviceRelief: 10,     // SERVICE STATION: so viel Wut weniger (dazu Power-ups voll)
     rowdyDiff: 0.35,       // so viel schwerer ist eine ROWDY NIGHT
   },
 
