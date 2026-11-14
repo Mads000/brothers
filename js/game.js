@@ -734,7 +734,7 @@ const Game = {
   draw() {
     let sx = 0, sy = 0;
     if (this.shake > 0) { sx = Math.round(rnd(-this.shake, this.shake)); sy = Math.round(rnd(-this.shake, this.shake)); }
-    if (this.venue.posterSpots) VENUE_ORDER.forEach(v => { if (Save.data.posters[v]) posterImage(v); });   // vor dem Zeichnen vorbereiten
+    if (this.venue.posterSpots) VENUE_ORDER.forEach(v => { if (Save.hasPoster(v)) posterImage(v); });   // vor dem Zeichnen vorbereiten
     drawVenue(this.venue, this.T, sx, sy, this.hasFlag('mirror'));   // setzt Welt-Koordinaten
     drawWallPosters(this.venue);
 

@@ -799,7 +799,7 @@ const Screens = {
   /* ----- Extras: Erfolge, Plakate, Highscores ----- */
   extras() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
-    VENUE_ORDER.forEach(v => { if (Save.data.posters[v]) posterImage(v); });   // Plakat-Bilder vorbereiten (vor dem Zeichnen)
+    VENUE_ORDER.forEach(v => { if (Save.hasPoster(v)) posterImage(v); });   // Plakat-Bilder vorbereiten (vor dem Zeichnen)
     drawBackdrop(VENUES.backstage, App.T);
     txtS('EXTRAS', cx, 7, '#ffd84a', 2, 'c');
     drawTabs(['AWARDS', 'POSTERS', 'SCORES'], App.extrasTab, i => { App.extrasTab = i; });
@@ -820,9 +820,9 @@ const Screens = {
         txt('PAGE ' + (App.awardsPage + 1) + '/' + pages, cx, 236, '#888', 1, 'c');
       }
     } else if (App.extrasTab === 1) {
-      const n = VENUE_ORDER.filter(v => Save.data.posters[v]).length;
+      const n = VENUE_ORDER.filter(v => Save.hasPoster(v)).length;
       VENUE_ORDER.forEach((vid, i) => {
-        const pw = 38, ph = 60, x = x0 + 2 + (i % 4) * 42, y = 50 + ((i / 4) | 0) * 68, have = !!Save.data.posters[vid];
+        const pw = 38, ph = 60, x = x0 + 2 + (i % 4) * 42, y = 50 + ((i / 4) | 0) * 68, have = Save.hasPoster(vid);
         if (have) {
           X.imageSmoothingEnabled = true; X.drawImage(posterImage(vid), x - 1, y - 1, pw + 2, ph + 2); X.imageSmoothingEnabled = false;
           UI.button(x, y, pw, ph, '', () => { App.posterView = vid; }, { bare: true, noDefault: true, draw(b, hl) { if (hl) { X.fillStyle = '#ffd84a'; X.fillRect(b.x - 2, b.y - 2, b.w + 4, 1); X.fillRect(b.x - 2, b.y + b.h + 1, b.w + 4, 1); } } });
@@ -1426,7 +1426,7 @@ function posterReward(vid) { return '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7
 function drawWallPosters(ve) {
   const spots = ve.posterSpots;
   if (!spots) return;
-  const have = VENUE_ORDER.filter(v => Save.data.posters[v]);
+  const have = VENUE_ORDER.filter(v => Save.hasPoster(v));
   X.imageSmoothingEnabled = true;
   spots.forEach((s, i) => { if (have[i]) X.drawImage(posterImage(have[i]), s.x, s.y, s.w || 10, s.h || 16); });
   X.imageSmoothingEnabled = false;

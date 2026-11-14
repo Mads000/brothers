@@ -127,6 +127,8 @@ const Save = {
   powerupCount(id) { return TEST_MODE ? Infinity : (this.data.powerups[id] || 0); },
   usePowerup(id) { if (!TEST_MODE) { this.data.powerups[id] = Math.max(0, (this.data.powerups[id] || 0) - 1); this.write(); } },
 
+  /** Plakat vorhanden? Im Playtest (Testmodus) sind alle freigeschaltet. */
+  hasPoster(v) { return TEST_MODE || !!this.data.posters[v]; },
   owns(kind, id) { return TEST_MODE || this.data.owned[kind].includes(id); },
   outfitOf(charId) {
     const id = this.data.outfit[charId];
