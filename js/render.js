@@ -43,7 +43,9 @@ function safeInsets() {
   // Vom Home-Bildschirm gestartet (Statusleiste liegt über dem Spiel): Manche iPhones melden
   // den Abstand zu spät oder gar nicht. Dann lieber einen sicheren Mindestabstand nehmen.
   const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 54); bottom = Math.max(bottom, 30); }
+  // Die unscharfe Statusleiste reicht etwas tiefer als der gemeldete Abstand: oben 12 px extra
+  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 12; bottom = Math.max(bottom, 30); }
+  else if (top > 0) top += 8;
   return { top, bottom };
 }
 
