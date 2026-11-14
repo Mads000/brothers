@@ -45,7 +45,8 @@ function fitView() {
 
   // Skalierung: Handy füllt den Bildschirm
   const dpr = window.devicePixelRatio || 1;
-  let s = Math.min(innerWidth / W, innerHeight / HC);
+  const pad = pc ? Math.round(Math.max(12, innerHeight * .03)) : 0;   // PC: kleiner Rand oben und unten
+  let s = Math.min(innerWidth / W, (innerHeight - pad * 2) / HC);
   // PC: pixelgenau in ganzen Gerätepixeln, aber nur wenn dabei kaum Platz verloren geht.
   // Sonst (z. B. Fenster knapp unter 960 px hoch) füllt das Spiel die Höhe trotzdem aus.
   if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1 && ds / dpr >= s * .9) s = ds / dpr; }
