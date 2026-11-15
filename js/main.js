@@ -41,7 +41,7 @@ const App = {
 
   /* ---------- Szenenwechsel ---------- */
 
-  go(scene) { this.posterView = null; this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; if (scene === 'tourmap') { this.mapSel = 0; this.mapMove = null; } },
+  go(scene) { if (this.updateReady && scene === 'menu') { location.reload(); return; } this.posterView = null; this.scene = scene; this.sceneT = this.T; UI.focus = -1; this.msg = null; if (scene === 'transition') this.transT = 0; if (scene === 'tourmap') { this.mapSel = 0; this.mapMove = null; } },
 
   startLevel(lv, skipIntro) {
     this.level = lv;
@@ -361,5 +361,19 @@ requestAnimationFrame(loop);
 
 // Offline spielbar (z. B. vom Home-Bildschirm): Service Worker anmelden (nur über http/https)
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* egal, dann eben nur online */ }); });
+  addEventListener('load', () => {
+    // Vom Home-Bildschirm läuft die App oft tagelang weiter: beim Zurückkehren nach Updates fragen
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      const check = () => reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+      setInterval(check, 5 * 60 * 1000);
+    }).catch(() => { /* egal, dann eben nur online */ });
+    // Neue Version ist aktiv: neu laden (mitten im Spiel erst beim nächsten Zurück ins Menü)
+    const hadOld = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadOld) return;
+      App.updateReady = true;
+      if (!['play', 'intro', 'result', 'transition', 'tourmap'].includes(App.scene)) location.reload();
+    });
+  });
 }

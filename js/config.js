@@ -21,7 +21,7 @@ function setTestMode(on) {
 }
 
 const CONFIG = {
-  VERSION: '1.0',
+  VERSION: '1.18',
 
   // Bildformat
   PLAY_W: 180,      // Breite des Spielfelds, auf jedem Gerät gleich
