@@ -19,6 +19,12 @@ body.pc {
     radial-gradient(ellipse at center, #1c1724 0%, #050407 75%);
 }
 
+/* iOS 26 vom Home-Bildschirm: die Höhe wird um die Statusleiste zu kurz berechnet, unten
+   bliebe ein Streifen frei. Die Seite um genau diese Höhe größer machen (nur als App). */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html { min-height: calc(100% + env(safe-area-inset-top, 0px)); }
+}
+
 #wrap {
   position: fixed;
   inset: 0;

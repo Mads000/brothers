@@ -42,12 +42,20 @@ document.body.appendChild(SAFE_PROBE);
  * (innerHeight kleiner als der Bildschirm). Dort kann man nicht malen, das iPhone füllt ihn
  * mit der Hintergrundfarbe. bottomGap() = Höhe dieses Streifens in CSS-Pixeln.
  */
-function appHeight() { return innerHeight; }
-function bottomGap() {
+function isApp() {
   const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   const app = navigator.standalone || (window.matchMedia && ['standalone', 'fullscreen', 'minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches));
-  if (!touch || !app || innerWidth > innerHeight) return 0;
-  const g = Math.max(screen.width, screen.height) - innerHeight;
+  return touch && app && innerWidth < innerHeight;
+}
+/** Höhe, die wir füllen: als App die (per CSS korrigierte) Höhe der Seite, sonst das Fenster */
+function appHeight() {
+  if (!isApp()) return innerHeight;
+  const doc = Math.round(document.documentElement.getBoundingClientRect().height);
+  return clamp(doc, innerHeight, Math.max(screen.width, screen.height));
+}
+function bottomGap() {
+  if (!isApp()) return 0;
+  const g = Math.max(screen.width, screen.height) - appHeight();
   return g > 0 && g < 160 ? g : 0;
 }
 const WRAP = document.getElementById('wrap');
@@ -72,6 +80,8 @@ function safeInsets() {
 /** Erkennt das Format (Handy hochkant 180x320 oder PC 240x320) und skaliert. */
 function fitView() {
   const IH = appHeight();
+  // als App an der Seite (nicht am zu kurzen Fenster) ausrichten, damit unten nichts abgeschnitten wird
+  WRAP.style.position = isApp() ? 'absolute' : 'fixed';
   WRAP.style.bottom = 'auto'; WRAP.style.height = IH + 'px';      // Fläche oben am Bildschirm, so hoch wie er ist
   const pc = innerWidth / IH >= CONFIG.PC_ASPECT;
   const W = pc ? CONFIG.PC_W : PLAY_W;
