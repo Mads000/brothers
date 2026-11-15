@@ -37,6 +37,19 @@ const SAFE_PROBE = document.createElement('div');
 SAFE_PROBE.style.cssText = 'position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;' +
   'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
 document.body.appendChild(SAFE_PROBE);
+/**
+ * Höhe, die wir füllen. Vom Home-Bildschirm gestartet meldet iOS manchmal eine kleinere
+ * innerHeight als der Bildschirm wirklich hat. Dann bliebe oben und unten ein leerer Rand.
+ * In dem Fall nehmen wir die echte Bildschirmhöhe.
+ */
+function appHeight() {
+  const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  const app = navigator.standalone || (window.matchMedia && ['standalone', 'fullscreen', 'minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches));
+  if (!touch || !app || innerWidth > innerHeight) return innerHeight;
+  const sh = Math.max(screen.width, screen.height);
+  return sh > innerHeight && sh - innerHeight < 160 ? sh : innerHeight;
+}
+const WRAP = document.getElementById('wrap');
 function safeInsets() {
   const cs = getComputedStyle(SAFE_PROBE);
   let top = parseFloat(cs.paddingTop) || 0, bottom = parseFloat(cs.paddingBottom) || 0;
@@ -46,19 +59,21 @@ function safeInsets() {
   // Langes Touch-Handy, das den ganzen Bildschirm füllt: die unscharfe Statusleiste reicht
   // deutlich tiefer als der gemeldete Abstand -> oben großzügig Platz, unten nur knapp über der Home-Leiste.
   const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-  if (touch && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 36; bottom = Math.min(Math.max(bottom, 21), 34) * .45; }
+  if (touch && appHeight() / innerWidth > 1.9) { top = Math.max(top, 59) + 36; bottom = Math.min(Math.max(bottom, 21), 34) * .45; }
   else if (top > 0) top += 8;
   return { top, bottom };
 }
 
 /** Erkennt das Format (Handy hochkant 180x320 oder PC 240x320) und skaliert. */
 function fitView() {
-  const pc = innerWidth / innerHeight >= CONFIG.PC_ASPECT;
+  const IH = appHeight();
+  WRAP.style.bottom = 'auto'; WRAP.style.height = IH + 'px';      // Fläche oben am Bildschirm, so hoch wie er ist
+  const pc = innerWidth / IH >= CONFIG.PC_ASPECT;
   const W = pc ? CONFIG.PC_W : PLAY_W;
   // Handy (nur echte Touch-Geräte): Bildfläche so hoch wie der Bildschirm, damit oben und
   // unten nichts schwarz bleibt. Am PC (auch im schmalen Fenster) bleibt es bei 320 Pixeln.
   const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-  const OY = pc || !touch ? 0 : clamp(Math.floor((PLAY_W * innerHeight / innerWidth - H) / 2), 0, CONFIG.MAX_BAND);
+  const OY = pc || !touch ? 0 : clamp(Math.floor((PLAY_W * IH / innerWidth - H) / 2), 0, CONFIG.MAX_BAND);
   const HC = H + OY * 2;
   const changed = !VIEW.ready || VIEW.W !== W || VIEW.OY !== OY;
   if (C.width !== W || C.height !== HC) { C.width = W; C.height = HC; }
@@ -67,8 +82,8 @@ function fitView() {
 
   // Skalierung: Handy füllt den Bildschirm
   const dpr = window.devicePixelRatio || 1;
-  const pad = pc ? Math.round(Math.max(12, innerHeight * .03)) : 0;   // PC: kleiner Rand oben und unten
-  let s = Math.min(innerWidth / W, (innerHeight - pad * 2) / HC);
+  const pad = pc ? Math.round(Math.max(12, IH * .03)) : 0;   // PC: kleiner Rand oben und unten
+  let s = Math.min(innerWidth / W, (IH - pad * 2) / HC);
   // PC: pixelgenau in ganzen Gerätepixeln, aber nur wenn dabei kaum Platz verloren geht.
   // Sonst (z. B. Fenster knapp unter 960 px hoch) füllt das Spiel die Höhe trotzdem aus.
   if (pc) { const ds = Math.floor(s * dpr); if (ds >= 1 && ds / dpr >= s * .9) s = ds / dpr; }
