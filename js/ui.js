@@ -225,6 +225,11 @@ function drawTallBus() {
   X.fillStyle = 'rgba(0,0,0,.5)'; X.fillRect(0, -h, VIEW.W, 320 + 2 * h);
   return true;
 }
+/** Spielfeld abdunkeln, aber nur zwischen den HUD-Leisten (Namen und Knöpfe bleiben hell) */
+function shadePlay(a = .5) {
+  const b = VIEW.playBox || { top: 26, bot: 304 };
+  X.fillStyle = `rgba(8,6,12,${a})`; X.fillRect(0, b.top, VIEW.W, b.bot - b.top);
+}
 function shade(a = .5) { X.fillStyle = `rgba(0,0,0,${a})`; X.fillRect(0, 26, VIEW.W, 278); }
 /** Kasten mit Rahmen */
 function panel(x, y, w, h, border = '#4a4a58') {
@@ -264,6 +269,7 @@ function drawHUD(game, interactive) {
   const HY = TY + (dy >> 1), RY = TY + dy;          // Kopfzeile / Zeile mit den Wut-Leisten
   const BH = BY >= 12 ? Math.max(28, BY + 2) : 16, BB = 320 + BY - BH;   // untere Leiste
   drawFrame(game.venue, game.T, game.bros);
+  VIEW.playBox = { top: TY + TB, bot: BB };                     // Bereich zwischen den Leisten (für shadePlay)
   X.fillStyle = HUD_BG; X.fillRect(0, TY - ST, W, TB + ST); X.fillRect(0, BB, W, BH + SB);
 
   // Oben Mitte: Zeit bzw. Ziel
@@ -358,13 +364,13 @@ function drawHUD(game, interactive) {
   });
 
   if (game.state === 'intro') drawIntro(game);
-  else drawTutorial(game);
+  else if (App.scene === 'play') drawTutorial(game);   // nicht unter Pause/Ergebnis durchscheinen lassen
 }
 
 /** Startkarte vor einem Level */
 function drawIntro(game) {
   const lv = game.level, OX = VIEW.OX, cx = VIEW.W / 2, rec = Save.level(lv.id);
-  shade(.6);
+  shadePlay(.6);
   panel(OX + 8, 50, PLAY_W - 16, 214, lv.headliner ? '#ffd84a' : '#4a4a58');
   txt(levelLabel(lv) + (lv.headliner ? '  HEADLINER' : ''), cx, 58, lv.headliner ? '#ffd84a' : '#888', 1, 'c');
   const sc = textW(lv.name, 2) <= PLAY_W - 24 ? 2 : 1;
@@ -648,9 +654,12 @@ const Screens = {
 
   /* ----- Pause ----- */
   pause() {
-    const cx = VIEW.W / 2, lv = Game.level;
-    shade();
-    txtS('PAUSED', cx, 66, '#fff', 2, 'c');
+    const cx = VIEW.W / 2, OX = VIEW.OX, lv = Game.level;
+    shadePlay(.7);
+    const endY = lv.endless ? Math.max(208, 222 + (Game.mods.length - 1) * 8) : lv.bonus ? 232 : 222;
+    panel(OX + 8, 54, PLAY_W - 16, endY - 54 + 6, '#5a5464');
+    X.fillStyle = '#ffd84a'; X.fillRect(OX + 8, 54, PLAY_W - 16, 1);
+    txtS('PAUSED', cx, 64, '#fff', 2, 'c');
     txt(levelLabel(lv) + ': ' + lv.name, cx, 86, '#aaa', 1, 'c');
     UI.button(cx - 50, 104, 100, 20, 'RESUME', () => App.resume());
     if (lv.endless) {
@@ -671,7 +680,7 @@ const Screens = {
   /* ----- Ergebnis nach dem Level ----- */
   result() {
     const cx = VIEW.W / 2, OX = VIEW.OX, r = App.result, lv = r.level;
-    shade(.78);
+    shadePlay(.78);
     let y;
     if (lv.sandbox) {
       txtS(r.win ? 'NICE ONE!' : 'FIGHT!', cx, 44, r.win ? '#7cfc6a' : '#ff4a3a', 3, 'c');
@@ -908,7 +917,7 @@ const Screens = {
   /* ----- Übergang zwischen zwei Städten: Punkte + Wahl der nächsten Station ----- */
   transition() {
     const cx = VIEW.W / 2, OX = VIEW.OX, E = Endless, b = E.lastCity;
-    shade(.88);
+    shadePlay(.88);
     txtS('CITY ' + E.section + ' DONE!', cx, 30, '#7cfc6a', 2, 'c');
     drawTourMap(OX + 10, 46, E.history, true);
 
@@ -1107,7 +1116,7 @@ const Screens = {
   /* ----- Ende der Never-Ending Tour ----- */
   endlessOver() {
     const cx = VIEW.W / 2, OX = VIEW.OX, L = Endless.last;
-    shade(.88);
+    shadePlay(.88);
     txtS('TOUR OVER', cx, 30, '#ff4a3a', 2, 'c');
     txt(L.reason || 'THEY HAD A FIGHT.', cx, 47, '#ccc', 1, 'c');
     drawTourMap(OX + 10, 58, Endless.history, false);
