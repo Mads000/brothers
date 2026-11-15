@@ -481,7 +481,7 @@ const Screens = {
     const bx = cx - 64, bw = 128, y0 = 128;
     const done = LEVELS.filter(l => (Save.level(l.id) || {}).done).length;
     // Die Knöpfe sehen aus wie Konzert-Tickets (siehe ticket() unten)
-    UI.button(bx, y0, bw, 28, 'TOUR', () => App.go('route'),
+    UI.button(bx, y0, bw, 28, 'TOUR', () => App.go('select'),
       { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
     UI.button(bx, y0 + 33, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
@@ -643,58 +643,6 @@ const Screens = {
         });
       });
     }
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('route'), { noDefault: true });
-  },
-
-  /* ----- Tour-Karte der normalen Tour: die 7 Schauplätze als Stationen quer durchs Land ----- */
-  route() {
-    const OX = VIEW.OX, cx = VIEW.W / 2, T = App.T, hy = mapHeadY();
-    fitMapCam(VENUE_ORDER.map(v => ROUTE_STOPS[v].city));
-    drawMapBase(OX, T);
-    // Straße von Station zu Station: gold, solange der nächste Schauplatz offen ist
-    VENUE_ORDER.forEach((v, i) => {
-      if (!i) return;
-      const open = Save.venueUnlocked(v);
-      mapRoad(ROUTE_STOPS[VENUE_ORDER[i - 1]].city, ROUTE_STOPS[v].city, open ? '#f0c850' : '#8a8494', !open);
-    });
-    const cur = routeCurrent();
-    VENUE_ORDER.forEach((v, i) => {
-      const st = ROUTE_STOPS[v], ve = VENUES[v], p = mapXY(st.city), open = Save.venueUnlocked(v), now = v === cur.venue;
-      const [got, max] = venueStars(v);
-      if (now) { const s = 8 + ((T * 4 | 0) % 2); X.fillStyle = 'rgba(255,216,74,.3)'; X.fillRect(p.x - s, p.y - s, s * 2 + 1, s * 2 + 1); }
-      X.fillStyle = '#000'; X.fillRect(p.x - 6, p.y - 6, 13, 13);
-      X.fillStyle = now ? '#ffd84a' : open ? '#e8dcc0' : '#5a5464'; X.fillRect(p.x - 5, p.y - 5, 11, 11);
-      X.fillStyle = open ? ve.color : '#2a2630'; X.fillRect(p.x - 4, p.y - 4, 9, 9);
-      if (open) txt(String(i + 1), p.x + 1, p.y - 2, '#fff', 1, 'c'); else drawLock(p.x - 3, p.y - 4, '#8a8494');
-      // Schild: Name und Sterne
-      const l1 = st.label, l2 = open ? got + '/' + max : 'LOCKED', w = Math.max(textW(l1), textW(l2) + 7) + 4;
-      let lx = st.side === 'l' ? p.x - 8 - w : st.side === 'r' ? p.x + 8 : p.x - w / 2;
-      const ly = st.side === 't' ? p.y - 24 : st.side === 'b' ? p.y + 8 : p.y - 8;
-      lx = clamp(Math.round(lx), OX + 1, OX + PLAY_W - w - 1);
-      X.fillStyle = 'rgba(10,8,14,.82)'; X.fillRect(lx, ly, w, 16);
-      X.fillStyle = open ? ve.color : '#3a3640'; X.fillRect(lx, ly, 1, 16);
-      txt(l1, lx + 3, ly + 2, open ? '#fff' : '#6a6474');
-      if (open) { drawStar(lx + 5, ly + 10, got > 0); txt(l2, lx + 10, ly + 9, got === max ? '#ffd84a' : '#cfc3a6'); }
-      else txt(l2, lx + 3, ly + 9, '#6a6474');
-      UI.button(Math.min(p.x - 8, lx), Math.min(p.y - 8, ly), Math.max(p.x + 8, lx + w) - Math.min(p.x - 8, lx), Math.max(p.y + 8, ly + 16) - Math.min(p.y - 8, ly), '',
-        () => { App.venueIdx = i; App.go('select'); }, { bare: true, noDefault: true, draw() {} });
-    });
-    const cp = mapXY(ROUTE_STOPS[cur.venue].city);
-    drawMapBus(cp.x + 9, cp.y + 7, T);
-
-    mapHeader(hy);
-    txtS('THE TOUR', OX + 4, hy + 4, '#ffd84a', 1);
-    drawStar(OX + PLAY_W - 30, hy + 6, true); txt(Save.totalStars() + '', OX + PLAY_W - 24, hy + 4, '#ffd84a');
-    txt('TAP A STOP TO PICK A LEVEL', OX + 4, hy + 15, '#cfc3a6');
-
-    // Unten: direkt weiterspielen
-    const y0 = 234;
-    X.fillStyle = HUD_BG; X.fillRect(0, y0, VIEW.W, 320 + VIEW.OY - y0);
-    X.fillStyle = '#ffd84a'; X.fillRect(0, y0, VIEW.W, 1);
-    if (cur.level) {
-      txt('NEXT UP: ' + VENUES[cur.venue].name, cx, y0 + 6, '#9fd8ff', 1, 'c');
-      UI.button(cx - 70, y0 + 16, 140, 22, 'PLAY: ' + cur.level.name, () => App.startLevel(cur.level));
-    } else txt('ALL LEVELS DONE! GO FOR 3 STARS', cx, y0 + 10, '#7cfc6a', 1, 'c');
     UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
@@ -1322,30 +1270,6 @@ function fitMapCam(cities) {
   MAPCAM = { lat: (lat0 + lat1) / 2, lon: (lon0 + lon1) / 2, z: Math.round(z * 4) / 4 };
 }
 function mapXY(city) { const p = Array.isArray(city) ? city : CITY_POS[city] || CITY_POS[TOUR_START]; return mapLL(p[0], p[1]); }
-
-/* Normale Tour: Stationen der 7 Schauplätze (Ort, Lage, Seite fürs Schild: l r t b) */
-const ROUTE_STOPS = {
-  bus: { label: 'LONDON', city: [51.51, -0.13], side: 'l' },
-  rehearsal: { label: 'MANCHESTER', city: [53.48, -2.24], side: 'l' },
-  pub: { label: 'GLASGOW', city: [55.86, -4.25], side: 'b' },
-  backstage: { label: 'EDINBURGH', city: [55.95, -3.19], side: 'r' },
-  festival: { label: 'NEWCASTLE', city: [54.97, -1.61], side: 'r' },
-  hotel: { label: 'LEEDS', city: [53.80, -1.55], side: 'r' },
-  flat: { label: 'THE MOOR', city: [54.35, -0.85], side: 'r' },
-};
-/** Sterne eines Schauplatzes: [gesammelt, möglich] */
-function venueStars(v) { const ls = levelsOf(v); return [ls.reduce((n, l) => n + ((Save.level(l.id) || {}).stars || 0), 0), ls.length * 3]; }
-/** Wo die Tour gerade steht: erstes offenes, noch nicht geschafftes Level */
-function routeCurrent() {
-  let last = VENUE_ORDER[0];
-  for (const v of VENUE_ORDER) {
-    if (!Save.venueUnlocked(v)) break;
-    last = v;
-    const lv = levelsOf(v).find(l => Save.levelUnlocked(l) && !(Save.level(l.id) || {}).done);
-    if (lv) return { venue: v, level: lv };
-  }
-  return { venue: last, level: null };
-}
 
 let mapCache = null, mapCacheKey = '';
 onViewChange(() => { mapCache = null; });
