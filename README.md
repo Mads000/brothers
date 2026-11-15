@@ -25,6 +25,9 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
   - ROWDY NIGHT: doppelte Punkte, aber schwerer
   - REST STOP: kein Gig, −30 % Wut
   - SERVICE STATION: kein Gig, Power-ups wieder voll, −10 % Wut
+  - LEGENDARY GIG: legendäre Bühne (Knebworth, Maine Road, Glastonbury, Wembley ...), dreifache Punkte, sehr schwer. Gewonnene Bühnen landen im TOUR BOOK (`LEGENDS` in `js/endless.js`)
+
+  Die ganze Tourkarte: FULL MAP auf der Karte, TOUR MAP in der Pause und am Tour-Ende, TOUR BOOK im Startbildschirm der Tour.
 
   Alle 3 Städte kommt ein neuer Twist dazu, dafür werden die Power-ups aufgefüllt. Dazu Highscores und 4 Paare zum Freischalten. Städte und ihre Lage stehen in `CITY_POS` in `js/endless.js`
 - **Soundcheck (Freies Spiel):** Schauplatz, Paar, Tempo (CHILL/NORMAL/WILD), Zeit (2 Min., 5 Min., ohne Limit), Prügeleien an/aus, Gegenstände und Events an/aus frei wählbar. Keine Sterne, keine Belohnung, Power-ups kosten nichts. Die Auswahl-Listen stehen in `SANDBOX` in `js/ui.js`

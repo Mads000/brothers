@@ -182,6 +182,13 @@ function drawBackdrop(ve, T) {
   X.fillStyle = ve && ve.color ? ve.color : '#ffd84a'; X.globalAlpha = .5; X.fillRect(VIEW.OX + 20, 24, PLAY_W - 40, 1); X.globalAlpha = 1;
 }
 const MENU_BG = '#17141d';
+/** Tour-Menüs: der Schauplatz im Hintergrund (über die ganze Höhe), gut abgedunkelt */
+function drawMapBackdrop(ve, T, a = .68) {
+  drawVenue(ve, T);
+  drawFrame(ve, T, null);
+  baseT();
+  X.fillStyle = `rgba(12,10,16,${a})`; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY);
+}
 /** Hintergrund mit Schauplatz (nur noch fürs Hauptmenü am PC) */
 function drawVenueBackdrop(ve, T, withBros) {
   drawVenue(ve, T);
@@ -272,7 +279,8 @@ function drawHUD(game, interactive) {
   txt(levelLabel(lv), OX + 3, 3 + HY, '#666');
   if (lv.endless) {
     txt(String(Endless.liveScore(game)), W - 24, 3 + HY, '#ffd84a', 1, 'r');
-    if (Endless.cur && Endless.cur.kind === 'rowdy') txt('X2', OX + 4 + textW(levelLabel(lv)) + 4, 3 + HY, '#ff5a4a');
+    const mu = Endless.cur && ROUTES[Endless.cur.kind].mult;
+    if (mu > 1) txt('X' + mu, OX + 4 + textW(levelLabel(lv)) + 4, 3 + HY, mu > 2 ? '#ffd84a' : '#ff5a4a');
   }
 
   // Wut-Leisten oben
@@ -281,14 +289,15 @@ function drawHUD(game, interactive) {
     X.fillStyle = b.color; X.fillRect(bx, 13 + RY, 6, 8 + tall);
     txt(b.name, bx + 8, 15 + RY + (tall >> 1), '#ccc');
     // dicker, gelb -> orange -> rot (blinkt, wenn es kritisch wird)
-    X.fillStyle = '#000'; X.fillRect(bx + 22, 12 + RY, 58, 10 + tall);
-    X.fillStyle = '#26222c'; X.fillRect(bx + 23, 13 + RY, 56, 8 + tall);
+    const ax = bx + 10 + textW(b.name), aW = 80 - (ax - bx) - 2;          // Leiste beginnt hinter dem Namen
+    X.fillStyle = '#000'; X.fillRect(ax - 1, 12 + RY, aW + 2, 10 + tall);
+    X.fillStyle = '#26222c'; X.fillRect(ax, 13 + RY, aW, 8 + tall);
     const hot = b.anger > 85, col = hot ? ((App.T * 5 | 0) % 2 ? '#ff3030' : '#c01818') : b.anger > 65 ? '#ff8a3a' : '#ffd84a';
-    const aw = Math.round(56 * b.anger / 100);
-    X.fillStyle = col; X.fillRect(bx + 23, 13 + RY, aw, 8 + tall);
-    X.fillStyle = 'rgba(255,255,255,.35)'; X.fillRect(bx + 23, 13 + RY, aw, 1);
-    X.fillStyle = 'rgba(0,0,0,.5)'; for (const m of [.65, .85]) X.fillRect(bx + 23 + Math.round(56 * m), 13 + RY, 1, 8 + tall);
-    if (b.hidden) txt('LIFT', bx + 51, 15 + RY + (tall >> 1), '#fff', 1, 'c');
+    const aw = Math.round(aW * b.anger / 100);
+    X.fillStyle = col; X.fillRect(ax, 13 + RY, aw, 8 + tall);
+    X.fillStyle = 'rgba(255,255,255,.35)'; X.fillRect(ax, 13 + RY, aw, 1);
+    X.fillStyle = 'rgba(0,0,0,.5)'; for (const m of [.65, .85]) X.fillRect(ax + Math.round(aW * m), 13 + RY, 1, 8 + tall);
+    if (b.hidden) txt('LIFT', ax + aW / 2, 15 + RY + (tall >> 1), '#fff', 1, 'c');
   });
 
   // Angekündigte Events blinken am rechten Rand
@@ -365,14 +374,14 @@ function drawIntro(game) {
 
   const fresh = newEventsIn(lv);
   if (fresh.length) {
-    // Neues in diesem Level: kurz erklären (statt Kev <-> Del)
+    // Neues in diesem Level: kurz erklären (statt Liam <-> Noel)
     const ev = EVENTS[fresh[0]], blink = (App.T * 3 | 0) % 2;
     X.fillStyle = blink ? '#ffd84a' : '#ff8a3a'; X.fillRect(OX + 16, 133, 22, 9);
     txt('NEW!', OX + 27, 135, '#000', 1, 'c');
     txtS(ev.name, OX + 42, 135, '#ffd84a');
     wrapText(ev.desc, 34).slice(0, 2).forEach((l, i) => txt(l, cx, 146 + i * 8, '#ddd', 1, 'c'));
   } else {
-    // Kev <-> Del: worum es immer geht
+    // Liam <-> Noel: worum es immer geht
     const kb = makeBro('kev', 0, { x: cx - 40, y: 160 }), db = makeBro('del', 0, { x: cx + 40, y: 160 });
     drawBro(kb); drawBro(db);
     X.fillStyle = '#ff8a3a';
@@ -581,7 +590,8 @@ const Screens = {
   /* ----- Level-Auswahl ----- */
   select() {
     const W = VIEW.W, OX = VIEW.OX, cx = W / 2;
-    drawBackdrop(VENUES[VENUE_ORDER[App.venueIdx]], App.T);
+    drawMapBackdrop(VENUES[VENUE_ORDER[App.venueIdx]], App.T, Save.venueUnlocked(VENUE_ORDER[App.venueIdx]) ? .66 : .8);
+    X.fillStyle = 'rgba(12,10,16,.75)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY + 26);
     txtS('TOUR', cx, 7, '#ffd84a', 2, 'c');
     drawStar(OX + 150, 9, true);
     txt(String(Save.totalStars()), OX + 157, 9, '#ffd84a');
@@ -611,6 +621,7 @@ const Screens = {
     } else {
       // aktuelles Level = erstes offenes, das noch nicht geschafft ist
       const cur = levels.find(l => Save.levelUnlocked(l) && !(Save.level(l.id) || {}).done);
+      X.fillStyle = 'rgba(8,6,12,.55)'; X.fillRect(OX + 6, 77, 168, levels.length * 20 + 3);   // ruhige Fläche hinter der Liste
       levels.forEach((lv, i) => {
         const open = Save.levelUnlocked(lv), rec = Save.level(lv.id), now = lv === cur;
         UI.button(OX + 10, 80 + i * 20, 160, 17, '', () => App.startLevel(lv), {
@@ -644,8 +655,9 @@ const Screens = {
     UI.button(cx - 50, 104, 100, 20, 'RESUME', () => App.resume());
     if (lv.endless) {
       UI.button(cx - 50, 130, 100, 20, 'END THIS RUN', () => { App.go('play'); Game.finish(false, 'YOU CALLED IT A DAY'); });
-      UI.button(cx - 50, 156, 100, 20, 'MAIN MENU', () => { Endless.active = false; App.go('menu'); });
-      Game.mods.forEach((m, i) => txt(MODIFIERS[m].name + ': ' + MODIFIERS[m].desc, cx, 196 + i * 8, '#ff8a3a', 1, 'c'));
+      UI.button(cx - 50, 156, 100, 20, 'TOUR MAP', () => { App.tourBack = 'pause'; App.go('tourview'); });
+      UI.button(cx - 50, 182, 100, 20, 'MAIN MENU', () => { Endless.active = false; App.go('menu'); });
+      Game.mods.forEach((m, i) => txt(MODIFIERS[m].name + ': ' + MODIFIERS[m].desc, cx, 214 + i * 8, '#ff8a3a', 1, 'c'));
     } else {
       UI.button(cx - 50, 130, 100, 20, 'RESTART', () => App.restart());
       UI.button(cx - 50, 156, 100, 20, lv.sandbox ? 'SETTINGS' : 'LEVELS', () => App.toSelect());
@@ -869,14 +881,15 @@ const Screens = {
   /* ----- Never-Ending Tour: Paar wählen ----- */
   endlessSetup() {
     const OX = VIEW.OX, cx = VIEW.W / 2;
-    drawBackdrop(VENUES.festival, App.T);
+    drawMapBackdrop(VENUES.festival, App.T, .76);
     txtS('NEVER-ENDING', cx, 4, '#ffd84a', 1, 'c');
     txtS('TOUR', cx, 12, '#ffd84a', 2, 'c');
-    ['DRIVE ACROSS THE MAP FROM CITY TO CITY.', '20 SECONDS PER GIG. ANGER CARRIES OVER.', 'PICK YOUR STOPS: GIGS, ROWDY NIGHTS (X2),', 'REST STOPS AND SERVICE STATIONS.'].forEach((s, i) => txt(s, cx, 30 + i * 8, '#ccc', 1, 'c'));
-    txt('CHOOSE YOUR PAIR:', cx, 68, '#9fd8ff', 1, 'c');
+    ['DRIVE FROM CITY TO CITY. 20 SEC PER GIG.', 'ANGER CARRIES OVER TO THE NEXT CITY.', 'ON THE MAP YOU PICK THE NEXT STOP.'].forEach((s, i) => txt(s, cx, 30 + i * 8, '#ccc', 1, 'c'));
+    txt('PLAY LEGENDARY STAGES FOR X3!', cx, 56, '#ffd84a', 1, 'c');
+    txt('CHOOSE YOUR BAND:', cx, 68, '#9fd8ff', 1, 'c');
     Object.keys(PAIRS).forEach((id, i) => {
-      const p = PAIRS[id], open = Save.pairUnlocked(id), y = 78 + i * 40;
-      UI.button(OX + 8, y, PLAY_W - 16, 36, '', () => Endless.start(id), {
+      const p = PAIRS[id], open = Save.pairUnlocked(id), y = 78 + i * 38;
+      UI.button(OX + 8, y, PLAY_W - 16, 34, '', () => Endless.start(id), {
         disabled: !open,
         draw(b, hl) {
           const a = makeBro(p.bros[0], 10, { x: b.x + 14, y: b.y + 33 }), c = makeBro(p.bros[1], 10, { x: b.x + 30, y: b.y + 33 });
@@ -886,7 +899,9 @@ const Screens = {
         },
       });
     });
-    txt('BEST: ' + Save.data.endlessBest + ' CITIES', cx, 246, '#888', 1, 'c');
+    txt('BEST: ' + Save.data.endlessBest + ' CITIES', OX + 10, 234, '#888');
+    txt('LEGENDS ' + legendCount() + '/' + Object.keys(LEGENDS).length, OX + PLAY_W - 10, 234, '#ffd84a', 1, 'r');
+    UI.button(cx - 40, 250, 80, 16, 'TOUR BOOK', () => { App.tourBack = 'endlessSetup'; App.go('tourview'); }, { noDefault: true });
     UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
@@ -919,6 +934,14 @@ const Screens = {
       txt(m.desc, cx, y + 13, '#ccc', 1, 'c');
       y += 26;
     }
+    if (E.newLegend) {
+      const L = LEGENDS[E.newLegend];
+      panel(OX + 8, y, PLAY_W - 16, 22, '#ffd84a');
+      drawMapStar(OX + 17, y + 11, true);
+      txt('LEGEND: ' + E.newLegend + ' ' + L.year, OX + 25, y + 4, '#ffd84a');
+      txt('ADDED TO YOUR TOUR BOOK', OX + 25, y + 13, '#ccc');
+      y += 26;
+    }
     if (E.restocked) { txt('MANAGER RESTOCKED YOUR POWER-UPS', cx, y, '#9fd8ff', 1, 'c'); y += 10; }
 
     // Weiter zur Landkarte
@@ -933,21 +956,23 @@ const Screens = {
   /* ----- Never-Ending Tour: Landkarte, Wahl des nächsten Halts ----- */
   tourmap() {
     const cx = VIEW.W / 2, OX = VIEW.OX, E = Endless, T = App.T, mv = App.mapMove;
+    const hy = mapHeadY();
     if (!mv) fitMapCam([E.pos, ...E.routes.map(r => r.city)]);
     drawMapBase(OX, T);
-    // Gefahrene Strecke
-    for (let i = 1; i < E.path.length; i++) mapRoad(E.path[i - 1], E.path[i], '#e8c050', false);
-    for (const c of E.path) { const p = mapXY(c); X.fillStyle = '#e8c050'; X.fillRect(p.x - 1, p.y - 1, 3, 3); }
+    drawMapLegends();
+    mapPath(E.path);
     // Die Halte zur Auswahl (gestrichelte Straßen dorthin)
     const sel = clamp(App.mapSel, 0, E.routes.length - 1);
+    E.routes.forEach((r, k) => mapRoad(E.pos, r.city, k === sel ? '#ffffff' : '#a8a8b4', true));
     E.routes.forEach((r, k) => {
-      mapRoad(E.pos, r.city, k === sel ? '#ffffff' : '#8a8a96', true);
       const p = mapXY(r.city), R = ROUTES[r.kind], on = k === sel;
-      if (on) { const s = 7 + ((T * 4 | 0) % 2); X.fillStyle = 'rgba(255,255,255,.25)'; X.fillRect(p.x - s, p.y - s, s * 2 + 1, s * 2 + 1); }
+      if (on) { const s = 7 + ((T * 4 | 0) % 2); X.fillStyle = 'rgba(255,255,255,.28)'; X.fillRect(p.x - s, p.y - s, s * 2 + 1, s * 2 + 1); }
       mapNode(p.x, p.y, r, on);
-      const lw = textW(r.city), lx = clamp(p.x - lw / 2, OX + 2, OX + PLAY_W - lw - 2), ly = p.y + 8 > 222 ? p.y - 14 : p.y + 8;
-      X.fillStyle = 'rgba(0,0,0,.6)'; X.fillRect(lx - 1, ly - 1, lw + 2, 7);
-      txt(r.city, lx, ly, on ? '#fff' : R.color);
+      // Name mit Nummer (passt zu den Karten unten)
+      const label = (k + 1) + ' ' + r.city, lw = textW(label), lx = clamp(p.x - lw / 2, OX + 2, OX + PLAY_W - lw - 2), ly = p.y + 8 > 212 ? p.y - 14 : p.y + 8;
+      X.fillStyle = on ? 'rgba(0,0,0,.85)' : 'rgba(0,0,0,.6)'; X.fillRect(lx - 2, ly - 2, lw + 4, 9);
+      if (on) { X.fillStyle = R.color; X.fillRect(lx - 2, ly + 6, lw + 4, 1); }
+      txt(label, lx, ly, on ? '#fff' : R.color);
       UI.button(p.x - 9, p.y - 9, 19, 19, '', () => { if (App.mapSel === k) E.choose(k); else App.mapSel = k; }, { bare: true, noDefault: true, disabled: !!mv, draw() {} });
     });
     // Der Bus (fährt bei einer Wahl los)
@@ -955,32 +980,96 @@ const Screens = {
     if (mv) { const a = mapXY(mv.from), b = mapXY(mv.to), t = Math.min(1, mv.t / 1.2), e = t * t * (3 - 2 * t); bp = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }; }
     drawMapBus(Math.round(bp.x), Math.round(bp.y), T);
 
-    // Kopfzeile
-    X.fillStyle = 'rgba(14,12,20,.85)'; X.fillRect(OX, 0, PLAY_W, 24);
-    txtS('NEXT STOP?', OX + 4, 4, '#ffd84a', 1);
-    txt('CITY ' + (E.section + 1) + '   SCORE ' + E.score, OX + PLAY_W - 4, 4, '#cfc3a6', 1, 'r');
-    const ang = E.anger || [0, 0];
-    txt(Game.bros.map((x, i) => x.name + ' ' + Math.round(ang[i]) + '%').join('  '), OX + 4, 14, '#9a9a9a');
-    if (E.stopMsg) txtS(E.stopMsg.text, cx, 30, E.stopMsg.c, 1, 'c');
+    // Kopfzeile: Stadt, Punkte, Wut beider Brüder, ganze Karte
+    mapHeader(hy);
+    txtS('CITY ' + (E.section + 1) + ': WHERE TO?', OX + 4, hy + 4, '#ffd84a', 1);
+    UI.button(OX + PLAY_W - 44, hy + 2, 40, 10, 'FULL MAP', () => { App.tourBack = 'tourmap'; App.go('tourview'); }, { noDefault: true, disabled: !!mv });
+    mapAngerRow(OX + 4, hy + 15);
+    txt('SCORE ' + E.score, OX + PLAY_W - 4, hy + 15, '#cfc3a6', 1, 'r');
+    let my = hy + 28;
+    if (E.stopMsg) { txtS(E.stopMsg.text, cx, my, E.stopMsg.c, 1, 'c'); my += 9; }
+    else if (E.section <= 1 && !mv) { const t = 'TAP A STOP, THEN GO!'; X.fillStyle = 'rgba(0,0,0,.6)'; X.fillRect(cx - textW(t) / 2 - 3, my - 2, textW(t) + 6, 9); txt(t, cx, my, '#fff', 1, 'c'); }
 
-    // Infokasten zum gewählten Halt
+    // Unten: die Halte als Karten zum Antippen, darunter alles zum gewählten Halt
     const r = E.routes[sel];
     if (!r) return;
-    const R = ROUTES[r.kind], y0 = 230;
-    panel(OX + 4, y0, PLAY_W - 8, 74, R.color);
-    txt(R.name, OX + 10, y0 + 5, R.color);
-    txtS(r.city, OX + PLAY_W - 10, y0 + 5, '#fff', 1, 'r');
-    let y = y0 + 15;
+    const R = ROUTES[r.kind], y0 = 218;
+    X.fillStyle = HUD_BG; X.fillRect(0, y0, VIEW.W, 320 + VIEW.OY - y0);
+    X.fillStyle = R.color; X.fillRect(0, y0, VIEW.W, 1);
+    const n = E.routes.length, tw = Math.floor((PLAY_W - 8 - (n - 1) * 3) / n);
+    E.routes.forEach((q, k) => {
+      const Q = ROUTES[q.kind], on = k === sel;
+      UI.button(OX + 4 + k * (tw + 3), y0 + 4, tw, 15, '', () => { if (App.mapSel === k) E.choose(k); else App.mapSel = k; }, {
+        noDefault: true, disabled: !!mv,
+        draw(b, hl) {
+          X.fillStyle = '#000'; X.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2);
+          X.fillStyle = on ? '#2c2832' : '#1b1820'; X.fillRect(b.x, b.y, b.w, b.h);
+          X.fillStyle = on || hl ? Q.color : '#3a3640'; X.fillRect(b.x, b.y, b.w, 1); X.fillRect(b.x, b.y + b.h - 1, b.w, 1); X.fillRect(b.x, b.y, 1, b.h); X.fillRect(b.x + b.w - 1, b.y, 1, b.h);
+          mapNode(b.x + 8, b.y + 7, q, false);
+          txt(routeShort(q.kind), b.x + 16, b.y + 5, on || hl ? Q.color : '#8a8494');
+        },
+      });
+    });
+    let y = y0 + 25;
+    txtS(r.city, OX + 6, y, '#fff', 1);
+    txt(r.kind === 'legend' ? LEGENDS[r.city].year : R.name, OX + PLAY_W - 6, y, R.color, 1, 'r');
+    y += 10;
+    if (r.kind === 'legend') { txt(LEGENDS[r.city].line, OX + 6, y, '#ffe9a0'); y += 8; }
     if (r.venue) {
       const ve = VENUES[r.venue];
-      X.fillStyle = ve.color; X.fillRect(OX + 10, y, 4, 4);
-      txt(ve.name, OX + 17, y, '#9fd8ff'); y += 9;
-      txt('MISSION: ' + bonusText(r.mission), OX + 10, y, '#ccc'); y += 9;
+      X.fillStyle = ve.color; X.fillRect(OX + 6, y, 4, 4);
+      txt(ve.name, OX + 13, y, '#9fd8ff'); y += 8;
+      txt('MISSION: ' + bonusText(r.mission), OX + 6, y, '#ccc'); y += 8;
     }
-    R.perks().forEach(p => { txt(p, OX + 10, y, '#bbb'); y += 8; });
-    UI.button(OX + PLAY_W - 64, y0 + 54, 56, 16, R.gig ? "LET'S GO" : 'STOP HERE', () => E.choose(sel), { disabled: !!mv });
-    endTourButton(OX + 8, y0 + 54, 56);
+    R.perks().forEach(p => { txt(p, OX + 6, y, '#9a94a4'); y += 8; });
+    const by = Math.max(y + 2, 292);
+    UI.button(OX + PLAY_W - 74, by, 70, 18, R.gig ? "LET'S GO!" : 'STOP HERE', () => E.choose(sel), { disabled: !!mv });
+    endTourButton(OX + 4, by + 1, 56);
   },
+
+  /* ----- Ganze Tourkarte ansehen (Pause, Karte, Tour-Ende, Tour-Buch) ----- */
+  tourview() {
+    const OX = VIEW.OX, E = Endless, T = App.T, hy = mapHeadY();
+    const run = E.path.length > 1, live = E.active;
+    MAPCAM = { lat: 54.4, lon: -4.35, z: 1 };                      // ganz Großbritannien und Irland
+    drawMapBase(OX, T);
+    drawMapLegends(true);
+    if (run) {
+      mapPath(E.path);
+      // Halte: Farbe des Schauplatzes, Rast/Tankstelle, Prügelei = rotes X
+      for (let i = 1; i < E.path.length; i++) {
+        const p = mapXY(E.path[i]), h = E.history[i - 1];
+        if (!h) continue;
+        if (h.kind === 'legend' && !h.failed) { drawMapStar(p.x, p.y, true); continue; }
+        X.fillStyle = '#000'; X.fillRect(p.x - 2, p.y - 2, 5, 5);
+        X.fillStyle = h.venue ? VENUES[h.venue].color : ROUTES[h.kind].color; X.fillRect(p.x - 1, p.y - 1, 3, 3);
+        if (h.failed) { X.fillStyle = '#ff3a2a'; for (let k = -2; k <= 2; k++) { X.fillRect(p.x + k, p.y + k, 1, 1); X.fillRect(p.x + k, p.y - k, 1, 1); } }
+      }
+      const start = mapXY(E.path[0]); X.fillStyle = '#fff'; X.fillRect(start.x - 1, start.y - 1, 3, 3);
+      if (live) drawMapBus(mapXY(E.pos).x, mapXY(E.pos).y, T);
+    }
+
+    mapHeader(hy);
+    txtS(run ? (live ? 'YOUR TOUR SO FAR' : 'YOUR LAST TOUR') : 'TOUR BOOK', OX + 4, hy + 4, '#ffd84a', 1);
+    if (run) {
+      txt((live ? E.section : (E.last ? E.last.cities : E.section)) + ' CITIES   SCORE ' + (E.last && !live ? E.last.score : E.score), OX + 4, hy + 15, '#cfc3a6');
+    } else txt('NO TOUR YET. HIT THE ROAD!', OX + 4, hy + 15, '#cfc3a6');
+
+    // Unten: die legendären Bühnen (gesammelt = gold)
+    const y0 = 226;
+    X.fillStyle = HUD_BG; X.fillRect(0, y0, VIEW.W, 320 + VIEW.OY - y0);
+    X.fillStyle = '#ffd84a'; X.fillRect(0, y0, VIEW.W, 1);
+    txt('LEGENDARY STAGES ' + legendCount() + '/' + Object.keys(LEGENDS).length, OX + 4, y0 + 5, '#ffd84a');
+    txt('X3 POINTS', OX + PLAY_W - 4, y0 + 5, '#8a8494', 1, 'r');
+    Object.keys(LEGENDS).forEach((l, i) => {
+      const got = !!Save.data.legends[l], x = OX + 6 + (i % 2) * 88, y = y0 + 16 + (i >> 1) * 9;
+      drawMapStar(x + 2, y + 2, got);
+      txt(l, x + 8, y, got ? '#fff' : '#6a6474');
+      txt(LEGENDS[l].year.slice(-3), x + 80, y, got ? '#ffd84a' : '#4a4454', 1, 'r');
+    });
+    UI.button(VIEW.W / 2 - 40, 296, 80, 16, 'BACK', () => App.go(App.tourBack || 'menu'), { noDefault: true });
+  },
+
 
   /* ----- Sandbox: SOUNDCHECK, alles frei einstellbar ----- */
   sandbox() {
@@ -989,7 +1078,7 @@ const Screens = {
     const pairs = Object.keys(PAIRS).filter(id => Save.pairUnlocked(id));
     if (!venues.includes(sb.venue)) sb.venue = venues[0];
     if (!pairs.includes(sb.pair)) sb.pair = pairs[0];
-    drawBackdrop(VENUES[sb.venue], App.T);
+    drawMapBackdrop(VENUES[sb.venue], App.T, .74);
     txtS('SOUNDCHECK', cx, 7, '#ffd84a', 2, 'c');
     txt('PLAY HOW YOU LIKE. NO STARS, NO STRESS.', cx, 30, '#cfc3a6', 1, 'c');
     const cyc = (list, v, d) => list[(list.indexOf(v) + d + list.length) % list.length];
@@ -1035,6 +1124,7 @@ const Screens = {
     if (App.T - App.sceneT < .6) return;
     UI.button(cx - 50, 240, 100, 20, 'GO AGAIN', () => Endless.start(Endless.pair));
     UI.button(cx - 50, 266, 100, 20, 'MAIN MENU', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, 292, 80, 16, 'TOUR MAP', () => { App.tourBack = 'endlessOver'; App.go('tourview'); }, { noDefault: true });
   },
 
   /* ----- Debug-Menü (nur im Testmodus) ----- */
@@ -1141,7 +1231,7 @@ function drawTourMap(x0, y0, history, showNext) {
     const h = history[i];
     if (!h) { if ((App.T * 3 | 0) % 2) txt('?', x + 2, y, '#fff', 1, 'c'); continue; }
     if (!h.venue) { X.fillStyle = ROUTES[h.kind].color; X.fillRect(x + 1, y + 1, 3, 3); continue; }   // Rast / Tankstelle
-    if (h.kind === 'rowdy') { X.fillStyle = '#ff5a4a'; X.fillRect(x - 1, y - 1, 7, 7); }
+    if (h.kind === 'rowdy' || h.kind === 'legend') { X.fillStyle = h.kind === 'legend' ? '#ffd84a' : '#ff5a4a'; X.fillRect(x - 1, y - 1, 7, 7); }
     X.fillStyle = '#000'; X.fillRect(x, y, 5, 5);
     X.fillStyle = VENUES[h.venue].color; X.fillRect(x, y, 5, 5);
     if (h.ok) { X.fillStyle = '#ffd84a'; X.fillRect(x + 2, y - 2, 1, 1); }
@@ -1182,57 +1272,167 @@ function mapXY(city) { const p = CITY_POS[city] || CITY_POS[TOUR_START]; return 
 
 let mapCache = null, mapCacheKey = '';
 onViewChange(() => { mapCache = null; });
-/** Land als Pixelbild (neu gemalt, wenn sich die Kamera ändert): Wiese mit Strand am Rand */
+const MAP_SEA = '#22507e';
+/** Bergland (0 = flach, 1 = hohe Berge) grob nach Breite/Länge */
+function mapHigh(lat, lon) {
+  let h = 0;
+  // weicher Rand (ca. 0,35 Grad), damit keine eckigen Flächen entstehen
+  const box = (la0, la1, lo0, lo1, v) => {
+    const e = Math.min(lat - la0, la1 - lat, (lon - lo0) * .6, (lo1 - lon) * .6);
+    if (e > 0) h = Math.max(h, v * Math.min(1, e / .35));
+  };
+  box(56.3, 59, -8, -3.0, .95);          // Highlands
+  box(56.6, 59, -3.0, -1.9, .6);         // Cairngorms bis zur Küste
+  box(55.0, 55.9, -4.8, -2.6, .45);      // Southern Uplands
+  box(51.75, 53.25, -4.6, -3.05, .75);   // Wales
+  box(54.25, 54.75, -3.4, -2.75, .85);   // Lake District
+  box(53.3, 55.0, -2.45, -1.85, .5);     // Pennines
+  box(54.2, 54.5, -1.4, -0.6, .4);       // North York Moors
+  box(50.45, 50.72, -4.1, -3.7, .5);     // Dartmoor
+  box(53.3, 53.7, -10.2, -9.3, .6);      // Connemara
+  box(51.6, 52.2, -10.5, -9.2, .7);      // Kerry
+  box(52.9, 53.2, -6.6, -6.1, .5);       // Wicklow
+  return h;
+}
+/** Land als Pixelbild (neu gemalt, wenn sich die Kamera ändert): Wiesen, Berge, Strand, flaches Wasser */
 function getMapImage() {
   const key = MAPCAM.lat + ',' + MAPCAM.lon + ',' + MAPCAM.z + ',' + VIEW.OX;
   if (mapCache && key === mapCacheKey) return mapCache;
   mapCacheKey = key;
-  const o = makeCanvas(PLAY_W, H), g = o.getContext('2d'), OX = VIEW.OX;
+  const W = VIEW.W, o = makeCanvas(W, H), g = o.getContext('2d'), OX = VIEW.OX;   // ganze Breite (PC: auch die Ränder)
   g.fillStyle = '#fff';
   for (const poly of MAP_LAND) {
     g.beginPath();
-    poly.forEach(([lon, lat], i) => { const p = mapLL(lat, lon); i ? g.lineTo(p.x - OX, p.y) : g.moveTo(p.x - OX, p.y); });
+    poly.forEach(([lon, lat], i) => { const p = mapLL(lat, lon); i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); });
     g.closePath(); g.fill();
   }
-  const im = g.getImageData(0, 0, PLAY_W, H), d = im.data, land = new Uint8Array(PLAY_W * H);
-  for (let i = 0; i < land.length; i++) land[i] = d[i * 4 + 3] > 110 ? 1 : 0;
-  const grass = hex('#4e7a3c'), grass2 = hex('#5a8a44'), sand = hex('#d8c890');
-  for (let y = 0; y < H; y++) for (let x = 0; x < PLAY_W; x++) {
-    const i = y * PLAY_W + x, k = i * 4;
-    if (!land[i]) { d[k + 3] = 0; continue; }
-    const coast = !land[i - 1] || !land[i + 1] || !land[i - PLAY_W] || !land[i + PLAY_W];
-    const c = coast ? sand : ((x * 7 + y * 13) % 23 === 0 ? grass2 : grass);
+  const im = g.getImageData(0, 0, W, H), d = im.data, N = W * H, land = new Uint8Array(N), near = new Uint8Array(N);
+  for (let i = 0; i < N; i++) land[i] = d[i * 4 + 3] > 110 ? 1 : 0;
+  // Abstand zur Küste im Wasser (1..4 Pixel) für das helle, flache Wasser
+  for (let r = 1; r <= 4; r++) for (let i = 0; i < N; i++) {
+    if (land[i] || near[i]) continue;
+    const x = i % W, nb = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W];
+    if (nb.some(j => j >= 0 && j < N && (r === 1 ? land[j] : near[j] === r - 1))) near[i] = r;
+  }
+  const C = {
+    g1: hex('#4f7d3a'), g2: hex('#5e8f44'), g3: hex('#42702f'), field: hex('#6c9a4a'),
+    hi1: hex('#6f7a46'), hi2: hex('#857c56'), peak: hex('#bcb49a'), sand: hex('#dccb92'), sand2: hex('#c4b07a'),
+    sh1: hex('#4a8cbc'), sh2: hex('#3674a8'),
+  };
+  const z = MAPCAM.z;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, k = i * 4, bay = (BAYER[(y & 3) * 4 + (x & 3)] + .5) / 16;
+    let c = null;
+    if (land[i]) {
+      const coast = !land[i - 1] || !land[i + 1] || !land[i - W] || !land[i + W];
+      if (coast) c = (x + y) % 3 ? C.sand : C.sand2;
+      else {
+        const lon = MAPCAM.lon + (x - OX - 90) / (13.3 * z), lat = MAPCAM.lat - (y - 126) / (22.2 * z);
+        const n = Math.sin(lat * 9.1 + lon * 2.3) + Math.sin(lon * 6.7 - lat * 3.9) * .8 + Math.sin((lat + lon) * 17) * .4;
+        const hgt = mapHigh(lat, lon);
+        if (hgt > 0 && hgt * .9 + n * .2 > bay * .5 + .45) c = hgt > .75 && n > 1.3 && bay < .4 ? C.peak : n > .2 ? C.hi2 : C.hi1;
+        else {
+          const v = (n + 2.2) / 4.4;
+          c = v > .62 + bay * .2 ? C.g2 : v < .3 + bay * .15 ? C.g3 : (Math.sin(lat * 40) * Math.sin(lon * 33) > .93 ? C.field : C.g1);
+        }
+      }
+    } else if (near[i]) {
+      const r = near[i];
+      c = r === 1 ? C.sh1 : r === 2 ? (bay < .5 ? C.sh1 : C.sh2) : r === 3 ? C.sh2 : (bay < .5 ? C.sh2 : null);
+    }
+    if (!c) { d[k + 3] = 0; continue; }
     d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
   }
   g.putImageData(im, 0, 0);
   return (mapCache = o);
 }
-/** Meer, Land, alle Städte als kleine Punkte */
+/** Meer, Land, Kompass, alle Städte als kleine Punkte (über die ganze Bildschirmhöhe) */
 function drawMapBase(OX, T) {
   baseT();
-  X.fillStyle = '#2a5a8a'; X.fillRect(0, 0, VIEW.W, H);
-  X.fillStyle = '#336aa0';                                                     // Wellen
-  for (let y = 30; y < 228; y += 9) for (let x = ((y / 9) % 2) * 9; x < PLAY_W; x += 18) X.fillRect(OX + x + Math.round(Math.sin(T * .8 + y) * 2), y, 4, 1);
-  X.drawImage(getMapImage(), OX, 0);
-  for (const c in CITY_POS) { const p = mapXY(c); X.fillStyle = Endless.usedCities.includes(c) ? '#6a6a5a' : '#2a3a20'; X.fillRect(p.x, p.y, 2, 2); }
-  X.fillStyle = 'rgba(14,12,20,.85)'; X.fillRect(OX, 226, PLAY_W, H - 226);
+  const top = -VIEW.OY, full = H + 2 * VIEW.OY;
+  X.fillStyle = MAP_SEA; X.fillRect(0, top, VIEW.W, full);
+  X.fillStyle = 'rgba(90,150,210,.35)';                                        // Wellen
+  for (let y = top + 4; y < H + VIEW.OY; y += 9) for (let x = ((Math.abs(y) / 9 | 0) % 2) * 9; x < VIEW.W; x += 18) X.fillRect(x + Math.round(Math.sin(T * .8 + y) * 2), y, 4, 1);
+  X.drawImage(getMapImage(), 0, 0);
+  for (const c in CITY_POS) {
+    if (LEGENDS[c]) continue;
+    const p = mapXY(c);
+    X.fillStyle = 'rgba(0,0,0,.35)'; X.fillRect(p.x, p.y + 1, 2, 2);
+    X.fillStyle = Endless.usedCities.includes(c) ? '#e8dcc0' : '#2e3a26'; X.fillRect(p.x, p.y, 2, 2);
+  }
+  // Kompass unten links im Atlantik
+  const kx = OX + 12, ky = 200;
+  X.fillStyle = 'rgba(0,0,0,.3)'; X.fillRect(kx - 5, ky - 5, 11, 11);
+  X.fillStyle = '#e8dcc0'; X.fillRect(kx, ky - 4, 1, 9); X.fillRect(kx - 4, ky, 9, 1);
+  X.fillStyle = '#ff5a4a'; X.fillRect(kx, ky - 4, 1, 4);
+  txt('N', kx + 1, ky - 11, '#e8dcc0', 1, 'c');
 }
-/** Straße zwischen zwei Städten (gestrichelt = mögliche Fahrt) */
+/** Kopfzeile der Karte: dunkler Streifen vom Bildschirmrand bis unter die Statusleiste */
+function mapHeadY() { return Math.max(0, -VIEW.OY + (VIEW.safeT || 0)); }
+function mapHeader(hy) {
+  X.fillStyle = 'rgba(14,12,20,.9)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY + hy + 24);
+  X.fillStyle = 'rgba(255,216,74,.4)'; X.fillRect(0, hy + 24, VIEW.W, 1);
+}
+/** Wut beider Brüder als kleine Leisten (Kopfzeile der Karte) */
+function mapAngerRow(x, y) {
+  const ang = Endless.anger || [0, 0];
+  Game.bros.forEach((b, i) => {
+    const bx = x + i * 62, w = 30, a = Math.round(ang[i] || 0);
+    X.fillStyle = b.color; X.fillRect(bx, y, 3, 5);
+    txt(b.name, bx + 5, y, '#bbb');
+    const ax = bx + 7 + textW(b.name);
+    X.fillStyle = '#000'; X.fillRect(ax - 1, y - 1, w + 2, 7);
+    X.fillStyle = '#26222c'; X.fillRect(ax, y, w, 5);
+    X.fillStyle = angerColor(a); X.fillRect(ax, y, Math.round(w * a / 100), 5);
+  });
+}
+/** Kurzname eines Halts für die Karten unten */
+function routeShort(kind) { return { normal: 'GIG', rowdy: 'ROWDY X2', rest: 'REST', service: 'SERVICE', legend: 'LEGEND X3' }[kind] || kind; }
+/** Straße zwischen zwei Städten (gestrichelt = mögliche Fahrt, sonst mit Schatten) */
 function mapRoad(a, b, col, dashed) {
   const p = mapXY(a), q = mapXY(b), n = Math.max(1, Math.round(Math.hypot(q.x - p.x, q.y - p.y)));
-  X.fillStyle = col;
-  for (let i = 0; i <= n; i++) {
-    if (dashed && ((i >> 1) % 2)) continue;
-    X.fillRect(Math.round(p.x + (q.x - p.x) * i / n), Math.round(p.y + (q.y - p.y) * i / n), 1, 1);
+  for (const pass of dashed ? [1] : [0, 1]) {
+    X.fillStyle = pass ? col : 'rgba(0,0,0,.45)';
+    for (let i = 0; i <= n; i++) {
+      if (dashed && ((i >> 1) % 2)) continue;
+      X.fillRect(Math.round(p.x + (q.x - p.x) * i / n), Math.round(p.y + (q.y - p.y) * i / n) + (pass ? 0 : 1), pass || dashed ? 1 : 2, 1);
+    }
   }
 }
-/** Symbol für einen Halt: Gig (Farbe des Schauplatzes), Rast, Tankstelle */
+/** Bisher gefahrene Strecke (goldene Straße mit Schatten) */
+function mapPath(path) {
+  for (let i = 1; i < path.length; i++) mapRoad(path[i - 1], path[i], '#f0c850', false);
+  for (const c of path) { const p = mapXY(c); X.fillStyle = '#000'; X.fillRect(p.x - 1, p.y - 1, 3, 3); X.fillStyle = '#f0c850'; X.fillRect(p.x, p.y, 1, 1); }
+}
+/** Kleiner Stern (legendäre Bühne). on = gesammelt (gold), sonst grau */
+function drawMapStar(x, y, on) {
+  const pts = [[0, -2], [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [1, 1], [-2, 2], [2, 2]];
+  X.fillStyle = '#000';
+  for (const [a, b] of pts) for (const [u, v] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) X.fillRect(x + a + u, y + b + v, 1, 1);
+  X.fillStyle = on ? '#ffd84a' : '#8a8494';
+  for (const [a, b] of pts) X.fillRect(x + a, y + b, 1, 1);
+  if (on) { X.fillStyle = '#fff6c0'; X.fillRect(x, y - 1, 1, 1); }
+}
+/** Alle legendären Bühnen auf der Karte (gesammelte gold) */
+function drawMapLegends(labels) {
+  const T = App.T;
+  for (const l in LEGENDS) {
+    const p = mapXY(l), got = !!Save.data.legends[l];
+    drawMapStar(p.x, p.y, got);
+    if (got && (T * 2 | 0) % 4 === 0) { X.fillStyle = 'rgba(255,240,180,.8)'; X.fillRect(p.x + 3, p.y - 3, 1, 1); }   // funkelt
+    if (labels && got) { const w = textW(l); X.fillStyle = 'rgba(0,0,0,.55)'; X.fillRect(p.x + 4, p.y - 3, w + 2, 7); txt(l, p.x + 5, p.y - 2, '#ffd84a'); }
+  }
+}
+/** Gesammelte legendäre Bühnen */
+function legendCount() { return Object.keys(LEGENDS).filter(l => Save.data.legends && Save.data.legends[l]).length; }
+/** Symbol für einen Halt: Gig (Farbe des Schauplatzes), Rast, Tankstelle, legendäre Bühne */
 function mapNode(x, y, r, on) {
   X.fillStyle = '#000'; X.fillRect(x - 5, y - 5, 11, 11);
   X.fillStyle = on ? '#fff' : ROUTES[r.kind].color; X.fillRect(x - 4, y - 4, 9, 9);
   X.fillStyle = '#1a1a1e'; X.fillRect(x - 3, y - 3, 7, 7);
   if (r.kind === 'rest') { X.fillStyle = '#7cfc6a'; X.fillRect(x - 2, y - 1, 4, 3); X.fillRect(x + 2, y, 1, 1); X.fillStyle = '#ddd'; X.fillRect(x - 1, y - 3, 1, 1); X.fillRect(x, y - 2, 1, 1); }   // Tasse
   else if (r.kind === 'service') { X.fillStyle = '#9fd8ff'; X.fillRect(x - 2, y - 2, 3, 5); X.fillRect(x + 1, y - 1, 1, 1); X.fillRect(x + 2, y, 1, 2); }   // Zapfsäule
+  else if (r.kind === 'legend') { X.fillStyle = '#ffd84a'; for (const [a, b] of [[0, -2], [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [1, 1], [-2, 2], [2, 2]]) X.fillRect(x + a, y + b, 1, 1); }   // Stern
   else {
     X.fillStyle = VENUES[r.venue].color; X.fillRect(x - 2, y - 2, 5, 5);
     if (r.kind === 'rowdy') { X.fillStyle = '#ff5a3a'; X.fillRect(x - 1, y - 6, 3, 2); X.fillStyle = '#ffd84a'; X.fillRect(x, y - 6, 1, 1); }   // Flamme
@@ -1242,6 +1442,7 @@ function mapNode(x, y, r, on) {
 function drawMapBus(x, y, T) {
   const b = Math.round(Math.sin(T * 6));
   X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(x - 4, y - 1, 10, 4);
+  X.fillStyle = '#000'; X.fillRect(x - 6, y - 5 + b, 12, 7);
   X.fillStyle = '#8a2430'; X.fillRect(x - 5, y - 4 + b, 10, 5);
   X.fillStyle = '#e0d4b0'; X.fillRect(x - 5, y - 2 + b, 10, 1);
   X.fillStyle = '#9fd8ff'; X.fillRect(x + 3, y - 3 + b, 2, 1);
@@ -1292,19 +1493,19 @@ function ticket(icon) {
   };
 }
 /**
- * Spiel-Logo: Kev und Del wie auf dem App-Icon (ohne Blitz), darunter BROTHERS.
+ * Spiel-Logo: Liam und Noel wie auf dem App-Icon (ohne Blitz), darunter BROTHERS.
  * cx = Mitte, y = Oberkante, k = Pixelgröße. 32 x 32 Logo-Pixel.
  */
 function drawLogo(cx, y, k) {
   const x0 = Math.round(cx - 16 * k);
   const r = (x, yy, w, h, c) => { X.fillStyle = c; X.fillRect(x0 + x * k, y + yy * k, w * k, h * k); };
-  // Kev: Haare, Sonnenbrille, grüner Parka mit Fellkragen
+  // Liam: Haare, Sonnenbrille, grüner Parka mit Fellkragen
   r(2, 18, 12, 6, '#4a5e2a'); r(2, 22, 12, 2, '#36451e'); r(7, 18, 1, 6, '#bbbbbb'); r(2, 17, 12, 1, '#c8b890');
   r(4, 8, 8, 9, '#e2b38f');
   r(3, 5, 10, 3, '#3a2412'); r(3, 8, 1, 4, '#3a2412'); r(12, 8, 1, 4, '#3a2412');
   r(4, 9, 1, 1, '#000'); r(5, 10, 2, 1, '#000'); r(10, 9, 1, 1, '#000'); r(8, 10, 2, 1, '#000');
   r(4, 11, 8, 2, '#000'); r(5, 11, 1, 1, '#6a8ab0'); r(7, 14, 3, 2, '#000');
-  // Del: Fischerhut, rotes Gesicht, blaue Jacke
+  // Noel: Fischerhut, rotes Gesicht, blaue Jacke
   r(18, 18, 12, 6, '#22346a'); r(18, 22, 12, 2, '#18264d'); r(24, 18, 1, 6, '#bbbbbb');
   r(20, 9, 8, 8, '#e8906a');
   r(18, 8, 12, 2, '#d9d1b6'); r(20, 4, 8, 4, '#d9d1b6'); r(20, 7, 8, 1, '#b0a888');

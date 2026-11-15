@@ -35,7 +35,7 @@ const LEVELS = [
     hint: 'KEEP THEM APART TIL THE GIG STARTS',
     bonus: { type: 'bin', n: 3 },
     tutorial: [
-      { text: "KEV AND DEL HATE EACH OTHER. DRAG ONE AWAY! YOU CAN'T HOLD HIM FOREVER.", wait: 'drag', point: 'bro0' },
+      { text: "LIAM AND NOEL HATE EACH OTHER. DRAG ONE AWAY! YOU CAN'T HOLD HIM FOREVER.", wait: 'drag', point: 'bro0' },
       { text: 'TAP A BROTHER TO CALM HIM DOWN.', wait: 'calm', point: 'bro1' },
       { text: 'BEER MAKES THEM ANGRY. TAP IT TO BIN IT!', wait: 'bin', spawn: 'beer', point: 'item' },
       { text: 'GOOD LUCK. THE GIG IS WAITING!', wait: 'time', t: 2.5 },
@@ -319,7 +319,7 @@ const LEVELS = [
     time: 55, startAnger: [25, 25], ramp: 44,
     items: { beer: 4, buckethat: 2, mirror: 1, tea: 1 }, itemEvery: [3, 5], firstItem: 3,
     events: { insult: [3.5, 6] },
-    hint: "NOBODY TOUCHES DEL'S BUCKET HAT.",
+    hint: "NOBODY TOUCHES NOEL'S BUCKET HAT.",
     bonus: { type: 'bin', n: 8 },
   },
   {

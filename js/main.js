@@ -34,7 +34,8 @@ const App = {
   msg: null,         // kurze Meldung im Shop
   transT: 0,         // Zeit im Übergang (Endlos)
   mapSel: 0,         // gewählter Halt auf der Landkarte
-  mapMove: null,     // Bus fährt gerade: { from, to, t, stop }
+  mapMove: null,
+  tourBack: 'menu', // Tourkarte (tourview): wohin BACK führt     // Bus fährt gerade: { from, to, t, stop }
   sb: { venue: 'bus', pair: 'brothers', pace: 0, time: 0, safe: true, items: true, events: true },   // Soundcheck-Einstellungen
   debugOpen: false, debugMsg: null, resetArmed: 0,
   lp: null,          // laufendes langes Drücken: { id, x, y, t }
@@ -249,6 +250,10 @@ const App = {
       if (enter || code === 'Space') this.go('tourmap');
       return;
     }
+    if (s === 'tourview') {
+      if (code === 'Escape' || code === 'Backspace' || enter || code === 'Space') this.go(this.tourBack || 'menu');
+      return;
+    }
     if (s === 'tourmap') {
       if (this.mapMove) return;
       const n = Endless.routes.length, m = /^Digit([1-3])$/.exec(code);
@@ -338,6 +343,7 @@ const App = {
       case 'gig': Screens.gig(); break;
       case 'transition': Game.draw(); drawHUD(Game, false); Screens.transition(); break;
       case 'tourmap': Screens.tourmap(); break;
+      case 'tourview': Screens.tourview(); break;
       case 'sandbox': Screens.sandbox(); break;
       case 'endlessOver': Game.draw(); drawHUD(Game, false); Screens.endlessOver(); break;
     }
@@ -373,7 +379,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!hadOld) return;
       App.updateReady = true;
-      if (!['play', 'intro', 'result', 'transition', 'tourmap'].includes(App.scene)) location.reload();
+      if (!['play', 'pause', 'intro', 'result', 'transition', 'tourmap', 'tourview'].includes(App.scene)) location.reload();
     });
   });
 }

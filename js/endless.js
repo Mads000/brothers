@@ -34,7 +34,21 @@ const CITY_POS = {
   'BIRMINGHAM': [52.48, -1.90], 'LIVERPOOL': [53.41, -2.98], 'GALWAY': [53.27, -9.05],
 };
 const TOUR_START = 'MANCHESTER';
-const CITIES = Object.keys(CITY_POS).filter(c => c !== TOUR_START);
+
+// Legendäre Bühnen: besondere Halte auf der Karte (X3 Punkte, schwerer). Werden im
+// Spielstand gesammelt (Save.data.legends). pos = Breite/Länge, year/line = Anzeige.
+const LEGENDS = {
+  'GLASTONBURY': { pos: [51.15, -2.59], year: "JUN '94", line: 'MUD, WELLIES AND A FIELD' },
+  'EARLS COURT': { pos: [51.49, -0.20], year: "NOV '95", line: 'TWO NIGHTS IN LONDON' },
+  'MAINE ROAD': { pos: [53.45, -2.23], year: "APR '96", line: 'HOME GAME IN MANCHESTER' },
+  'LOCH LOMOND': { pos: [56.00, -4.58], year: "AUG '96", line: 'TWO NIGHTS BY THE LOCH' },
+  'KNEBWORTH': { pos: [51.87, -0.21], year: "AUG '96", line: '250,000 FANS, TWO NIGHTS' },
+  'WEMBLEY': { pos: [51.56, -0.28], year: "JUL '00", line: 'THE NATIONAL STADIUM' },
+  'MURRAYFIELD': { pos: [55.94, -3.24], year: "AUG '25", line: 'BACK TOGETHER IN SCOTLAND' },
+  'CROKE PARK': { pos: [53.36, -6.25], year: "AUG '25", line: 'DUBLIN SINGS ALONG' },
+};
+for (const k in LEGENDS) CITY_POS[k] = LEGENDS[k].pos;
+const CITIES = Object.keys(CITY_POS).filter(c => c !== TOUR_START && !LEGENDS[c]);
 
 // Arten von Halten auf der Karte. gig = es wird gespielt.
 const ROUTES = {
@@ -42,6 +56,7 @@ const ROUTES = {
   rowdy: { name: 'ROWDY NIGHT', color: '#ff7a5a', mult: 2, gig: true, perks: () => ['X2 POINTS', 'BUT HARDER'] },
   rest: { name: 'REST STOP', color: '#7cfc6a', gig: false, perks: () => ['NO GIG. THEY CHILL OUT:', '-' + CONFIG.ENDLESS.restRelief + '% ANGER'] },
   service: { name: 'SERVICE STATION', color: '#9fd8ff', gig: false, perks: () => ['NO GIG. POWER-UPS REFILLED', '-' + CONFIG.ENDLESS.serviceRelief + '% ANGER'] },
+  legend: { name: 'LEGENDARY GIG', short: 'LEGEND', color: '#ffd84a', mult: 3, gig: true, perks: () => ['X3 POINTS, BUT VERY HARD', 'WIN IT FOR YOUR TOUR BOOK'] },
 };
 
 const Endless = {
@@ -63,13 +78,15 @@ const Endless = {
   lastCity: null,   // Punkte-Aufschlüsselung der letzten Stadt
   stopMsg: null,    // Meldung nach einem Halt ohne Gig
   missionsDone: 0,
+  legendsRun: [],   // in diesem Run gespielte legendäre Bühnen
+  newLegend: null,  // gerade gewonnene legendäre Bühne
   last: null,       // Ergebnis am Ende
 
   start(pairId) {
     this.active = true; this.pair = pairId;
     this.section = 0; this.score = 0; this.mods = []; this.anger = null;
     this.slotUsed = [false, false]; this.usedCities = []; this.history = [];
-    this.newMod = null; this.restocked = false; this.lastCity = null; this.missionsDone = 0; this.last = null; this.stopMsg = null;
+    this.newMod = null; this.restocked = false; this.lastCity = null; this.missionsDone = 0; this.last = null; this.stopMsg = null; this.legendsRun = []; this.newLegend = null;
     this.pos = TOUR_START; this.path = [TOUR_START];
     // erster Gig: eine Stadt in der Nähe von Manchester
     const city = this.nearCities(1)[0];
@@ -103,6 +120,7 @@ const Endless = {
   makeStop(avoidVenues, kind, city) {
     if (!ROUTES[kind].gig) return { venue: null, city, kind };
     let pool = VENUE_ORDER.filter(v => Save.venueUnlocked(v) && VENUES[v].endless);
+    if (kind === 'legend' && pool.includes('festival')) pool = ['festival'];   // große Bühne unter freiem Himmel
     const fresh = pool.filter(v => !avoidVenues.includes(v));
     if (fresh.length) pool = fresh;
     const venue = pickOne(pool);
@@ -116,9 +134,23 @@ const Endless = {
     const hot = this.anger && Math.max(...this.anger) > 55;
     const third = wasBreak ? 'normal' : pickWeighted({ rest: hot ? 3 : 1.4, service: this.slotUsed.some(x => x) ? 1.6 : .6, normal: 1 });
     const kinds = ['normal', 'rowdy', third].sort(() => Math.random() - .5);
+    // Ab Stadt 2, alle 3 Städte: eine legendäre Bühne statt der Rowdy Night
+    const legend = this.section >= 2 && this.section % 3 === 2 ? this.nextLegend() : null;
+    if (legend) { cities[kinds.indexOf('rowdy')] = legend; kinds[kinds.indexOf('rowdy')] = 'legend'; }
     const avoid = this.cur ? [this.cur.venue] : [];
     const out = cities.map((c, i) => { const s = this.makeStop(avoid, kinds[i], c); if (s.venue) avoid.push(s.venue); return s; });
     return out.sort((a, b) => CITY_POS[a.city][1] - CITY_POS[b.city][1]);   // von West nach Ost
+  },
+
+  /** Nächste legendäre Bühne: noch nicht in diesem Run, am liebsten noch nicht gesammelt, möglichst nah */
+  nextLegend() {
+    const got = Save.data.legends || {};
+    let pool = Object.keys(LEGENDS).filter(l => !this.legendsRun.includes(l));
+    if (!pool.length) return null;
+    const fresh = pool.filter(l => !got[l]);
+    if (fresh.length) pool = fresh;
+    pool.sort((a, b) => this.cityDist(this.pos, a) - this.cityDist(this.pos, b));
+    return pool[0];
   },
 
   /** Mission für eine Stadt: allgemeine Aufgaben + die des Schauplatzes */
@@ -133,7 +165,7 @@ const Endless = {
 
   /** Level-Objekt für einen Gig bauen */
   makeLevel(stop) {
-    const t = VENUES[stop.venue].endless, rowdy = stop.kind === 'rowdy';
+    const t = VENUES[stop.venue].endless, rowdy = stop.kind === 'rowdy' || stop.kind === 'legend';
     const extras = this.section >= 4 && Math.random() < .35 ? [pickOne(['tambourine', 'drummer'])] : [];
     const ie = t.itemEvery || [3, 5];
     return {
@@ -149,10 +181,10 @@ const Endless = {
     const E = CONFIG.ENDLESS, lv = this.makeLevel(this.cur);
     Game.start(lv, {
       endless: true, pair: this.pair, keepAnger: this.anger, mods: this.mods,
-      diffBase: 1 + this.section * E.rampPerSection + (this.cur.kind === 'rowdy' ? E.rowdyDiff : 0),
+      diffBase: 1 + this.section * E.rampPerSection + (this.cur.kind === 'rowdy' ? E.rowdyDiff : this.cur.kind === 'legend' ? E.rowdyDiff * 1.5 : 0),
       skipIntro: true, slotUsed: this.slotUsed,
     });
-    Game.toastMsg('WELCOME TO ' + lv.name + '!', '#ffd84a');
+    Game.toastMsg((this.cur.kind === 'legend' ? 'LIVE AT ' : 'WELCOME TO ') + lv.name + '!', '#ffd84a');
     App.go('play');
   },
 
@@ -177,6 +209,11 @@ const Endless = {
     this.lastCity = b;
     this.score += b.total;
     if (b.ok) this.missionsDone++;
+    this.newLegend = null;
+    if (this.cur.kind === 'legend') {
+      this.legendsRun.push(this.cur.city);
+      if (!Save.data.legends[this.cur.city]) { Save.data.legends[this.cur.city] = true; this.newLegend = this.cur.city; }
+    }
     this.history.push({ venue: this.cur.venue, kind: this.cur.kind, ok: b.ok });
     this.section++;
     // Busfahrt: ein bisschen Erholung

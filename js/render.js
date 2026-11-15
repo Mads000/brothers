@@ -44,7 +44,7 @@ function safeInsets() {
   // den Abstand zu spät oder gar nicht. Dann lieber einen sicheren Mindestabstand nehmen.
   const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
   // Die unscharfe Statusleiste reicht etwas tiefer als der gemeldete Abstand: oben 12 px extra
-  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 22; bottom = Math.max(bottom, 21) * .6; }   // unten nur knapp über der Home-Leiste
+  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 28; bottom = Math.max(bottom, 21) * .6; }   // unten nur knapp über der Home-Leiste
   else if (top > 0) top += 8;
   return { top, bottom };
 }

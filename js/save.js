@@ -28,7 +28,7 @@ const Save = {
       powerups: { ...CONFIG.START_POWERUPS }, loadout: ['tape', 'mum'],
       owned: { outfits: ['default'], paints: ['default'] },
       outfit: {}, paint: 'default',
-      posters: {}, rivals: {}, achievements: {}, highscores: [], endlessBest: 0,
+      posters: {}, rivals: {}, legends: {}, achievements: {}, highscores: [], endlessBest: 0,
       settings: { vibrate: true, sound: true, music: true },
     };
   },

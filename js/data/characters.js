@@ -20,8 +20,8 @@
    ========================================================================= */
 
 const CHARACTERS = {
-  kev: { name: 'KEV', desc: 'GETS ANGRY FAST, BUT CALMS DOWN FAST.', color: '#4a5e2a', look: 'shades', angerRate: 1.15, calmPower: 1.25, speed: 1 },   // schnell wütend, schnell ruhig
-  del: { name: 'DEL', desc: 'SLOW TO ANGER, BUT STAYS ANGRY LONG.', color: '#22346a', look: 'buckethat', angerRate: 0.85, calmPower: 0.75, speed: 1 }, // langsam wütend, lange sauer
+  kev: { name: 'LIAM', desc: 'GETS ANGRY FAST, BUT CALMS DOWN FAST.', color: '#4a5e2a', look: 'shades', angerRate: 1.15, calmPower: 1.25, speed: 1 },   // schnell wütend, schnell ruhig
+  del: { name: 'NOEL', desc: 'SLOW TO ANGER, BUT STAYS ANGRY LONG.', color: '#22346a', look: 'buckethat', angerRate: 0.85, calmPower: 0.75, speed: 1 }, // langsam wütend, lange sauer
 
   // Zwillinge: sehen exakt gleich aus. Merk dir, wer wer ist!
   ron: { name: 'RON', color: '#6a2a5a', look: 'shades', angerRate: 1, calmPower: 1, speed: 1 },
@@ -37,7 +37,7 @@ const CHARACTERS = {
 };
 
 const PAIRS = {
-  brothers: { name: 'KEV & DEL', desc: 'THE ORIGINALS', bros: ['kev', 'del'], unlockCities: 0 },
+  brothers: { name: 'LIAM & NOEL', desc: 'THE ORIGINALS', bros: ['kev', 'del'], unlockCities: 0 },
   twins: { name: 'THE TWINS', desc: 'WHO IS WHO?', bros: ['ron', 'don'], unlockCities: 3 },
   dadson: { name: 'DAD & SON', desc: 'ONE SLOW, ONE FAST', bros: ['dad', 'son'], unlockCities: 6 },
   sisters: { name: 'THE SISTERS', desc: 'KEEP THEM TOGETHER!', bros: ['jo', 'bex'], unlockCities: 9, inverted: true, silent: true },
