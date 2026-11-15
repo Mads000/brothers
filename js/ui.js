@@ -481,7 +481,7 @@ const Screens = {
     const bx = cx - 64, bw = 128, y0 = 128;
     const done = LEVELS.filter(l => (Save.level(l.id) || {}).done).length;
     // Die Knöpfe sehen aus wie Konzert-Tickets (siehe ticket() unten)
-    UI.button(bx, y0, bw, 28, 'TOUR', () => App.go('select'),
+    UI.button(bx, y0, bw, 28, 'TOUR', () => App.go('route'),
       { sub: done + '/' + LEVELS.length + ' LEVELS', bare: true, draw: ticket('bus') });
     const eu = Save.endlessUnlocked();
     UI.button(bx, y0 + 33, bw, 28, 'NEVER-ENDING TOUR', () => App.go('endlessSetup'),
@@ -643,6 +643,58 @@ const Screens = {
         });
       });
     }
+    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('route'), { noDefault: true });
+  },
+
+  /* ----- Tour-Karte der normalen Tour: die 7 Schauplätze als Stationen quer durchs Land ----- */
+  route() {
+    const OX = VIEW.OX, cx = VIEW.W / 2, T = App.T, hy = mapHeadY();
+    fitMapCam(VENUE_ORDER.map(v => ROUTE_STOPS[v].city));
+    drawMapBase(OX, T);
+    // Straße von Station zu Station: gold, solange der nächste Schauplatz offen ist
+    VENUE_ORDER.forEach((v, i) => {
+      if (!i) return;
+      const open = Save.venueUnlocked(v);
+      mapRoad(ROUTE_STOPS[VENUE_ORDER[i - 1]].city, ROUTE_STOPS[v].city, open ? '#f0c850' : '#8a8494', !open);
+    });
+    const cur = routeCurrent();
+    VENUE_ORDER.forEach((v, i) => {
+      const st = ROUTE_STOPS[v], ve = VENUES[v], p = mapXY(st.city), open = Save.venueUnlocked(v), now = v === cur.venue;
+      const [got, max] = venueStars(v);
+      if (now) { const s = 8 + ((T * 4 | 0) % 2); X.fillStyle = 'rgba(255,216,74,.3)'; X.fillRect(p.x - s, p.y - s, s * 2 + 1, s * 2 + 1); }
+      X.fillStyle = '#000'; X.fillRect(p.x - 6, p.y - 6, 13, 13);
+      X.fillStyle = now ? '#ffd84a' : open ? '#e8dcc0' : '#5a5464'; X.fillRect(p.x - 5, p.y - 5, 11, 11);
+      X.fillStyle = open ? ve.color : '#2a2630'; X.fillRect(p.x - 4, p.y - 4, 9, 9);
+      if (open) txt(String(i + 1), p.x + 1, p.y - 2, '#fff', 1, 'c'); else drawLock(p.x - 3, p.y - 4, '#8a8494');
+      // Schild: Name und Sterne
+      const l1 = st.label, l2 = open ? got + '/' + max : 'LOCKED', w = Math.max(textW(l1), textW(l2) + 7) + 4;
+      let lx = st.side === 'l' ? p.x - 8 - w : st.side === 'r' ? p.x + 8 : p.x - w / 2;
+      const ly = st.side === 't' ? p.y - 24 : st.side === 'b' ? p.y + 8 : p.y - 8;
+      lx = clamp(Math.round(lx), OX + 1, OX + PLAY_W - w - 1);
+      X.fillStyle = 'rgba(10,8,14,.82)'; X.fillRect(lx, ly, w, 16);
+      X.fillStyle = open ? ve.color : '#3a3640'; X.fillRect(lx, ly, 1, 16);
+      txt(l1, lx + 3, ly + 2, open ? '#fff' : '#6a6474');
+      if (open) { drawStar(lx + 5, ly + 10, got > 0); txt(l2, lx + 10, ly + 9, got === max ? '#ffd84a' : '#cfc3a6'); }
+      else txt(l2, lx + 3, ly + 9, '#6a6474');
+      UI.button(Math.min(p.x - 8, lx), Math.min(p.y - 8, ly), Math.max(p.x + 8, lx + w) - Math.min(p.x - 8, lx), Math.max(p.y + 8, ly + 16) - Math.min(p.y - 8, ly), '',
+        () => { App.venueIdx = i; App.go('select'); }, { bare: true, noDefault: true, draw() {} });
+    });
+    const cp = mapXY(ROUTE_STOPS[cur.venue].city);
+    drawMapBus(cp.x + 9, cp.y + 7, T);
+
+    mapHeader(hy);
+    txtS('THE TOUR', OX + 4, hy + 4, '#ffd84a', 1);
+    drawStar(OX + PLAY_W - 30, hy + 6, true); txt(Save.totalStars() + '', OX + PLAY_W - 24, hy + 4, '#ffd84a');
+    txt('TAP A STOP TO PICK A LEVEL', OX + 4, hy + 15, '#cfc3a6');
+
+    // Unten: direkt weiterspielen
+    const y0 = 234;
+    X.fillStyle = HUD_BG; X.fillRect(0, y0, VIEW.W, 320 + VIEW.OY - y0);
+    X.fillStyle = '#ffd84a'; X.fillRect(0, y0, VIEW.W, 1);
+    if (cur.level) {
+      txt('NEXT UP: ' + VENUES[cur.venue].name, cx, y0 + 6, '#9fd8ff', 1, 'c');
+      UI.button(cx - 70, y0 + 16, 140, 22, 'PLAY: ' + cur.level.name, () => App.startLevel(cur.level));
+    } else txt('ALL LEVELS DONE! GO FOR 3 STARS', cx, y0 + 10, '#7cfc6a', 1, 'c');
     UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
@@ -833,7 +885,7 @@ const Screens = {
         txt('PAGE ' + (App.awardsPage + 1) + '/' + pages, cx, 236, '#888', 1, 'c');
       }
     } else if (App.extrasTab === 1) {
-      const rival = App.posterPage === 1, keys = rival ? Object.keys(RIVALS) : VENUE_ORDER;
+      const rival = App.posterPage === 1, keys = rival ? Object.keys(RIVALS) : [...VENUE_ORDER, 'legends'];
       const n = keys.filter(v => Save.hasPoster(v)).length;
       UI.button(x0, 44, 24, 14, '<', () => { App.posterPage = rival ? 0 : 1; App.posterHint = null; }, { noDefault: true });
       UI.button(x0 + w - 24, 44, 24, 14, '>', () => { App.posterPage = rival ? 0 : 1; App.posterHint = null; }, { noDefault: true });
@@ -851,7 +903,7 @@ const Screens = {
       });
       txt(n + '/' + keys.length + ' COLLECTED', cx, 196, '#ffd84a', 1, 'c');
       const hk = App.posterHint;
-      if (hk && !Save.hasPoster(hk)) txt('LOCKED: ' + (isRival(hk) ? RIVALS[hk].hint : 'WIN THE LAST LEVEL OF ' + VENUES[hk].name), cx, 208, '#ff8a3a', 1, 'c');
+      if (hk && !Save.hasPoster(hk)) txt('LOCKED: ' + (isRival(hk) ? RIVALS[hk].hint : hk === 'legends' ? 'WIN ALL 8 LEGENDARY STAGES' : 'WIN THE LAST LEVEL OF ' + VENUES[hk].name), cx, 208, '#ff8a3a', 1, 'c');
       else txt(rival ? 'TAP A LOCKED ONE TO SEE HOW TO GET IT' : 'WIN THE LAST LEVEL OF A PLACE', cx, 208, '#888', 1, 'c');
       txt('TAP A POSTER TO VIEW AND SAVE IT', cx, 218, '#888', 1, 'c');
       txt('THEY ALSO HANG IN THE PUB AND BACKSTAGE', cx, 228, '#666', 1, 'c');
@@ -942,6 +994,7 @@ const Screens = {
       txt('ADDED TO YOUR TOUR BOOK', OX + 25, y + 13, '#ccc');
       y += 26;
     }
+    if (E.allLegends) { txtS('ALL 8 LEGENDS! +' + CONFIG.REWARDS.legends + ' PICKS', cx, y, '#ffd84a', 1, 'c'); txt('NEW POSTER AND SECRET BUS PAINT', cx, y + 9, '#ccc', 1, 'c'); y += 20; }
     if (E.restocked) { txt('MANAGER RESTOCKED YOUR POWER-UPS', cx, y, '#9fd8ff', 1, 'c'); y += 10; }
 
     // Weiter zur Landkarte
@@ -1262,13 +1315,37 @@ let MAPCAM = { lat: 54.4, lon: -4.35, z: 1 };
 function mapLL(lat, lon) { return { x: VIEW.OX + Math.round(90 + (lon - MAPCAM.lon) * 13.3 * MAPCAM.z), y: Math.round(126 + (MAPCAM.lat - lat) * 22.2 * MAPCAM.z) }; }
 /** Kamera so setzen, dass Standort und alle Ziele gut sichtbar sind (möglichst nah heran) */
 function fitMapCam(cities) {
-  const ps = cities.map(c => CITY_POS[c] || CITY_POS[TOUR_START]);
+  const ps = cities.map(c => Array.isArray(c) ? c : CITY_POS[c] || CITY_POS[TOUR_START]);
   const la = ps.map(p => p[0]), lo = ps.map(p => p[1]);
   const lat0 = Math.min(...la), lat1 = Math.max(...la), lon0 = Math.min(...lo), lon1 = Math.max(...lo);
   const z = clamp(Math.min(140 / Math.max(.01, (lon1 - lon0) * 13.3), 150 / Math.max(.01, (lat1 - lat0) * 22.2)), 1, 2.25);
   MAPCAM = { lat: (lat0 + lat1) / 2, lon: (lon0 + lon1) / 2, z: Math.round(z * 4) / 4 };
 }
-function mapXY(city) { const p = CITY_POS[city] || CITY_POS[TOUR_START]; return mapLL(p[0], p[1]); }
+function mapXY(city) { const p = Array.isArray(city) ? city : CITY_POS[city] || CITY_POS[TOUR_START]; return mapLL(p[0], p[1]); }
+
+/* Normale Tour: Stationen der 7 Schauplätze (Ort, Lage, Seite fürs Schild: l r t b) */
+const ROUTE_STOPS = {
+  bus: { label: 'LONDON', city: [51.51, -0.13], side: 'l' },
+  rehearsal: { label: 'MANCHESTER', city: [53.48, -2.24], side: 'l' },
+  pub: { label: 'GLASGOW', city: [55.86, -4.25], side: 'b' },
+  backstage: { label: 'EDINBURGH', city: [55.95, -3.19], side: 'r' },
+  festival: { label: 'NEWCASTLE', city: [54.97, -1.61], side: 'r' },
+  hotel: { label: 'LEEDS', city: [53.80, -1.55], side: 'r' },
+  flat: { label: 'THE MOOR', city: [54.35, -0.85], side: 'r' },
+};
+/** Sterne eines Schauplatzes: [gesammelt, möglich] */
+function venueStars(v) { const ls = levelsOf(v); return [ls.reduce((n, l) => n + ((Save.level(l.id) || {}).stars || 0), 0), ls.length * 3]; }
+/** Wo die Tour gerade steht: erstes offenes, noch nicht geschafftes Level */
+function routeCurrent() {
+  let last = VENUE_ORDER[0];
+  for (const v of VENUE_ORDER) {
+    if (!Save.venueUnlocked(v)) break;
+    last = v;
+    const lv = levelsOf(v).find(l => Save.levelUnlocked(l) && !(Save.level(l.id) || {}).done);
+    if (lv) return { venue: v, level: lv };
+  }
+  return { venue: last, level: null };
+}
 
 let mapCache = null, mapCacheKey = '';
 onViewChange(() => { mapCache = null; });
@@ -1370,7 +1447,7 @@ function drawMapBase(OX, T) {
 /** Kopfzeile der Karte: dunkler Streifen vom Bildschirmrand bis unter die Statusleiste */
 function mapHeadY() { return Math.max(0, -VIEW.OY + (VIEW.safeT || 0)); }
 function mapHeader(hy) {
-  X.fillStyle = 'rgba(14,12,20,.9)'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY + hy + 24);
+  X.fillStyle = '#0e0c14'; X.fillRect(0, -VIEW.OY, VIEW.W, VIEW.OY + hy + 24);
   X.fillStyle = 'rgba(255,216,74,.4)'; X.fillRect(0, hy + 24, VIEW.W, 1);
 }
 /** Wut beider Brüder als kleine Leisten (Kopfzeile der Karte) */
@@ -1536,13 +1613,14 @@ function ticketIcon(icon, x, y, ink) {
 
 /** Gig-Plakat (Extras, Wände, Speichern). Eigenes Motiv pro Schauplatz. */
 function drawPoster(x, y, w, h, vid, have) {
+  if (vid === 'legends' && have) return drawLegendsPoster(x, y, w, h);
   const ve = VENUES[vid];
   if (!have) {
     X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
     X.fillStyle = '#1a1a20'; X.fillRect(x, y, w, h);
     X.fillStyle = '#222228'; for (let k = 0; k < h; k += 4) X.fillRect(x, y + k, w, 1);
     drawLock(x + w / 2 - 3, y + h / 2 - 8, '#555');
-    txt(ve.short, x + w / 2, y + h - 10, '#444', 1, 'c');
+    txt(ve ? ve.short : 'LGD', x + w / 2, y + h - 10, '#444', 1, 'c');
     return;
   }
   const lv = posterLevel(vid), r = (a, b, ww, hh, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, ww, hh); };
@@ -1663,7 +1741,7 @@ function posterLevel(vid) { const ls = levelsOf(vid); return ls.find(l => l.head
 const POSTER_W = 54, POSTER_H = 86, posterCache = {};
 /** Plakat einmal ins Canvas malen und als eigenes Bild merken (vor dem Zeichnen des Bildschirms aufrufen) */
 function posterImage(vid) {
-  const key = isRival(vid) ? vid : vid + (Save.level(posterLevel(vid).id) || {}).stars;
+  const key = isRival(vid) || vid === 'legends' ? vid : vid + (Save.level(posterLevel(vid).id) || {}).stars;
   if (posterCache[vid] && posterCache[vid].key === key) return posterCache[vid].img;
   X.save(); X.setTransform(1, 0, 0, 1, 0, 0);
   if (isRival(vid)) drawRivalPoster(1, 1, POSTER_W, POSTER_H, vid); else drawPoster(1, 1, POSTER_W, POSTER_H, vid, true);
@@ -1677,7 +1755,7 @@ function posterImage(vid) {
 function savePoster(vid) {
   const src = posterImage(vid), k = 10, c = makeCanvas(src.width * k, src.height * k), g = c.getContext('2d');
   g.imageSmoothingEnabled = false; g.drawImage(src, 0, 0, c.width, c.height);
-  const name = 'brothers-poster-' + (isRival(vid) ? RIVALS[vid].band.replace(/\s+/g, '-') : (posterLevel(vid).city || vid)).toLowerCase() + '.png';
+  const name = 'brothers-poster-' + (isRival(vid) ? RIVALS[vid].band.replace(/\s+/g, '-') : vid === 'legends' ? 'legends' : (posterLevel(vid).city || vid)).toLowerCase() + '.png';
   c.toBlob(blob => {
     if (!blob) return;
     try {
@@ -1699,9 +1777,26 @@ function drawPosterView(vid) {
   UI.button(cx - 40, 258, 80, 18, 'CLOSE', () => { App.posterView = null; }, { noDefault: true });
 }
 /** Was ein Plakat gebracht hat */
-function posterReward(vid) { return isRival(vid) ? 'RIVAL BAND: ' + RIVALS[vid].band : '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7: SECRET BUS PAINT!'; }
+function posterReward(vid) { return isRival(vid) ? 'RIVAL BAND: ' + RIVALS[vid].band : vid === 'legends' ? 'ALL 8 LEGENDARY STAGES WON!' : '+' + CONFIG.REWARDS.poster + ' PICKS. ALL 7: SECRET BUS PAINT!'; }
 /** Alle Plakate: erst die Gig-Plakate, dann die Rivalen */
-function allPosterKeys() { return [...VENUE_ORDER, ...Object.keys(RIVALS)]; }
+function allPosterKeys() { return [...VENUE_ORDER, 'legends', ...Object.keys(RIVALS)]; }
+/** Sonder-Plakat: alle 8 legendären Bühnen gewonnen */
+function drawLegendsPoster(x, y, w, h) {
+  const r = (a, b, ww, hh, c) => { X.fillStyle = c; X.fillRect(x + a, y + b, ww, hh); }, cx = w / 2;
+  X.fillStyle = '#000'; X.fillRect(x - 1, y - 1, w + 2, h + 2);
+  r(0, 0, w, h, '#ffd84a');
+  for (let k = 0; k < 50; k++) r(3, 3 + k, w - 6, 1, lerpCol('#0e0c28', '#3a2a5a', k / 50));          // Nachthimmel
+  const rr = seeded(7); for (let k = 0; k < 18; k++) r(4 + ((rr() * (w - 8)) | 0), 4 + ((rr() * 26) | 0), 1, 1, '#fff6c0');
+  for (let k = 0; k < 8; k++) drawMapStar(x + 8 + (k % 4) * 12, y + 10 + (k >> 2) * 9, true);          // die 8 Bühnen
+  r(8, 30, w - 16, 8, '#1a1a20'); r(8, 30, w - 16, 1, '#6a6a74');                                       // Bühne
+  for (let k = 0; k < 5; k++) r(10 + k * 7, 31, 2, 2, ['#ff4a4a', '#4a8aff', '#ffd84a', '#e04aff', '#7cfc6a'][k]);
+  for (let yy = 40; yy < 53; yy += 3) for (let xx = 3 + ((yy / 3 | 0) % 2) * 2; xx < w - 3; xx += 4) r(xx, yy, 2, 2, ['#3a2414', '#e0b090', '#8a5a2a', '#1a1410'][(xx + yy) % 4]);
+  r(3, 53, w - 6, 1, '#111');
+  txt('BROTHERS', x + cx, y + 57, '#1a1a1a', 1, 'c');
+  r(8, 64, w - 16, 1, '#1a1838');
+  txt('THE', x + cx, y + 67, '#5a3a10', 1, 'c');
+  txt('LEGENDS', x + cx, y + 75, '#1a1a1a', 1, 'c');
+}
 /** Gesammelte Plakate an den Wänden der Schauplätze (Welt-Koordinaten) */
 function drawWallPosters(ve) {
   const spots = ve.posterSpots;

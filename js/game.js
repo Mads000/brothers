@@ -737,6 +737,7 @@ const Game = {
     if (this.venue.posterSpots) allPosterKeys().forEach(v => { if (Save.hasPoster(v)) posterImage(v); });   // vor dem Zeichnen vorbereiten
     drawVenue(this.venue, this.T, sx, sy, this.hasFlag('mirror'));   // setzt Welt-Koordinaten
     drawWallPosters(this.venue);
+    if (this.level.legend) drawLegendStage(this.level.legend, this.T);   // Never-Ending Tour: legendäre Bühne
 
     // Bühnen-Zone ("Bring beide zur Bühne")
     if (this.phase === 'stagecall') {

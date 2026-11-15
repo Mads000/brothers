@@ -334,6 +334,7 @@ const App = {
       case 'info': Screens.info(); break;
       case 'code': Screens.code(); break;
       case 'select': Screens.select(); break;
+      case 'route': Screens.route(); break;
       case 'shop': Screens.shop(); break;
       case 'extras': Screens.extras(); break;
       case 'endlessSetup': Screens.endlessSetup(); break;

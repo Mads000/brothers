@@ -32,5 +32,7 @@ const PAINTS = {
   gold: { name: 'FOOLS GOLD', price: 0, secret: true, wall: '#8a6a1a', trim: '#ffe070', pattern: 'gold' },
   splatter: { name: 'PAINT SPLATTER', price: 0, secret: true, wall: '#e8e0cc', trim: '#2a2a2a', pattern: 'splatter' },
   // Belohnung: alle Gig-Plakate gesammelt
+  // Belohnung: alle 8 legendären Bühnen der Never-Ending Tour gewonnen
+  legendary: { name: 'LEGENDARY', price: 0, secret: true, wall: '#1a1838', trim: '#ffd84a', pattern: 'legend' },
   posters: { name: 'TOUR POSTERS', price: 0, secret: true, wall: '#2a2420', trim: '#efe4c8', pattern: 'posters' },
 };

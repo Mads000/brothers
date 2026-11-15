@@ -940,6 +940,14 @@ function busWall(g, x, w = 18) {
       g.fillStyle = cols[k % cols.length]; g.fillRect(px + 1, y + 2, pw - 2, 6);
       g.fillStyle = '#1a1a1a'; g.fillRect(px + 2, y + 9, pw - 4, 1);
     }
+  } else if (p.pattern === 'legend') {
+    // Belohnung für alle 8 legendären Bühnen: Nachthimmel mit goldenen Sternen
+    for (let y = 30, k = 0; y < 300; y += 14, k++) {
+      const sx = x + 3 + (k % 3) * 4;
+      g.fillStyle = '#ffd84a'; g.fillRect(sx + 1, y, 1, 1); g.fillRect(sx, y + 1, 3, 1); g.fillRect(sx + 1, y + 2, 1, 1);
+      g.fillStyle = '#8a8ab8'; g.fillRect(x + 1 + ((k * 7) % (w - 2)), y + 7, 1, 1);
+    }
+    g.fillStyle = '#ffd84a'; g.fillRect(x, 26, w, 1); g.fillRect(x, 303, w, 1);
   } else if (p.pattern === 'psych') {
     const cols = ['#e03070', '#f0a020', '#f0e040', '#30c070', '#3080e0', '#9040d0'];
     for (let y = 26; y < 304; y += 3) { g.fillStyle = cols[((y / 3) | 0) % cols.length]; g.fillRect(x + Math.round(Math.sin(y / 9) * 2) + 2, y, w - 4, 3); }
@@ -1101,4 +1109,84 @@ function marshDeck(g, x, y, w, h, edge) {
   ART.noise(g, x, y, w, h, 'rgba(60,40,20,.25)', w * h / 30, x + y);
   g.fillStyle = '#5a4028'; g.fillRect(x, y, 2, h); g.fillRect(x + w - 2, y, 2, h);
   if (edge) for (let yy = y + 4; yy < y + h - 2; yy += 30) { g.fillStyle = '#4a3420'; g.fillRect(x - 2, yy, 3, 3); g.fillRect(x + w - 1, yy, 3, 3); }
+}
+
+/* ---------- Legendäre Bühnen (Never-Ending Tour): eigene Kulisse über der Festival-Bühne ----------
+   Wird jedes Frame nach drawVenue in Welt-Koordinaten gemalt (Game.draw).
+   look: stand = Tribünenfarbe (Stadion), packed = riesige Menge, mud = Schlamm,
+         indoor = Halle (dunkel, bunte Lichter), loch = See vorne, towers = zwei weiße Türme,
+         flags = Fahnen in der Menge (Farbstreifen von oben nach unten bzw. 'saltire') */
+const LEGEND_LOOK = {
+  'GLASTONBURY': { mud: true, flags: [['#e84a4a', '#ffd84a'], ['#4a8ae8', '#ffffff'], ['#7cfc6a', '#e04aff'], ['#ff8a3a', '#2a2a2a']] },
+  'EARLS COURT': { indoor: true, packed: true, flags: [] },
+  'MAINE ROAD': { stand: '#6cabdd', flags: [['#6cabdd', '#ffffff'], ['#6cabdd', '#1c2c5b']] },
+  'LOCH LOMOND': { loch: true, flags: ['saltire', 'saltire'] },
+  'KNEBWORTH': { packed: true, flags: [['#c8102e', '#ffffff'], ['#1c2c5b', '#ffd84a'], ['#6cabdd', '#ffffff'], ['#ffffff', '#c8102e']] },
+  'WEMBLEY': { stand: '#c8102e', towers: true, flags: [['#ffffff', '#c8102e']] },
+  'MURRAYFIELD': { stand: '#1c3a8a', flags: ['saltire', 'saltire', 'saltire'] },
+  'CROKE PARK': { stand: '#2a7a3a', flags: [['#169b62', '#ffffff', '#ff883e'], ['#169b62', '#ffffff', '#ff883e']] },
+};
+function drawLegendStage(name, T) {
+  const L = LEGEND_LOOK[name], info = LEGENDS[name];
+  if (!L || !info) return;
+  const r = (x, y, w, h, c) => { X.fillStyle = c; X.fillRect(x, y, w, h); };
+  // Halle: alles außerhalb der Bühne dunkel, bunte Lichtstreifen
+  if (L.indoor) {
+    r(0, 26, 18, 212, 'rgba(12,8,24,.72)'); r(162, 26, 18, 212, 'rgba(12,8,24,.72)'); r(0, 238, 180, 66, 'rgba(18,10,30,.7)');
+    const cols = ['rgba(255,60,120,.10)', 'rgba(80,140,255,.10)', 'rgba(255,220,80,.09)'];
+    for (let k = 0; k < 3; k++) { const x = Math.round(90 + Math.sin(T * .8 + k * 2) * 70); r(x - 6, 240, 12, 64, cols[k]); }
+  }
+  // Schlamm (Glastonbury): braune Pfützen in Wiese und Menge
+  if (L.mud) {
+    const rr = seeded(91);
+    for (let k = 0; k < 26; k++) {
+      const x = (rr() * 176) | 0, y = k < 8 ? 40 + ((rr() * 190) | 0) : 240 + ((rr() * 60) | 0);
+      if (k < 8 && x > 18 && x < 162) continue;
+      r(x, y, 4 + ((rr() * 6) | 0), 2 + ((rr() * 2) | 0), 'rgba(90,60,30,.65)');
+    }
+  }
+  // Stadion: Tribüne mit Sitzreihen ganz unten
+  if (L.stand) {
+    for (let y = 296; y < 304; y += 3) { r(0, y, 180, 2, L.stand); r(0, y + 2, 180, 1, 'rgba(0,0,0,.35)'); }
+    for (let x = 1; x < 180; x += 3) { const up = Math.sin(T * 5 + x) > .6 ? 1 : 0; r(x, 294 + ((x * 7) % 8) - up, 2, 2, ['#e0b090', '#a87858', '#3a2a20'][x % 3]); }
+    for (const x of [2, 172]) { r(x, 246, 6, 3, '#e8e8f0'); r(x - 2, 249, 10, 30, 'rgba(255,255,230,.05)'); }   // Flutlicht
+  }
+  // See vorne (Loch Lomond), dahinter dunstige Berge in den Wiesen-Streifen
+  if (L.loch) {
+    r(0, 294, 180, 10, '#3a6a90');
+    for (let k = 0; k < 6; k++) r(((T * 6 + k * 34) % 200) - 10 | 0, 296 + (k % 3) * 3, 8, 1, 'rgba(220,240,255,.5)');
+    for (let x = 0; x < 180; x += 5) r(x, 292, 1, 3, '#4a6a30');                       // Schilf am Ufer
+    for (const x0 of [0, 162]) for (let y = 40; y < 230; y += 46) { r(x0 + 2, y, 14, 3, 'rgba(90,110,140,.55)'); r(x0 + 5, y - 2, 8, 2, 'rgba(90,110,140,.55)'); }
+  }
+  // Riesige Menge: zusätzliche Köpfe, die springen
+  if (L.packed) {
+    for (let n = 0; n < 80; n++) {
+      const x = (n * 37 + (n >> 3)) % 178, y = 248 + ((n * 23) % 54), up = Math.sin(T * 7 + n * 1.7) > .3 ? 1 : 0;
+      r(x, y - up, 2, 2, ['#e0b090', '#a87858', '#3a2a20', '#c89870'][n % 4]);
+      if (n % 6 === 0 && up) r(x, y - 3, 1, 2, '#e0b090');
+    }
+  }
+  // Zwei weiße Türme (Wembley)
+  if (L.towers) {
+    for (const x of [4, 162]) {
+      r(x, 262, 14, 30, '#e8e4dc'); r(x + 1, 262, 1, 30, '#ffffff'); r(x + 12, 262, 2, 30, '#b8b4ac');
+      r(x + 3, 256, 8, 6, '#e8e4dc'); r(x + 5, 252, 4, 4, '#d8d4cc'); r(x + 6, 249, 2, 3, '#c8c4bc');
+      for (let y = 266; y < 290; y += 6) r(x + 5, y, 3, 3, '#3a3a48');
+    }
+  }
+  // Fahnen in der Menge (wehen)
+  (L.flags || []).forEach((f, i) => {
+    const x = 20 + ((i * 47 + 13) % 140), y = 252 + ((i * 17) % 30), wv = Math.round(Math.sin(T * 4 + i * 2));
+    r(x, y, 1, 12, '#2a2a2a');
+    if (f === 'saltire') {
+      r(x + 1, y + wv * 0, 8, 6, '#1a5ab8');
+      for (let k = 0; k < 6; k++) { r(x + 1 + Math.round(k * 7 / 5), y + k, 1, 1, '#fff'); r(x + 8 - Math.round(k * 7 / 5), y + k, 1, 1, '#fff'); }
+    } else {
+      const w = 8, s = Math.floor(w / f.length);
+      f.forEach((c, j) => r(x + 1 + j * s, y + (j % 2 ? wv : 0), j === f.length - 1 ? w - j * s : s, 6, c));
+    }
+  });
+  // Banner über der Bühne: Name und Jahr
+  r(46, 32, 88, 9, '#111'); r(46, 32, 88, 1, '#ffd84a'); r(46, 40, 88, 1, '#ffd84a');
+  txt(name + ' ' + info.year.slice(-3), 90, 34, '#ffd84a', 1, 'c');
 }

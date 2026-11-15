@@ -42,9 +42,11 @@ function safeInsets() {
   let top = parseFloat(cs.paddingTop) || 0, bottom = parseFloat(cs.paddingBottom) || 0;
   // Vom Home-Bildschirm gestartet (Statusleiste liegt über dem Spiel): Manche iPhones melden
   // den Abstand zu spät oder gar nicht. Dann lieber einen sicheren Mindestabstand nehmen.
-  const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-  // Die unscharfe Statusleiste reicht etwas tiefer als der gemeldete Abstand: oben 12 px extra
-  if (standalone && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 28; bottom = Math.max(bottom, 21) * .6; }   // unten nur knapp über der Home-Leiste
+  // Nicht auf "standalone" verlassen (iPhone meldet das bei display: fullscreen nicht).
+  // Langes Touch-Handy, das den ganzen Bildschirm füllt: die unscharfe Statusleiste reicht
+  // deutlich tiefer als der gemeldete Abstand -> oben großzügig Platz, unten nur knapp über der Home-Leiste.
+  const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  if (touch && innerHeight / innerWidth > 1.9) { top = Math.max(top, 59) + 36; bottom = Math.min(Math.max(bottom, 21), 34) * .45; }
   else if (top > 0) top += 8;
   return { top, bottom };
 }
@@ -73,7 +75,7 @@ function fitView() {
   VIEW.scale = s;
   // Handy: wie viele Spielpixel oben/unten unter Statusleiste bzw. Home-Leiste liegen
   const si = pc ? { top: 0, bottom: 0 } : safeInsets();
-  const sT = Math.min(OY + 8, Math.ceil(si.top / s)), sB = Math.min(OY, Math.ceil(si.bottom / s));   // oben darf die Leiste etwas ins Spielfeld ragen
+  const sT = Math.min(OY + 12, Math.ceil(si.top / s)), sB = Math.min(OY, Math.ceil(si.bottom / s));   // oben darf die Leiste etwas ins Spielfeld ragen
   const insetsChanged = sT !== VIEW.safeT || sB !== VIEW.safeB;
   VIEW.safeT = sT; VIEW.safeB = sB;
   SCREEN.style.width = (W * s) + 'px';

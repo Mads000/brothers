@@ -169,7 +169,7 @@ const Endless = {
     const extras = this.section >= 4 && Math.random() < .35 ? [pickOne(['tambourine', 'drummer'])] : [];
     const ie = t.itemEvery || [3, 5];
     return {
-      id: 'endless', endless: true, venue: stop.venue, name: stop.city, cityNo: this.section + 1,
+      id: 'endless', endless: true, venue: stop.venue, name: stop.city, cityNo: this.section + 1, legend: stop.kind === 'legend' ? stop.city : null,
       time: CONFIG.ENDLESS.sectionTime, ramp: 60,
       items: t.items, itemEvery: rowdy ? [ie[0] * .75, ie[1] * .75] : ie, firstItem: 1.5,
       events: t.events, mech: t.mech, prespawn: t.prespawn, extras,
@@ -209,10 +209,16 @@ const Endless = {
     this.lastCity = b;
     this.score += b.total;
     if (b.ok) this.missionsDone++;
-    this.newLegend = null;
+    this.newLegend = null; this.allLegends = false;
     if (this.cur.kind === 'legend') {
       this.legendsRun.push(this.cur.city);
       if (!Save.data.legends[this.cur.city]) { Save.data.legends[this.cur.city] = true; this.newLegend = this.cur.city; }
+      // Alle 8 gesammelt: Plakat, Picks und geheime Buslackierung
+      if (Object.keys(LEGENDS).every(l => Save.data.legends[l]) && !Save.data.posters.legends) {
+        Save.data.posters.legends = true; Save.addPicks(CONFIG.REWARDS.legends);
+        if (!Save.data.owned.paints.includes('legendary')) Save.data.owned.paints.push('legendary');
+        this.allLegends = true;
+      }
     }
     this.history.push({ venue: this.cur.venue, kind: this.cur.kind, ok: b.ok });
     this.section++;

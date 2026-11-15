@@ -21,7 +21,7 @@ function setTestMode(on) {
 }
 
 const CONFIG = {
-  VERSION: '1.19',
+  VERSION: '1.20',
 
   // Bildformat
   PLAY_W: 180,      // Breite des Spielfelds, auf jedem Gerät gleich
@@ -69,7 +69,7 @@ const CONFIG = {
   NEAR_MISS: { dist: 20, anger: 88, slow: 0.3, time: 0.6, cooldown: 4 },
 
   // Belohnungen in Plektren
-  REWARDS: { win: 5, perStar: 5, maxBinned: 20, firstClear: 10, lossPer10s: 1, endlessPer: 10, poster: 60 },
+  REWARDS: { win: 5, perStar: 5, maxBinned: 20, firstClear: 10, lossPer10s: 1, endlessPer: 10, poster: 60, legends: 150 },
 
   // Never-Ending Tour
   ENDLESS: {

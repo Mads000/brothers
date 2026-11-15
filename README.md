@@ -27,6 +27,8 @@ Reines HTML/CSS/JavaScript ohne Build-Tools. Läuft auf dem Handy (hochkant, Tou
   - SERVICE STATION: kein Gig, Power-ups wieder voll, −10 % Wut
   - LEGENDARY GIG: legendäre Bühne (Knebworth, Maine Road, Glastonbury, Wembley ...), dreifache Punkte, sehr schwer. Gewonnene Bühnen landen im TOUR BOOK (`LEGENDS` in `js/endless.js`)
 
+  Jede legendäre Bühne hat eine eigene Kulisse (Stadion, Schlamm, Halle, See, Türme, Fahnen: `LEGEND_LOOK` in `js/art.js`). Alle 8 gewonnen: Sonder-Plakat THE LEGENDS, +150 Picks und die geheime Buslackierung LEGENDARY.
+
   Die ganze Tourkarte: FULL MAP auf der Karte, TOUR MAP in der Pause und am Tour-Ende, TOUR BOOK im Startbildschirm der Tour.
 
   Alle 3 Städte kommt ein neuer Twist dazu, dafür werden die Power-ups aufgefüllt. Dazu Highscores und 4 Paare zum Freischalten. Städte und ihre Lage stehen in `CITY_POS` in `js/endless.js`
