@@ -38,16 +38,17 @@ SAFE_PROBE.style.cssText = 'position:fixed;left:0;top:0;width:0;visibility:hidde
   'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
 document.body.appendChild(SAFE_PROBE);
 /**
- * Höhe, die wir füllen. Vom Home-Bildschirm gestartet meldet iOS manchmal eine kleinere
- * innerHeight als der Bildschirm wirklich hat. Dann bliebe oben und unten ein leerer Rand.
- * In dem Fall nehmen wir die echte Bildschirmhöhe.
+ * Vom Home-Bildschirm gestartet gibt iOS der App unten manchmal einen Streifen nicht frei
+ * (innerHeight kleiner als der Bildschirm). Dort kann man nicht malen, das iPhone füllt ihn
+ * mit der Hintergrundfarbe. bottomGap() = Höhe dieses Streifens in CSS-Pixeln.
  */
-function appHeight() {
+function appHeight() { return innerHeight; }
+function bottomGap() {
   const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
   const app = navigator.standalone || (window.matchMedia && ['standalone', 'fullscreen', 'minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches));
-  if (!touch || !app || innerWidth > innerHeight) return innerHeight;
-  const sh = Math.max(screen.width, screen.height);
-  return sh > innerHeight && sh - innerHeight < 160 ? sh : innerHeight;
+  if (!touch || !app || innerWidth > innerHeight) return 0;
+  const g = Math.max(screen.width, screen.height) - innerHeight;
+  return g > 0 && g < 160 ? g : 0;
 }
 const WRAP = document.getElementById('wrap');
 function safeInsets() {
@@ -59,7 +60,11 @@ function safeInsets() {
   // Langes Touch-Handy, das den ganzen Bildschirm füllt: die unscharfe Statusleiste reicht
   // deutlich tiefer als der gemeldete Abstand -> oben großzügig Platz, unten nur knapp über der Home-Leiste.
   const touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-  if (touch && appHeight() / innerWidth > 1.9) { top = Math.max(top, 59) + 36; bottom = Math.min(Math.max(bottom, 21), 34) * .45; }
+  if (touch && Math.max(screen.width, screen.height) / innerWidth > 1.9) {
+    top = Math.max(top, 59) + 36;
+    // unten: liegt die Home-Leiste im nicht freigegebenen Streifen, gehen die Knöpfe bis an den Rand
+    bottom = bottomGap() > 20 ? 0 : Math.min(Math.max(bottom, 21), 34) * .45;
+  }
   else if (top > 0) top += 8;
   return { top, bottom };
 }
@@ -90,7 +95,7 @@ function fitView() {
   VIEW.scale = s;
   // Handy: wie viele Spielpixel oben/unten unter Statusleiste bzw. Home-Leiste liegen
   const si = pc ? { top: 0, bottom: 0 } : safeInsets();
-  const sT = Math.min(OY + 12, Math.ceil(si.top / s)), sB = Math.min(OY, Math.ceil(si.bottom / s));   // oben darf die Leiste etwas ins Spielfeld ragen
+  const sT = Math.min(OY + 16, Math.ceil(si.top / s)), sB = Math.min(OY, Math.ceil(si.bottom / s));   // oben darf die Leiste etwas ins Spielfeld ragen
   const insetsChanged = sT !== VIEW.safeT || sB !== VIEW.safeB;
   VIEW.safeT = sT; VIEW.safeB = sB;
   SCREEN.style.width = (W * s) + 'px';
