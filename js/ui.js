@@ -182,11 +182,18 @@ function drawBackdrop(ve, T) {
   X.fillStyle = ve && ve.color ? ve.color : '#ffd84a'; X.globalAlpha = .5; X.fillRect(VIEW.OX + 20, 24, PLAY_W - 40, 1); X.globalAlpha = 1;
 }
 const MENU_BG = '#17141d';
+/** Untere Knopfreihe der Menüs: am Handy unten am Rand (über der Home-Leiste), sonst bei 284 */
+function backY() { return VIEW.OY > 0 ? Math.max(284, 320 + VIEW.OY - (VIEW.safeB || 0) - 22) : 284; }
 /** Tour-Menüs: der Schauplatz im Hintergrund (über die ganze Höhe), gut abgedunkelt */
 function drawMapBackdrop(ve, T, a = .68) {
   drawVenue(ve, T);
   drawFrame(ve, T, null);
   baseT();
+  if (VIEW.OY > 0) {                                                          // Umgebung oben und unten
+    const h = VIEW.OY, bt = getBand(ve, true), bb = getBand(ve, false), k = Math.min(26, h);
+    X.drawImage(bt, 0, -h); X.drawImage(bt, 0, h - k, PLAY_W, k, 0, 0, PLAY_W, 26);   // auch über die (sonst schwarze) HUD-Fläche
+    X.drawImage(bb, 0, 320); X.drawImage(bb, 0, 0, PLAY_W, Math.min(16, h), 0, 304, PLAY_W, 16);
+  }
   X.fillStyle = `rgba(12,10,16,${a})`; X.fillRect(0, -VIEW.OY, VIEW.W, 320 + 2 * VIEW.OY);
 }
 /** Hintergrund mit Schauplatz (nur noch fürs Hauptmenü am PC) */
@@ -531,8 +538,8 @@ const Screens = {
     });
     if (VIEW.pc) txt('SPACE/P PAUSE  R RESTART  1/2 POWER-UPS', cx, 262, '#777', 1, 'c');
     else txt('POWER-UPS: BUTTONS AT THE BOTTOM', cx, 262, '#777', 1, 'c');
-    UI.button(cx - 84, 284, 80, 16, 'BACK', () => App.go('menu'));
-    UI.button(cx + 4, 284, 80, 16, 'ALL INFO', () => App.go('info'), { noDefault: true });
+    UI.button(cx - 84, backY(), 80, 16, 'BACK', () => App.go('menu'));
+    UI.button(cx + 4, backY(), 80, 16, 'ALL INFO', () => App.go('info'), { noDefault: true });
   },
 
   /* ----- Info-Seite: alles zum Nachlesen ----- */
@@ -561,7 +568,7 @@ const Screens = {
       UI.button(OX + PLAY_W - 44, 266, 24, 14, '>', () => { App.infoPage = (App.infoPage + 1) % pages; }, { noDefault: true });
       txt('PAGE ' + (App.infoPage + 1) + '/' + pages, cx, 270, '#888', 1, 'c');
     }
-    UI.button(cx - 40, 286, 80, 16, 'BACK', () => App.go('menu'));
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'));
   },
 
   /* ----- Code eingeben ----- */
@@ -590,7 +597,7 @@ const Screens = {
 
     if (App.codeMsg) wrapText(App.codeMsg.text, 40).forEach((l, i) => txtS(l, cx, 202 + i * 9, App.codeMsg.c, 1, 'c'));
     if (VIEW.pc) txt('TYPE ON YOUR KEYBOARD, ENTER = OK', cx, 266, '#666', 1, 'c');
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('extras'), { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('extras'), { noDefault: true });
   },
 
   /* ----- Level-Auswahl ----- */
@@ -649,7 +656,7 @@ const Screens = {
         });
       });
     }
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
   /* ----- Pause ----- */
@@ -815,7 +822,7 @@ const Screens = {
       txt('PAINTS THE INSIDE OF THE TOUR BUS', cx, 264, '#666', 1, 'c');
     }
     if (App.msg) txtS(App.msg.text, cx, 270, App.msg.c, 1, 'c');
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
   /* ----- Extras: Erfolge, Plakate, Highscores ----- */
@@ -883,7 +890,7 @@ const Screens = {
     UI.button(x0 + w / 2 + 2, 246, w / 2 - 2, 15, 'MUSIC: ' + (st.music !== false ? 'ON' : 'OFF'), tog('music'), { noDefault: true });
     UI.button(x0, 264, w / 2 - 2, 15, 'VIBRATE: ' + (st.vibrate ? 'ON' : 'OFF'), tog('vibrate', () => buzz(40)), { noDefault: true });
     UI.button(x0 + w / 2 + 2, 264, w / 2 - 2, 15, 'ENTER CODE', () => App.openCode(), { noDefault: true });
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
     if (App.posterView) { UI.begin(); drawPosterView(App.posterView); }   // Großansicht (nur ihre Knöpfe sind dann aktiv)
   },
 
@@ -910,8 +917,8 @@ const Screens = {
     });
     txt('BEST: ' + Save.data.endlessBest + ' CITIES', OX + 10, 234, '#888');
     txt('LEGENDS ' + legendCount() + '/' + Object.keys(LEGENDS).length, OX + PLAY_W - 10, 234, '#ffd84a', 1, 'r');
-    UI.button(cx - 40, 250, 80, 16, 'TOUR BOOK', () => { App.tourBack = 'endlessSetup'; App.go('tourview'); }, { noDefault: true });
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, Math.max(250, backY() - 26), 80, 16, 'TOUR BOOK', () => { App.tourBack = 'endlessSetup'; App.go('tourview'); }, { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
   /* ----- Übergang zwischen zwei Städten: Punkte + Wahl der nächsten Station ----- */
@@ -1072,12 +1079,13 @@ const Screens = {
     txt('LEGENDARY STAGES ' + legendCount() + '/' + Object.keys(LEGENDS).length, OX + 4, y0 + 5, '#ffd84a');
     txt('X3 POINTS', OX + PLAY_W - 4, y0 + 5, '#8a8494', 1, 'r');
     Object.keys(LEGENDS).forEach((l, i) => {
-      const got = !!Save.data.legends[l], x = OX + 6 + (i % 2) * 88, y = y0 + 16 + (i >> 1) * 9;
+      const sp = clamp(Math.floor((backY() - y0 - 30) / 4), 9, 16);   // am Handy mehr Abstand
+      const got = !!Save.data.legends[l], x = OX + 6 + (i % 2) * 88, y = y0 + 16 + (i >> 1) * sp;
       drawMapStar(x + 2, y + 2, got);
       txt(l, x + 8, y, got ? '#fff' : '#6a6474');
       txt(LEGENDS[l].year.slice(-3), x + 80, y, got ? '#ffd84a' : '#4a4454', 1, 'r');
     });
-    UI.button(VIEW.W / 2 - 40, 296, 80, 16, 'BACK', () => App.go(App.tourBack || 'menu'), { noDefault: true });
+    UI.button(VIEW.W / 2 - 40, backY(), 80, 16, 'BACK', () => App.go(App.tourBack || 'menu'), { noDefault: true });
   },
 
 
@@ -1110,7 +1118,7 @@ const Screens = {
       UI.button(OX + PLAY_W - 26, y + 2, 16, 16, '>', () => fn(1), { noDefault: true });
     });
     UI.button(cx - 50, 222, 100, 24, 'START', () => App.startSandbox());
-    UI.button(cx - 40, 284, 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
+    UI.button(cx - 40, backY(), 80, 16, 'BACK', () => App.go('menu'), { noDefault: true });
   },
 
   /* ----- Ende der Never-Ending Tour ----- */
